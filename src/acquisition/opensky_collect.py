@@ -42,7 +42,9 @@ COLUMNS = [
     "category",
 ]
 
-output = Path("opensky_trajectories.csv")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+output = PROJECT_ROOT / "data" / "raw" / "opensky" / "opensky_trajectories.csv"
+output.parent.mkdir(parents=True, exist_ok=True)
 
 samples = int(
     DURATION_MINUTES * 60 / INTERVAL_SECONDS

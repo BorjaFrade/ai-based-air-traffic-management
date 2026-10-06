@@ -388,21 +388,21 @@ GROUND_COLOR = "#FFD400"
 FIG_DPI = 160
 
 
-OUTPUT_DIR = (
-    Path(__file__)
-    .resolve()
-    .parent
-)
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+RAW_DATA_DIR = PROJECT_ROOT / "data" / "raw" / "opensky"
+
+RESULTS_FIGURES_DIR = PROJECT_ROOT / "results" / "figures"
 
 
 CSV_FILE = (
-    OUTPUT_DIR
+    RAW_DATA_DIR
     / "opensky_snapshot.csv"
 )
 
 
 MAP_FILE = (
-    OUTPUT_DIR
+    RESULTS_FIGURES_DIR
     / "opensky_snapshot_map.png"
 )
 

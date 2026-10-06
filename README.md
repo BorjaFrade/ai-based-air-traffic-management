@@ -68,6 +68,31 @@ Current functionality includes:
 
 The project will progressively incorporate historical trajectory processing and AI-based conflict analysis.
 
+## Repository structure
+
+```text
+data/
+├── raw/              # Original OpenSky data and aeronautical source documents
+├── processed/        # Reusable cleaned and transformed datasets
+└── samples/          # Small datasets for examples and tests
+src/
+├── acquisition/      # Data collection and provider-specific clients
+├── preprocessing/    # Cleaning and feature preparation
+├── trajectories/     # Trajectory handling and analysis
+├── conflict_detection/
+├── visualization/
+└── models/
+notebooks/            # Exploratory and reproducible research notebooks
+experiments/          # Experiment configurations and runs
+results/              # Generated figures and tables
+docs/                 # Thesis and project documentation
+tests/                # Automated tests
+```
+
+OpenSky acquisition scripts are located in `src/acquisition/`. Raw OpenSky snapshots
+are stored under `data/raw/opensky/`, while generated figures belong in
+`results/figures/`. The ILS source documents are kept in `data/raw/ils/`.
+
 ## ⚠️ Conflict Detection Model
 
 A simplified separation model is currently used for research and experimentation.
