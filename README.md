@@ -1,6 +1,6 @@
 # AI-Based Air Traffic Management
 
-Master's Thesis at the **Universidad Nacional de Educación a Distancia (UNED)** focused on the application of Artificial Intelligence (AI) models to Air Traffic Management (ATM).
+Master's Thesis at the **[Universidad Nacional de Educación a Distancia (UNED)](https://www.uned.es/)** focused on the application of Artificial Intelligence (AI) models to Air Traffic Management (ATM).
 
 The project investigates the use of historical and real-world aircraft trajectory data to analyse traffic situations, detect potential conflicts, study aircraft separation, and develop data-driven methods for supporting tactical air traffic conflict detection and resolution.
 
@@ -9,11 +9,13 @@ The project investigates the use of historical and real-world aircraft trajector
 **Title:** Air Traffic Management Using Artificial Intelligence Models  
 **Degree:** Master's Degree  
 **University:** [Universidad Nacional de Educación a Distancia (UNED)](https://www.uned.es/)  
-**Author:** Borja  
-**Supervisors:** Félix Hernández del Olmo and Elena Gaudioso Vázquez  
-**Status:** Work in progress  
-**Year:** 2026–2027
+**Author:** [Borja Rodríguez Frade](https://orcid.org/0000-0002-9097-1323) - [ORCID: 0000-0002-9097-1323](https://orcid.org/0000-0002-9097-1323)  
+**Supervisors:**  
+- [Félix Hernández del Olmo](https://orcid.org/0000-0002-0567-9572) — [ORCID: 0000-0002-0567-9572](https://orcid.org/0000-0002-0567-9572)  
+- [Elena Gaudioso Vázquez](https://orcid.org/0000-0003-2258-6623) — [ORCID: 0000-0003-2258-6623](https://orcid.org/0000-0003-2258-6623)  
 
+**Status:** Work in progress  
+**Academic Year:** 2026–2027
 ## ✈️ Project Overview
 
 The main objective of this project is to investigate how Artificial Intelligence and data-driven models can support Air Traffic Management, particularly in scenarios involving multiple aircraft trajectories and potential loss of separation.
