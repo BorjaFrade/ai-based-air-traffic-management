@@ -55,10 +55,54 @@ The current script prints the returned aircraft table and remaining API credits;
 it does not yet persist the response to a file. Do not commit credentials or
 tokens to the repository.
 
+### `download_opensky_monday_states.py`
+
+Downloads and geographically filters OpenSky's
+[Weekly 24 Hours of State Vector Data 2017–2022](https://opensky-network.org/data/scientific#d1)
+scientific dataset. OpenSky describes this dataset as complete Monday state
+vectors, available in hourly files with 10-second update intervals and CSV, Avro
+or JSON formats. This script downloads one global hourly archive at a time,
+reads it in chunks, keeps only the configured bounding boxes, writes regional
+Parquet files, and deletes the temporary global archive. This avoids retaining
+the full global dataset locally.
+
+Before a complete download, edit `START_DATE`, `END_DATE` and `REGIONS` near the
+top of the script. The script automatically selects Mondays within the date
+range. A safe first test is a single Monday:
+
+```python
+START_DATE = "2022-06-27"
+END_DATE = "2022-06-27"
+```
+
+Run it from the repository root:
+
+```bash
+python src/acquisition/download_opensky_monday_states.py
+```
+
+By default, results are written under `data/opensky_weekly/`, partitioned by
+region, year, date and hour:
+
+```text
+data/opensky_weekly/
+├── GALICIA/
+│   └── year=2022/date=2022-06-27/states_2022-06-27-00.parquet
+└── _completed/
+    └── 2022/2022-06-27-00.done
+```
+
+The `.done` marker records the source URL and row counts and allows the script to
+resume without downloading an already processed hour. The global source files
+are temporary; the retained data is the geographically filtered regional output.
+Configure `CHUNK_SIZE` according to available memory, and set
+`KEEP_ONLY_AIRBORNE = True` if ground aircraft should be excluded. Parquet
+output requires a suitable pandas engine such as `pyarrow`.
+
 ## Dependencies and reproducibility
 
 The scripts require Python packages including `requests`, `pandas`, `numpy`,
-`matplotlib`, `contextily`, `pyproj` and `geonamescache`. The exact dependency
+`matplotlib`, `contextily`, `pyproj`, `geonamescache` and `pyarrow`. The exact dependency
 manifest will be formalised in the root `requirements.txt`. Raw data and maps
 should be generated into the repository folders described above, not next to the
 source scripts.

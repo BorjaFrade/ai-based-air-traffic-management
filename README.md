@@ -43,6 +43,13 @@ The project may use data obtained from different aviation data providers, includ
 - Flightradar24;
 - other publicly available or research-access aviation datasets.
 
+For the historical part of the thesis, the repository also uses OpenSky's
+[Weekly 24 Hours of State Vector Data 2017–2022](https://opensky-network.org/data/scientific#d1)
+dataset. It contains complete Monday state-vector data, sampled at 10-second
+update intervals and distributed as hourly files. The download and geographic
+filtering workflow is implemented in
+[`src/acquisition/download_opensky_monday_states.py`](src/acquisition/download_opensky_monday_states.py).
+
 Third-party datasets are **not distributed under the license of this repository**.
 
 Each dataset remains subject to the terms, conditions, attribution requirements, and licensing restrictions imposed by its original provider.
@@ -94,7 +101,9 @@ The folders have the following responsibilities:
 - `data/`: datasets. `raw/` preserves source data without modification, `processed/`
   is for cleaned or transformed data, and `samples/` is for small datasets used in
   examples and tests. The original ILS documents are under `data/raw/ils/` and
-  OpenSky data under `data/raw/opensky/`.
+  OpenSky snapshots under `data/raw/opensky/`. Historical regional Parquet output
+  is generated under `data/opensky_weekly/` and is intentionally not committed as
+  part of the source repository.
 - `src/`: reusable project code, organised by research stage. See
   [`src/README.md`](src/README.md).
 - `notebooks/`: exploratory analyses, visual investigations and reproducible
