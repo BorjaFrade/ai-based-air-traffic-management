@@ -3,6 +3,10 @@ __pycache__/
 *.py[codz]
 *$py.class
 
+# General
+*.bak
+*.DS_Store
+
 # C extensions
 *.so
 
