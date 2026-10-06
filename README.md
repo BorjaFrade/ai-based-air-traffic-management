@@ -89,9 +89,24 @@ docs/                 # Thesis and project documentation
 tests/                # Automated tests
 ```
 
-OpenSky acquisition scripts are located in `src/acquisition/`. Raw OpenSky snapshots
-are stored under `data/raw/opensky/`, while generated figures belong in
-`results/figures/`. The ILS source documents are kept in `data/raw/ils/`.
+The folders have the following responsibilities:
+
+- `data/`: datasets. `raw/` preserves source data without modification, `processed/`
+  is for cleaned or transformed data, and `samples/` is for small datasets used in
+  examples and tests. The original ILS documents are under `data/raw/ils/` and
+  OpenSky data under `data/raw/opensky/`.
+- `src/`: reusable project code, organised by research stage. See
+  [`src/README.md`](src/README.md).
+- `notebooks/`: exploratory analyses, visual investigations and reproducible
+  research notebooks.
+- `experiments/`: experiment definitions, configurations and run-specific material.
+- `results/`: generated outputs such as figures and tables. See
+  [`results/README.md`](results/README.md).
+- `docs/`: thesis-related and technical documentation.
+- `tests/`: automated tests for the source code and data-processing pipeline.
+- `README.md`, `LICENSE` and `requirements.txt`: project entry-point documentation,
+  licensing information and Python dependencies respectively. `requirements.txt`
+  will be added when the dependency set is stabilised.
 
 ## ⚠️ Conflict Detection Model
 
