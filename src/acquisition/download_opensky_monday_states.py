@@ -111,7 +111,8 @@ REGIONS = {
 # Output directory
 # ------------------------------------------------------------
 
-OUTPUT_ROOT = Path("data/opensky_weekly")
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
+OUTPUT_ROOT = PROJECT_ROOT / "data" / "raw" / "opensky_weekly"
 
 
 # ------------------------------------------------------------

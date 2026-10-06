@@ -13,6 +13,8 @@ configured area of interest. It combines:
 - aircraft positions from the OpenSky state-vector response;
 - a geographic basemap, when the map-tile service is available;
 - aircraft labels and movement vectors based on heading and ground speed;
+- three-digit true-track labels at the tip of each movement vector, measured
+  clockwise from geographic north (for example, `072°` or `250°`);
 - altitude, vertical-speed and ground/airborne information used in the display;
 - pairwise proximity or conflict-warning annotations according to the configured
   horizontal and vertical research thresholds.
@@ -29,10 +31,12 @@ python src/acquisition/opensky_snapshot.py
 ```
 
 The script queries the OpenSky states API, processes the response and saves the
-configured map in `results/figures/`. The corresponding processed snapshot is
-saved as `data/raw/opensky/opensky_snapshot.csv` for traceability. If several
-configurations are being compared, rename or copy the generated PNGs to retain
-distinct names such as the examples above.
+default map as `results/figures/opensky_snapshot_map.png`. The corresponding
+processed snapshot is saved as `data/raw/opensky/opensky_snapshot.csv` for
+traceability. When several configurations are being compared, rename or copy
+each generated PNG immediately—for example, to `opensky_bcn_map.png`,
+`opensky_galicia_map.png` or `opensky_spain_north_map.png`—so later runs do not
+overwrite the preserved figures.
 
 The geographic scope is controlled in the script. `AREA_MODE="BBOX"` uses
 `CUSTOM_BBOX`; `AREA_MODE="CENTER_RADIUS"` derives a bounding box around the

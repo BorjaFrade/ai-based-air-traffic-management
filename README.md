@@ -102,7 +102,7 @@ The folders have the following responsibilities:
   is for cleaned or transformed data, and `samples/` is for small datasets used in
   examples and tests. The original ILS documents are under `data/raw/ils/` and
   OpenSky snapshots under `data/raw/opensky/`. Historical regional Parquet output
-  is generated under `data/opensky_weekly/` and is intentionally not committed as
+  is generated under `data/raw/opensky_weekly/` and is intentionally not committed as
   part of the source repository.
 - `src/`: reusable project code, organised by research stage. See
   [`src/README.md`](src/README.md).
@@ -114,8 +114,7 @@ The folders have the following responsibilities:
 - `docs/`: thesis-related and technical documentation.
 - `tests/`: automated tests for the source code and data-processing pipeline.
 - `README.md`, `LICENSE` and `requirements.txt`: project entry-point documentation,
-  licensing information and Python dependencies respectively. `requirements.txt`
-  will be added when the dependency set is stabilised.
+  licensing information and Python dependencies respectively.
 
 ## ⚠️ Conflict Detection Model
 

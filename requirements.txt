@@ -1,0 +1,14 @@
+# Core data acquisition and processing
+requests>=2.31
+urllib3>=2.0
+pandas>=2.0
+numpy>=1.24
+
+# Visualisation and geospatial mapping
+matplotlib>=3.7
+contextily>=1.4
+pyproj>=3.5
+geonamescache>=2.0
+
+# Parquet output for historical OpenSky data
+pyarrow>=14.0

@@ -35,6 +35,7 @@ import geonamescache
 #   "BBOX"
 
 AREA_MODE = "BBOX"
+#AREA_MODE = "CENTER_RADIUS"
 
 
 # ------------------------------------------------------------
@@ -154,6 +155,18 @@ CUSTOM_BBOX = {
 
     "lomin": -9.40,
     "lomax": -6.65,
+
+    "extended": 1,
+}
+
+CUSTOM_BBOX_NAME = "Northern Spain"
+
+CUSTOM_BBOX = {
+    "lamin": 41.50,
+    "lamax": 44.00,
+
+    "lomin": -3.50,
+    "lomax": 1.50,
 
     "extended": 1,
 }
@@ -2537,14 +2550,10 @@ def build_aircraft_label_box(
 
     if SHOW_GROUND_SPEED:
 
-
         speed = row.get(
-
             "velocity_kts",
-
             np.nan,
         )
-
 
         if (
             pd.notna(speed)
@@ -2552,12 +2561,40 @@ def build_aircraft_label_box(
             np.isfinite(speed)
         ):
 
+            # True track measured clockwise
+            # from geographic (true) north.
+            track = row.get(
+                "true_track",
+                np.nan,
+            )
+
+            if (
+                pd.notna(track)
+                and
+                np.isfinite(track)
+            ):
+
+                track_deg = (
+                    int(round(float(track)))
+                    % 360
+                )
+
+                speed_text = (
+                    f"{speed:.0f} kt  "
+                    f"{track_deg:03d}°"
+                )
+
+            else:
+
+                speed_text = (
+                    f"{speed:.0f} kt"
+                )
 
             lines.append(
 
                 TextArea(
 
-                    f"{speed:.0f} kt",
+                    speed_text,
 
                     textprops={
 
@@ -2569,7 +2606,6 @@ def build_aircraft_label_box(
                     },
                 )
             )
-
 
     if SHOW_VERTICAL_SPEED:
 

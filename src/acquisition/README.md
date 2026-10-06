@@ -23,6 +23,8 @@ It writes the raw snapshot to `data/raw/opensky/opensky_snapshot.csv` and the
 visualisation to `results/figures/opensky_snapshot_map.png`. The script also
 reports aircraft states, altitude and speed information, pairwise proximity and
 conflict/proximity warnings according to its configured research thresholds.
+Each trajectory vector is annotated at its tip with the three-digit true track
+relative to geographic north, such as `072°` or `250°`.
 
 ### `opensky_collect.py`
 
@@ -81,11 +83,11 @@ Run it from the repository root:
 python src/acquisition/download_opensky_monday_states.py
 ```
 
-By default, results are written under `data/opensky_weekly/`, partitioned by
+By default, results are written under `data/raw/opensky_weekly/`, partitioned by
 region, year, date and hour:
 
 ```text
-data/opensky_weekly/
+data/raw/opensky_weekly/
 ├── GALICIA/
 │   └── year=2022/date=2022-06-27/states_2022-06-27-00.parquet
 └── _completed/
@@ -97,12 +99,15 @@ resume without downloading an already processed hour. The global source files
 are temporary; the retained data is the geographically filtered regional output.
 Configure `CHUNK_SIZE` according to available memory, and set
 `KEEP_ONLY_AIRBORNE = True` if ground aircraft should be excluded. Parquet
-output requires a suitable pandas engine such as `pyarrow`.
+output requires a suitable pandas engine such as `pyarrow`. Historical files are
+kept under `data/raw/opensky_weekly/` because they are downloaded source-derived
+data and should not be committed unless redistribution and storage are explicitly
+intended.
 
 ## Dependencies and reproducibility
 
-The scripts require Python packages including `requests`, `pandas`, `numpy`,
-`matplotlib`, `contextily`, `pyproj`, `geonamescache` and `pyarrow`. The exact dependency
-manifest will be formalised in the root `requirements.txt`. Raw data and maps
+The scripts require the packages listed in the root `requirements.txt`, including
+`requests`, `pandas`, `numpy`, `matplotlib`, `contextily`, `pyproj`,
+`geonamescache` and `pyarrow`. Raw data and maps
 should be generated into the repository folders described above, not next to the
 source scripts.
