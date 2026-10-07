@@ -17,6 +17,7 @@ import geonamescache
 GEOD = Geod(ellps="WGS84")
 BBOX = {"lamin": 0.0, "lamax": 1.0, "lomin": 0.0, "lomax": 1.0}
 FIG_DPI = 160
+FIG_SIZE = (28, 16)
 MAP_FILE = Path("opensky_snapshot_map.png")
 AREA = {"name": "OpenSky"}
 AIRCRAFT_MARKER = None
@@ -2311,10 +2312,7 @@ def render_map(
     
     fig, ax = plt.subplots(
     
-        figsize=(
-            22,
-            12,
-        ),
+        figsize=FIG_SIZE,
     
         dpi=FIG_DPI,
     )
@@ -3227,4 +3225,6 @@ def render_map(
     # ============================================================
     
     plt.show()
+
+    return fig, ax
     
