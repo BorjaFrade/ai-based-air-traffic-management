@@ -7,8 +7,16 @@ __pycache__/
 *.bak
 *.DS_Store
 
+# Enviroment
+*.env
+
 # C extensions
 *.so
+
+# Multimedia
+*.mp4
+*.png
+*.csv
 
 # Distribution / packaging
 .Python
