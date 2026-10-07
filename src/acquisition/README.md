@@ -125,10 +125,19 @@ kept under `data/raw/opensky_weekly/` because they are downloaded source-derived
 data and should not be committed unless redistribution and storage are explicitly
 intended.
 
+### `download_opensky_trino_states.py`
+
+Queries historical state vectors through OpenSky Trino. Its study regions are
+loaded from [`bbox_presets.json`](bbox_presets.json); select one with
+`SELECTED_REGION`. Presets can be defined by vertices or by center and radius,
+keeping the study-area definitions shared with the snapshot and other
+acquisition scripts.
+
 ## Dependencies and reproducibility
 
 The scripts require the packages listed in the root `requirements.txt`, including
 `requests`, `pandas`, `numpy`, `matplotlib`, `contextily`, `pyproj`,
 `geonamescache` and `pyarrow`. Raw data and maps
 should be generated into the repository folders described above, not next to the
-source scripts.
+source scripts. The Trino workflow additionally requires the `pyopensky` and
+`imageio` packages.

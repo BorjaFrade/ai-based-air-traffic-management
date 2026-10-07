@@ -8,6 +8,10 @@
       "lomin": -9.4,
       "lomax": -6.65,
       "extended": 1
+    },
+    "render": {
+      "width_px": 3840,
+      "height_px": 3840
     }
   },
   "NORTHERN_SPAIN": {
@@ -19,6 +23,10 @@
       "lomin": -3.5,
       "lomax": 1.5,
       "extended": 1
+    },
+    "render": {
+      "width_px": 3840,
+      "height_px": 2160
     }
   },
   "BARCELONA_50KM": {
@@ -29,6 +37,10 @@
       "lat": 41.2974,
       "lon": 2.0833
     },
-    "radius_km": 50
+    "radius_km": 50,
+    "render": {
+      "width_px": 3840,
+      "height_px": 3840
+    }
   }
 }

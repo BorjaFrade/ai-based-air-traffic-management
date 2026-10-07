@@ -49,6 +49,10 @@ dataset. It contains complete Monday state-vector data, sampled at 10-second
 update intervals and distributed as hourly files. The download and geographic
 filtering workflow is implemented in
 [`src/acquisition/download_opensky_monday_states.py`](src/acquisition/download_opensky_monday_states.py).
+Historical state vectors can also be queried through OpenSky Trino with
+[`src/acquisition/download_opensky_trino_states.py`](src/acquisition/download_opensky_trino_states.py),
+using the shared study-area definitions in
+[`src/acquisition/bbox_presets.json`](src/acquisition/bbox_presets.json).
 
 Third-party datasets are **not distributed under the license of this repository**.
 

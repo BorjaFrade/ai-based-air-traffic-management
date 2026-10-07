@@ -6,7 +6,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.path import Path as MplPath
 from matplotlib.transforms import Affine2D, Bbox
-from matplotlib.ticker import FuncFormatter
+from matplotlib.ticker import FuncFormatter, MultipleLocator
+from matplotlib.patches import FancyArrowPatch
+from matplotlib.offsetbox import AnnotationBbox, TextArea, VPacker
 import matplotlib.patheffects as pe
 
 import contextily as cx
@@ -2279,6 +2281,7 @@ def validate_layout(
 def render_map(
     aircraft, area, bbox, aircraft_states, warnings, conflicts,
     snapshot_time, map_file, config=None,
+    show=True,
 ):
     """Render an analysed aircraft snapshot and return a Matplotlib figure."""
     global BBOX, AREA, MAP_FILE
@@ -3224,7 +3227,8 @@ def render_map(
     # DISPLAY
     # ============================================================
     
-    plt.show()
+    if show:
+        plt.show()
 
     return fig, ax
     
