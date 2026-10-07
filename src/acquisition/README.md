@@ -11,7 +11,8 @@ experimentation, not operational air-traffic control.
 Downloads one current state-vector snapshot for the configured geographic area,
 processes the aircraft states, performs proximity and separation analysis, and
 generates a map. The area can be configured near the beginning of the file using
-`AREA_MODE`, `SELECTED_PRESET`, `RADIUS_KM` and `CUSTOM_BBOX`. The center-radius
+`AREA_MODE`, `SELECTED_PRESET`, `RADIUS_KM` and `SELECTED_BBOX_PRESET`. The
+center-radius
 locations are loaded from [`location_presets.json`](location_presets.json), so
 new locations can be added there without modifying the Python script. Each entry
 must contain `name`, `icao`, `lat` and `lon`.
@@ -37,6 +38,14 @@ reports aircraft states, altitude and speed information, pairwise proximity and
 conflict/proximity warnings according to its configured research thresholds.
 Each trajectory vector is annotated at its tip with the three-digit true track
 relative to geographic north, such as `072°` or `250°`.
+
+### `opensky_plot.py`
+
+Contains the reusable map renderer used by `opensky_snapshot.py`. It draws the
+basemap, aircraft symbols, trajectory vectors, safety areas, cities and
+collision-free labels. Other scripts can import `render_map()` and provide
+their own aircraft dataframe, area, analysis results and visual configuration
+without performing an OpenSky download.
 
 ### `opensky_collect.py`
 

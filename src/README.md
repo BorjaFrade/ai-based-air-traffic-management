@@ -10,7 +10,10 @@ modelling can evolve independently:
 - `trajectories/`: trajectory representation, reconstruction and trajectory-based
   calculations.
 - `conflict_detection/`: separation, CPA/TCPA and conflict-identification logic.
-- `visualization/`: reusable plotting and map-rendering functions.
+- `visualization/`: reusable plotting and map-rendering functions. The current
+  OpenSky renderer is available at
+  [`acquisition/opensky_plot.py`](acquisition/opensky_plot.py) and exposes
+  `render_map()` for reuse by other acquisition or analysis scripts.
 - `models/`: machine-learning models, training code and prediction utilities.
 
 At present, the implemented functionality is concentrated in `acquisition/`.

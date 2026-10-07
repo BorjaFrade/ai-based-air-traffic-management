@@ -73,6 +73,27 @@ Current functionality includes:
 - pairwise aircraft proximity analysis;
 - conflict and proximity-warning visualisation.
 
+The current OpenSky snapshot workflow is split between acquisition/analysis and
+visualisation. [`opensky_snapshot.py`](src/acquisition/opensky_snapshot.py)
+downloads and analyses a snapshot, while
+[`opensky_plot.py`](src/acquisition/opensky_plot.py) provides the reusable map
+renderer for aircraft, labels, trajectory vectors, safety areas and cities.
+
+The snapshot configuration is externalised into JSON files:
+
+- [`location_presets.json`](src/acquisition/location_presets.json) for
+  center-radius locations;
+- [`bbox_presets.json`](src/acquisition/bbox_presets.json) for areas defined by
+  vertices or by center and radius;
+- [`separation_profiles.json`](src/acquisition/separation_profiles.json) for
+  horizontal and vertical separation thresholds.
+
+Run the current snapshot workflow from the repository root with:
+
+```bash
+python src/acquisition/opensky_snapshot.py
+```
+
 The project will progressively incorporate historical trajectory processing and AI-based conflict analysis.
 
 ## Repository structure
