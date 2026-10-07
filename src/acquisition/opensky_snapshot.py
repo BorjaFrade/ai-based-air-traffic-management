@@ -135,7 +135,7 @@ BBOX_PRESETS = load_bbox_presets()
 # 2. AIRCRAFT DISPLAY
 # ============================================================
 
-SHOW_GROUND_AIRCRAFT = True
+SHOW_GROUND_AIRCRAFT = False
 
 SHOW_LABELS = True
 SHOW_CITIES = True
@@ -2208,7 +2208,7 @@ def add_scale_bar_outside(
         + fraction
     )
 
-    y = -0.17
+    y = 0.05
 
 
     ax.plot(
@@ -2267,6 +2267,13 @@ def add_scale_bar_outside(
         fontsize=10,
 
         weight="bold",
+
+        bbox={
+            "facecolor": "white",
+            "edgecolor": "none",
+            "alpha": 0.7,
+            "pad": 3,
+        },
 
         clip_on=False,
     )
@@ -4174,8 +4181,8 @@ if SHOW_CITIES:
 fig, ax = plt.subplots(
 
     figsize=(
-        18,
-        10,
+        22,
+        12,
     ),
 
     dpi=FIG_DPI,
@@ -4184,13 +4191,13 @@ fig, ax = plt.subplots(
 
 fig.subplots_adjust(
 
-    left=0.075,
+    left=0.045,
 
-    right=0.985,
+    right=0.995,
 
-    bottom=0.21,
+    bottom=0.115,
 
-    top=0.90,
+    top=0.92,
 )
 
 
@@ -4366,16 +4373,6 @@ fig.suptitle(
     fontsize=17,
 
     y=0.965,
-)
-
-
-# ============================================================
-# SCALE
-# ============================================================
-
-add_scale_bar_outside(
-    ax,
-    BBOX,
 )
 
 
@@ -5079,6 +5076,10 @@ plt.savefig(
     dpi=FIG_DPI,
 
     facecolor="white",
+
+    bbox_inches="tight",
+
+    pad_inches=0.15,
 )
 
 
