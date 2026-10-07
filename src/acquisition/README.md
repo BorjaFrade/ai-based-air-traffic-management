@@ -11,7 +11,19 @@ experimentation, not operational air-traffic control.
 Downloads one current state-vector snapshot for the configured geographic area,
 processes the aircraft states, performs proximity and separation analysis, and
 generates a map. The area can be configured near the beginning of the file using
-`AREA_MODE`, `SELECTED_PRESET`, `RADIUS_KM` and `CUSTOM_BBOX`.
+`AREA_MODE`, `SELECTED_PRESET`, `RADIUS_KM` and `CUSTOM_BBOX`. The center-radius
+locations are loaded from [`location_presets.json`](location_presets.json), so
+new locations can be added there without modifying the Python script. Each entry
+must contain `name`, `icao`, `lat` and `lon`.
+
+The separation thresholds are loaded from
+[`separation_profiles.json`](separation_profiles.json). Select one with
+`SEPARATION_PROFILE`; each profile must contain `horizontal_nm` and `vertical_ft`.
+
+The BBOX definitions are loaded from [`bbox_presets.json`](bbox_presets.json).
+Select one with `SELECTED_BBOX_PRESET`. A preset can use `type: "vertices"`
+with `lamin`, `lamax`, `lomin` and `lomax`, or `type: "center"` with `center`
+(`lat` and `lon`) plus `radius_km`.
 
 Run from the repository root:
 

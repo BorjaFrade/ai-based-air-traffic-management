@@ -1,0 +1,18 @@
+{
+  "ENROUTE": {
+    "horizontal_nm": 5.0,
+    "vertical_ft": 1000.0
+  },
+  "TERMINAL": {
+    "horizontal_nm": 3.0,
+    "vertical_ft": 1000.0
+  },
+  "FINAL_APPROACH": {
+    "horizontal_nm": 2.5,
+    "vertical_ft": 1000.0
+  },
+  "CUSTOM": {
+    "horizontal_nm": 5.0,
+    "vertical_ft": 1000.0
+  }
+}

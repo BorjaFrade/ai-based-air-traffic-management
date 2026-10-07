@@ -1,0 +1,74 @@
+{
+  "BCN": {
+    "name": "Barcelona-El Prat",
+    "icao": "LEBL",
+    "lat": 41.2974,
+    "lon": 2.0833
+  },
+  "MAD": {
+    "name": "Madrid-Barajas",
+    "icao": "LEMD",
+    "lat": 40.4983,
+    "lon": -3.5676
+  },
+  "SCQ": {
+    "name": "Santiago-Rosalia de Castro",
+    "icao": "LEST",
+    "lat": 42.8963,
+    "lon": -8.4151
+  },
+  "LCG": {
+    "name": "A Coruna",
+    "icao": "LECO",
+    "lat": 43.3021,
+    "lon": -8.3773
+  },
+  "VGO": {
+    "name": "Vigo-Peinador",
+    "icao": "LEVX",
+    "lat": 42.2318,
+    "lon": -8.6268
+  },
+  "OVD": {
+    "name": "Asturias",
+    "icao": "LEAS",
+    "lat": 43.5636,
+    "lon": -6.0346
+  },
+  "SDR": {
+    "name": "Santander-Seve Ballesteros",
+    "icao": "LEXJ",
+    "lat": 43.4271,
+    "lon": -3.82
+  },
+  "BIO": {
+    "name": "Bilbao",
+    "icao": "LEBB",
+    "lat": 43.3011,
+    "lon": -2.9106
+  },
+  "VIT": {
+    "name": "Vitoria",
+    "icao": "LEVT",
+    "lat": 42.8828,
+    "lon": -2.7245
+  },
+  "OPO": {
+    "name": "Porto-Francisco Sa Carneiro",
+    "icao": "LPPR",
+    "lat": 41.2481,
+    "lon": -8.6814
+  },
+  "ZRH": {
+    "name": "Zurich",
+    "icao": "LSZH",
+    "lat": 47.4581,
+    "lon": 8.5555
+  },
+  "FRA": {
+    "name": "Frankfurt",
+    "icao": "EDDF",
+    "lat": 50.0379,
+    "lon": 8.5622
+  }
+}

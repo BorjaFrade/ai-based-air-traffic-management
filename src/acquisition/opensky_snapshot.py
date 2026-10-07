@@ -1,5 +1,6 @@
 from pathlib import Path
 from datetime import datetime, timezone
+import json
 
 import requests
 import pandas as pd
@@ -47,92 +48,38 @@ SELECTED_PRESET = "BCN"
 RADIUS_KM = 50
 
 
-LOCATION_PRESETS = {
+LOCATION_PRESETS_FILE = Path(__file__).with_name(
+    "location_presets.json"
+)
 
-    "BCN": {
-        "name": "Barcelona-El Prat",
-        "icao": "LEBL",
-        "lat": 41.2974,
-        "lon": 2.0833,
-    },
 
-    "MAD": {
-        "name": "Madrid-Barajas",
-        "icao": "LEMD",
-        "lat": 40.4983,
-        "lon": -3.5676,
-    },
+def load_location_presets():
 
-    "SCQ": {
-        "name": "Santiago-Rosalia de Castro",
-        "icao": "LEST",
-        "lat": 42.8963,
-        "lon": -8.4151,
-    },
+    try:
+        with LOCATION_PRESETS_FILE.open(
+            encoding="utf-8"
+        ) as presets_file:
+            presets = json.load(presets_file)
+    except FileNotFoundError as error:
+        raise FileNotFoundError(
+            f"Location presets file not found: "
+            f"{LOCATION_PRESETS_FILE}"
+        ) from error
+    except json.JSONDecodeError as error:
+        raise ValueError(
+            f"Invalid JSON in location presets file: "
+            f"{LOCATION_PRESETS_FILE}"
+        ) from error
 
-    "LCG": {
-        "name": "A Coruna",
-        "icao": "LECO",
-        "lat": 43.3021,
-        "lon": -8.3773,
-    },
+    if not isinstance(presets, dict):
+        raise ValueError(
+            "Location presets must be a JSON object"
+        )
 
-    "VGO": {
-        "name": "Vigo-Peinador",
-        "icao": "LEVX",
-        "lat": 42.2318,
-        "lon": -8.6268,
-    },
+    return presets
 
-    "OVD": {
-        "name": "Asturias",
-        "icao": "LEAS",
-        "lat": 43.5636,
-        "lon": -6.0346,
-    },
 
-    "SDR": {
-        "name": "Santander-Seve Ballesteros",
-        "icao": "LEXJ",
-        "lat": 43.4271,
-        "lon": -3.8200,
-    },
-
-    "BIO": {
-        "name": "Bilbao",
-        "icao": "LEBB",
-        "lat": 43.3011,
-        "lon": -2.9106,
-    },
-
-    "VIT": {
-        "name": "Vitoria",
-        "icao": "LEVT",
-        "lat": 42.8828,
-        "lon": -2.7245,
-    },
-
-    "OPO": {
-        "name": "Porto-Francisco Sa Carneiro",
-        "icao": "LPPR",
-        "lat": 41.2481,
-        "lon": -8.6814,
-    },
-
-    "ZRH": {
-        "name": "Zurich",
-        "icao": "LSZH",
-        "lat": 47.4581,
-        "lon": 8.5555,
-    },
-
-    "FRA": {
-        "name": "Frankfurt",
-        "icao": "EDDF",
-        "lat": 50.0379,
-        "lon": 8.5622,
-    },
-}
+LOCATION_PRESETS = load_location_presets()
 
 
 # Used if SELECTED_PRESET = None
@@ -147,29 +94,41 @@ CUSTOM_CENTER_LON = 2.0833
 # BBOX
 # ------------------------------------------------------------
 
-CUSTOM_BBOX_NAME = "Galicia"
+SELECTED_BBOX_PRESET = "NORTHERN_SPAIN"
 
-CUSTOM_BBOX = {
-    "lamin": 41.75,
-    "lamax": 43.85,
 
-    "lomin": -9.40,
-    "lomax": -6.65,
+BBOX_PRESETS_FILE = Path(__file__).with_name(
+    "bbox_presets.json"
+)
 
-    "extended": 1,
-}
 
-CUSTOM_BBOX_NAME = "Northern Spain"
+def load_bbox_presets():
 
-CUSTOM_BBOX = {
-    "lamin": 41.50,
-    "lamax": 44.00,
+    try:
+        with BBOX_PRESETS_FILE.open(
+            encoding="utf-8"
+        ) as presets_file:
+            presets = json.load(presets_file)
+    except FileNotFoundError as error:
+        raise FileNotFoundError(
+            f"BBOX presets file not found: "
+            f"{BBOX_PRESETS_FILE}"
+        ) from error
+    except json.JSONDecodeError as error:
+        raise ValueError(
+            f"Invalid JSON in BBOX presets file: "
+            f"{BBOX_PRESETS_FILE}"
+        ) from error
 
-    "lomin": -3.50,
-    "lomax": 1.50,
+    if not isinstance(presets, dict):
+        raise ValueError(
+            "BBOX presets must be a JSON object"
+        )
 
-    "extended": 1,
-}
+    return presets
+
+
+BBOX_PRESETS = load_bbox_presets()
 
 
 # ============================================================
@@ -202,28 +161,38 @@ TRAJECTORY_MINUTES = 2
 SEPARATION_PROFILE = "ENROUTE"
 
 
-SEPARATION_PROFILES = {
+SEPARATION_PROFILES_FILE = Path(__file__).with_name(
+    "separation_profiles.json"
+)
 
-    "ENROUTE": {
-        "horizontal_nm": 5.0,
-        "vertical_ft": 1000.0,
-    },
 
-    "TERMINAL": {
-        "horizontal_nm": 3.0,
-        "vertical_ft": 1000.0,
-    },
+def load_separation_profiles():
 
-    "FINAL_APPROACH": {
-        "horizontal_nm": 2.5,
-        "vertical_ft": 1000.0,
-    },
+    try:
+        with SEPARATION_PROFILES_FILE.open(
+            encoding="utf-8"
+        ) as profiles_file:
+            profiles = json.load(profiles_file)
+    except FileNotFoundError as error:
+        raise FileNotFoundError(
+            f"Separation profiles file not found: "
+            f"{SEPARATION_PROFILES_FILE}"
+        ) from error
+    except json.JSONDecodeError as error:
+        raise ValueError(
+            f"Invalid JSON in separation profiles file: "
+            f"{SEPARATION_PROFILES_FILE}"
+        ) from error
 
-    "CUSTOM": {
-        "horizontal_nm": 5.0,
-        "vertical_ft": 1000.0,
-    },
-}
+    if not isinstance(profiles, dict):
+        raise ValueError(
+            "Separation profiles must be a JSON object"
+        )
+
+    return profiles
+
+
+SEPARATION_PROFILES = load_separation_profiles()
 
 
 if SEPARATION_PROFILE not in SEPARATION_PROFILES:
@@ -538,6 +507,35 @@ def bbox_from_center(
     }
 
 
+def bbox_from_preset(preset_key):
+
+    if preset_key not in BBOX_PRESETS:
+        raise ValueError(
+            f"Unknown BBOX preset: {preset_key}"
+        )
+
+    preset = BBOX_PRESETS[preset_key]
+    definition_type = preset.get("type")
+
+    if definition_type == "center":
+        center = preset["center"]
+        bbox = bbox_from_center(
+            float(center["lat"]),
+            float(center["lon"]),
+            float(preset["radius_km"]),
+        )
+    elif definition_type == "vertices":
+        bbox = dict(preset["vertices"])
+        bbox.setdefault("extended", 1)
+    else:
+        raise ValueError(
+            f"BBOX preset '{preset_key}' must use "
+            'type "center" or "vertices"'
+        )
+
+    return preset["name"], preset.get("icao", ""), bbox
+
+
 def resolve_area():
 
     if AREA_MODE == "CENTER_RADIUS":
@@ -619,9 +617,8 @@ def resolve_area():
 
     if AREA_MODE == "BBOX":
 
-
-        bbox = dict(
-            CUSTOM_BBOX
+        name, icao, bbox = bbox_from_preset(
+            SELECTED_BBOX_PRESET
         )
 
 
@@ -640,10 +637,10 @@ def resolve_area():
         return {
 
             "name":
-                CUSTOM_BBOX_NAME,
+                name,
 
             "icao":
-                "",
+                icao,
 
             "center_lat":
                 lat,

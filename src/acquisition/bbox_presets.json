@@ -1,0 +1,34 @@
+{
+  "GALICIA": {
+    "name": "Galicia",
+    "type": "vertices",
+    "vertices": {
+      "lamin": 41.75,
+      "lamax": 43.85,
+      "lomin": -9.4,
+      "lomax": -6.65,
+      "extended": 1
+    }
+  },
+  "NORTHERN_SPAIN": {
+    "name": "Northern Spain",
+    "type": "vertices",
+    "vertices": {
+      "lamin": 41.5,
+      "lamax": 44.0,
+      "lomin": -3.5,
+      "lomax": 1.5,
+      "extended": 1
+    }
+  },
+  "BARCELONA_50KM": {
+    "name": "Barcelona-El Prat 50 km",
+    "icao": "LEBL",
+    "type": "center",
+    "center": {
+      "lat": 41.2974,
+      "lon": 2.0833
+    },
+    "radius_km": 50
+  }
+}
