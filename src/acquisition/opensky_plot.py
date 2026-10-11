@@ -24,6 +24,9 @@ MAP_FILE = Path("opensky_snapshot_map.png")
 AREA = {"name": "OpenSky"}
 AIRCRAFT_MARKER = None
 
+_BASEMAP_CACHE = {}
+_CITY_CACHE = {}
+
 
 
 # ============================================================
@@ -1981,9 +1984,6 @@ def place_aircraft_label(
         )
 
 
-        fig.canvas.draw()
-
-
         raw_box = (
             artist.get_window_extent(
                 renderer=renderer
@@ -2278,10 +2278,96 @@ def validate_layout(
 
 
 
+def _bbox_cache_key(bbox):
+
+    return tuple(
+        round(float(bbox[key]), 6)
+        for key in (
+            "lamin",
+            "lamax",
+            "lomin",
+            "lomax",
+        )
+    )
+
+
+def add_cached_basemap(
+    ax,
+    bbox,
+):
+
+    cache_key = _bbox_cache_key(bbox)
+
+    if cache_key in _BASEMAP_CACHE:
+
+        cached = _BASEMAP_CACHE[cache_key]
+
+        if cached is None:
+            ax.set_facecolor("0.15")
+            return
+
+        ax.imshow(
+            cached["array"],
+            extent=cached["extent"],
+            origin=cached["origin"],
+            cmap=cached["cmap"],
+            norm=cached["norm"],
+            interpolation=cached["interpolation"],
+            alpha=cached["alpha"],
+            zorder=0,
+        )
+        return
+
+    image_count = len(ax.images)
+
+    try:
+        cx.add_basemap(
+            ax,
+            source=cx.providers.Esri.WorldImagery,
+            crs="EPSG:4326",
+            zoom="auto",
+            attribution_size=5,
+        )
+
+    except Exception as exc:
+        print()
+        print("WARNING: basemap unavailable:")
+        print(exc)
+        _BASEMAP_CACHE[cache_key] = None
+        ax.set_facecolor("0.15")
+        return
+
+    if len(ax.images) == image_count:
+        _BASEMAP_CACHE[cache_key] = None
+        return
+
+    image = ax.images[-1]
+    _BASEMAP_CACHE[cache_key] = {
+        "array": np.array(image.get_array(), copy=True),
+        "extent": image.get_extent(),
+        "origin": image.origin,
+        "cmap": image.get_cmap(),
+        "norm": image.norm,
+        "interpolation": image.get_interpolation(),
+        "alpha": image.get_alpha(),
+    }
+
+
+def get_cached_cities(bbox):
+
+    cache_key = _bbox_cache_key(bbox)
+
+    if cache_key not in _CITY_CACHE:
+        _CITY_CACHE[cache_key] = get_relevant_cities(bbox)
+
+    return _CITY_CACHE[cache_key]
+
+
 def render_map(
     aircraft, area, bbox, aircraft_states, warnings, conflicts,
     snapshot_time, map_file, config=None,
     show=True,
+    save=True,
 ):
     """Render an analysed aircraft snapshot and return a Matplotlib figure."""
     global BBOX, AREA, MAP_FILE
@@ -2297,13 +2383,13 @@ def render_map(
     # ============================================================
     
     cities = []
-    
-    
+
+
     if SHOW_CITIES:
-    
-    
+
+
         cities = (
-            get_relevant_cities(
+            get_cached_cities(
                 BBOX
             )
         )
@@ -2353,44 +2439,10 @@ def render_map(
     # BASEMAP
     # ============================================================
     
-    try:
-    
-    
-        cx.add_basemap(
-    
-            ax,
-    
-            source=(
-                cx.providers
-                .Esri
-                .WorldImagery
-            ),
-    
-            crs="EPSG:4326",
-    
-            zoom="auto",
-    
-            attribution_size=5,
-        )
-    
-    
-    except Exception as exc:
-    
-    
-        print()
-    
-        print(
-            "WARNING: basemap unavailable:"
-        )
-    
-        print(
-            exc
-        )
-    
-    
-        ax.set_facecolor(
-            "0.15"
-        )
+    add_cached_basemap(
+        ax,
+        BBOX,
+    )
     
     
     # ============================================================
@@ -3197,30 +3249,32 @@ def render_map(
     print("=" * 80)
     
     
-    # ============================================================
-    # SAVE
-    # ============================================================
-    
-    plt.savefig(
-    
-        MAP_FILE,
-    
-        dpi=FIG_DPI,
-    
-        facecolor="white",
-    
-        bbox_inches="tight",
-    
-        pad_inches=0.15,
-    )
-    
-    
-    print()
-    
-    print(
-        "Map saved to:",
-        MAP_FILE,
-    )
+    if save:
+
+        # ========================================================
+        # SAVE
+        # ========================================================
+
+        plt.savefig(
+
+            MAP_FILE,
+
+            dpi=FIG_DPI,
+
+            facecolor="white",
+
+            bbox_inches="tight",
+
+            pad_inches=0.15,
+        )
+
+
+        print()
+
+        print(
+            "Map saved to:",
+            MAP_FILE,
+        )
     
     
     # ============================================================

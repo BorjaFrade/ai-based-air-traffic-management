@@ -131,7 +131,9 @@ Queries historical state vectors through OpenSky Trino. Its study regions are
 loaded from [`bbox_presets.json`](bbox_presets.json); select one with
 `SELECTED_REGION`. Presets can be defined by vertices or by center and radius,
 keeping the study-area definitions shared with the snapshot and other
-acquisition scripts.
+acquisition scripts. When generating frames, `opensky_plot.py` reuses the
+basemap and city data between frames and saves each frame only once to avoid
+repeating the most expensive rendering work.
 
 ## Dependencies and reproducibility
 

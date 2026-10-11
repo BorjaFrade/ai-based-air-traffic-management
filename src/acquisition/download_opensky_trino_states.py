@@ -84,7 +84,7 @@ def print_authentication_mode():
 
 START_UTC = "2025-06-16 20:00:00"
 
-END_UTC = "2025-06-16 20:05:00"
+END_UTC = "2025-06-16 20:15:00"
 
 
 # ------------------------------------------------------------
@@ -1921,29 +1921,8 @@ def generate_frames(
 
             show=False,
 
-        )
+            save=False,
 
-
-        # ----------------------------------------------------
-        # EXACT FRAME SIZE
-        # ----------------------------------------------------
-        #
-        # opensky_plot.render_map() currently saves using
-        # bbox_inches="tight".  That is useful for standalone
-        # figures but produces variable / sometimes odd pixel
-        # dimensions, which is not desirable for a video.
-        #
-        # Re-save the already rendered figure without tight
-        # cropping so every PNG has exactly the dimensions
-        # configured in bbox_presets.json.
-        # ----------------------------------------------------
-
-        fig.set_size_inches(
-
-            FIG_SIZE[0],
-            FIG_SIZE[1],
-
-            forward=True,
         )
 
 
