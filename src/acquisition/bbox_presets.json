@@ -1,4 +1,33 @@
 {
+  "_POLYGON_TEMPLATE": {
+    "enabled": false,
+    "name": "Copy this template and replace the example vertices",
+    "type": "polygon",
+    "polygon": {
+      "vertices": [
+        {
+          "lat": "LAT_1",
+          "lon": "LON_1"
+        },
+        {
+          "lat": "LAT_2",
+          "lon": "LON_2"
+        },
+        {
+          "lat": "LAT_3",
+          "lon": "LON_3"
+        },
+        {
+          "lat": "LAT_4",
+          "lon": "LON_4"
+        }
+      ]
+    },
+    "render": {
+      "width_px": 3840,
+      "height_px": 2160
+    }
+  },
   "GALICIA": {
     "name": "Galicia",
     "type": "vertices",

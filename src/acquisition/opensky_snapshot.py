@@ -18,6 +18,21 @@ import contextily as cx
 from pyproj import Geod
 import geonamescache
 
+from area_presets import (
+    load_area_presets,
+    resolve_area_preset,
+    filter_dataframe_to_area,
+    load_waypoints_for_area,
+)
+from opensky_safety import (
+    STATE_NORMAL,
+    STATE_PROXIMITY,
+    STATE_HIGH_RISK,
+    STATE_CONFLICT,
+    analyse_aircraft_snapshot,
+    relevant_pair_results,
+)
+
 
 # ============================================================
 # ============================================================
@@ -102,33 +117,7 @@ BBOX_PRESETS_FILE = Path(__file__).with_name(
 )
 
 
-def load_bbox_presets():
-
-    try:
-        with BBOX_PRESETS_FILE.open(
-            encoding="utf-8"
-        ) as presets_file:
-            presets = json.load(presets_file)
-    except FileNotFoundError as error:
-        raise FileNotFoundError(
-            f"BBOX presets file not found: "
-            f"{BBOX_PRESETS_FILE}"
-        ) from error
-    except json.JSONDecodeError as error:
-        raise ValueError(
-            f"Invalid JSON in BBOX presets file: "
-            f"{BBOX_PRESETS_FILE}"
-        ) from error
-
-    if not isinstance(presets, dict):
-        raise ValueError(
-            "BBOX presets must be a JSON object"
-        )
-
-    return presets
-
-
-BBOX_PRESETS = load_bbox_presets()
+BBOX_PRESETS = load_area_presets(BBOX_PRESETS_FILE)
 
 
 # ============================================================
@@ -139,6 +128,22 @@ SHOW_GROUND_AIRCRAFT = False
 
 SHOW_LABELS = True
 SHOW_CITIES = True
+
+# Aviation waypoints loaded from waypoints.json.
+SHOW_WAYPOINTS = True
+SHOW_WAYPOINT_LABELS = True
+
+WAYPOINTS_FILE = Path(__file__).with_name(
+    "waypoints.json"
+)
+
+# A square distinguishes waypoints from the white circular city markers.
+WAYPOINT_MARKER = "s"
+WAYPOINT_MARKER_SIZE = 34
+WAYPOINT_FACE_COLOR = "white"
+WAYPOINT_EDGE_COLOR = "black"
+WAYPOINT_EDGE_WIDTH = 0.9
+WAYPOINT_LABEL_COLOR = "white"
 
 SHOW_ALTITUDE = True
 SHOW_GROUND_SPEED = True
@@ -151,7 +156,14 @@ SHOW_VERTICAL_SPEED = True
 
 SHOW_TRAJECTORY_VECTOR = True
 
-TRAJECTORY_MINUTES = 2
+# Segmented look-ahead trajectory. Each segment is coloured with the worst
+# predicted safety state inside that interval.
+LOOKAHEAD_MINUTES = [1, 2, 5]
+
+# Kinematic prediction resolution. Five seconds is the default compromise;
+# it can be reduced to 2 s for sensitivity checks without changing the raw
+# OpenSky sampling.
+PREDICTION_STEP_SECONDS = 5
 
 
 # ============================================================
@@ -223,41 +235,40 @@ MIN_VERTICAL_SEPARATION_FT = float(
     ]
 )
 
+# Initial TFM experiment: upper en-route RVSM band over the selected study
+# area. Barometric altitude is used for the vertical-separation analysis.
+FILTER_CRUISE_FL_BAND = True
+CRUISE_FL_MIN = 290
+CRUISE_FL_MAX = 410
+
 
 # ============================================================
 # 5. WARNING ENVELOPE
 # ============================================================
 #
 # RED:
+#   H < minimum horizontal AND V < minimum vertical.
 #
-#   H < minimum horizontal
-#   AND
-#   V < minimum vertical
+# ORANGE:
+#   inside the warning envelope and exactly one minimum is infringed.
 #
 # YELLOW:
-#
-#   H < warning horizontal
-#   AND
-#   V < warning vertical
-#
-#   but not already red.
+#   inside the warning envelope while both minima are still respected.
 #
 # GREEN:
-#
 #   everything else.
 #
-# This avoids false warnings such as:
-#
-#   H = 43 NM
-#   V = 0 ft
-#
-# which is NORMAL / GREEN.
+# A pair such as H = 43 NM, V = 0 ft therefore remains NORMAL / GREEN.
 #
 # ============================================================
 
-WARNING_HORIZONTAL_FACTOR = 2.0
+# Research warning envelope. This is NOT an ATC separation minimum.
+# 1.50 -> 7.5 NM / 1500 ft for the ENROUTE 5 NM / 1000 ft profile.
+# Sensitivity analysis can compare 1.25 and 1.50.
+WARNING_FACTOR = 1.50
 
-WARNING_VERTICAL_FACTOR = 2.0
+WARNING_HORIZONTAL_FACTOR = WARNING_FACTOR
+WARNING_VERTICAL_FACTOR = WARNING_FACTOR
 
 
 WARNING_HORIZONTAL_NM = (
@@ -294,11 +305,12 @@ SAFETY_AREA_POINTS = 120
 # 7. SAFETY STATES
 # ============================================================
 
-STATE_NORMAL = "NORMAL"
-
-STATE_WARNING = "WARNING"
-
-STATE_CONFLICT = "CONFLICT"
+# Four-state model:
+# GREEN  = normal
+# YELLOW = proximity inside the warning envelope
+# ORANGE = high risk: one separation minimum already infringed
+# RED    = both minima infringed simultaneously
+STATE_WARNING = STATE_PROXIMITY  # backward-compatible alias
 
 
 # ============================================================
@@ -307,23 +319,29 @@ STATE_CONFLICT = "CONFLICT"
 #
 # GREEN  = normal
 # YELLOW = proximity warning
+# ORANGE = high risk
 # RED    = loss of separation
 #
 # ============================================================
 
-NORMAL_AIRCRAFT_COLOR = "#00C853"
+NORMAL_AIRCRAFT_COLOR = "#00A651"
+PROXIMITY_AIRCRAFT_COLOR = "#FFD400"
+HIGH_RISK_AIRCRAFT_COLOR = "#FF6F00"
+CONFLICT_AIRCRAFT_COLOR = "#D7191C"
 
-WARNING_AIRCRAFT_COLOR = "#FFD600"
-
-CONFLICT_AIRCRAFT_COLOR = "#FF2020"
+# Backward-compatible plotting alias.
+WARNING_AIRCRAFT_COLOR = PROXIMITY_AIRCRAFT_COLOR
 
 
 SAFETY_AREA_NORMAL_COLOR = (
     NORMAL_AIRCRAFT_COLOR
 )
 
+SAFETY_AREA_PROXIMITY_COLOR = PROXIMITY_AIRCRAFT_COLOR
+SAFETY_AREA_HIGH_RISK_COLOR = HIGH_RISK_AIRCRAFT_COLOR
+
 SAFETY_AREA_WARNING_COLOR = (
-    WARNING_AIRCRAFT_COLOR
+    PROXIMITY_AIRCRAFT_COLOR
 )
 
 SAFETY_AREA_CONFLICT_COLOR = (
@@ -508,32 +526,13 @@ def bbox_from_center(
 
 
 def bbox_from_preset(preset_key):
-
-    if preset_key not in BBOX_PRESETS:
-        raise ValueError(
-            f"Unknown BBOX preset: {preset_key}"
-        )
-
-    preset = BBOX_PRESETS[preset_key]
-    definition_type = preset.get("type")
-
-    if definition_type == "center":
-        center = preset["center"]
-        bbox = bbox_from_center(
-            float(center["lat"]),
-            float(center["lon"]),
-            float(preset["radius_km"]),
-        )
-    elif definition_type == "vertices":
-        bbox = dict(preset["vertices"])
-        bbox.setdefault("extended", 1)
-    else:
-        raise ValueError(
-            f"BBOX preset '{preset_key}' must use "
-            'type "center" or "vertices"'
-        )
-
-    return preset["name"], preset.get("icao", ""), bbox
+    resolved = resolve_area_preset(preset_key, BBOX_PRESETS)
+    return (
+        resolved["name"],
+        resolved.get("icao", ""),
+        resolved["bbox"],
+        resolved.get("polygon"),
+    )
 
 
 def resolve_area():
@@ -605,6 +604,7 @@ def resolve_area():
 
         return {
 
+            "key": SELECTED_PRESET,
             "name": name,
             "icao": icao,
 
@@ -617,7 +617,7 @@ def resolve_area():
 
     if AREA_MODE == "BBOX":
 
-        name, icao, bbox = bbox_from_preset(
+        name, icao, bbox, polygon = bbox_from_preset(
             SELECTED_BBOX_PRESET
         )
 
@@ -636,6 +636,9 @@ def resolve_area():
 
         return {
 
+            "key":
+                SELECTED_BBOX_PRESET,
+
             "name":
                 name,
 
@@ -650,6 +653,9 @@ def resolve_area():
 
             "bbox":
                 bbox,
+
+            "polygon":
+                polygon,
         }
 
 
@@ -662,6 +668,17 @@ def resolve_area():
 AREA = resolve_area()
 
 BBOX = AREA["bbox"]
+AREA_POLYGON = AREA.get("polygon")
+
+WAYPOINTS = (
+    load_waypoints_for_area(
+        WAYPOINTS_FILE,
+        area_key=AREA.get("key"),
+        area=AREA,
+    )
+    if SHOW_WAYPOINTS
+    else []
+)
 
 
 # ============================================================
@@ -680,6 +697,11 @@ print("=" * 80)
 print(
     "Selected area:",
     AREA["name"],
+)
+
+print(
+    "Waypoints loaded:",
+    len(WAYPOINTS),
 )
 
 
@@ -1260,377 +1282,13 @@ def print_aircraft_table(
 
 
 # ============================================================
-# SAFETY STATES
+# SAFETY ANALYSIS
 # ============================================================
-
-STATE_PRIORITY = {
-
-    STATE_NORMAL: 0,
-
-    STATE_WARNING: 1,
-
-    STATE_CONFLICT: 2,
-}
-
-
-def combine_states(
-    current_state,
-    new_state,
-):
-
-    if (
-        STATE_PRIORITY[
-            new_state
-        ]
-        >
-        STATE_PRIORITY[
-            current_state
-        ]
-    ):
-
-        return new_state
-
-
-    return current_state
-
-
-# ============================================================
-# PAIR CLASSIFICATION
-# ============================================================
-
-def classify_pair(
-    horizontal_nm,
-    vertical_ft,
-):
-    """
-    RED:
-        Inside minimum separation volume.
-
-        horizontal < minimum
-        AND
-        vertical < minimum
-
-    YELLOW:
-        Inside larger warning envelope,
-        but not inside red volume.
-
-        horizontal < warning
-        AND
-        vertical < warning
-
-    GREEN:
-        Outside warning envelope.
-    """
-
-    # --------------------------------------------------------
-    # RED
-    # --------------------------------------------------------
-
-    if (
-        horizontal_nm
-        < MIN_HORIZONTAL_SEPARATION_NM
-
-        and
-
-        vertical_ft
-        < MIN_VERTICAL_SEPARATION_FT
-    ):
-
-        return STATE_CONFLICT
-
-
-    # --------------------------------------------------------
-    # YELLOW
-    # --------------------------------------------------------
-
-    if (
-        horizontal_nm
-        < WARNING_HORIZONTAL_NM
-
-        and
-
-        vertical_ft
-        < WARNING_VERTICAL_FT
-    ):
-
-        return STATE_WARNING
-
-
-    # --------------------------------------------------------
-    # GREEN
-    # --------------------------------------------------------
-
-    return STATE_NORMAL
-
-
-# ============================================================
-# SEPARATION ANALYSIS
-# ============================================================
-
-def analyse_separation(
-    aircraft,
-):
-
-    pair_results = []
-
-
-    aircraft_states = {
-
-        index:
-            STATE_NORMAL
-
-        for index
-        in aircraft.index
-    }
-
-
-    skipped_pairs = 0
-
-
-    rows = list(
-        aircraft.iterrows()
-    )
-
-
-    for i in range(
-        len(rows)
-    ):
-
-
-        index_a, aircraft_a = (
-            rows[i]
-        )
-
-
-        if (
-            aircraft_is_on_ground(
-                aircraft_a
-            )
-
-            and
-
-            not CHECK_GROUND_AIRCRAFT_SAFETY
-        ):
-
-            continue
-
-
-        altitude_a = (
-            get_safety_altitude_ft(
-                aircraft_a
-            )
-        )
-
-
-        for j in range(
-            i + 1,
-            len(rows)
-        ):
-
-
-            index_b, aircraft_b = (
-                rows[j]
-            )
-
-
-            if (
-                aircraft_is_on_ground(
-                    aircraft_b
-                )
-
-                and
-
-                not CHECK_GROUND_AIRCRAFT_SAFETY
-            ):
-
-                continue
-
-
-            altitude_b = (
-                get_safety_altitude_ft(
-                    aircraft_b
-                )
-            )
-
-
-            horizontal_nm = (
-                horizontal_distance_nm(
-                    aircraft_a,
-                    aircraft_b,
-                )
-            )
-
-
-            # ------------------------------------------------
-            # MISSING ALTITUDE
-            # ------------------------------------------------
-
-            if (
-                altitude_a is None
-                or
-                altitude_b is None
-            ):
-
-                skipped_pairs += 1
-
-
-                # Cannot classify as conflict without vertical
-                # information.
-                #
-                # A close horizontal encounter is kept as a
-                # warning because altitude information is
-                # incomplete.
-
-                if (
-                    horizontal_nm
-                    < WARNING_HORIZONTAL_NM
-                ):
-
-                    pair_state = (
-                        STATE_WARNING
-                    )
-
-
-                    aircraft_states[
-                        index_a
-                    ] = combine_states(
-
-                        aircraft_states[
-                            index_a
-                        ],
-
-                        pair_state,
-                    )
-
-
-                    aircraft_states[
-                        index_b
-                    ] = combine_states(
-
-                        aircraft_states[
-                            index_b
-                        ],
-
-                        pair_state,
-                    )
-
-
-                    pair_results.append({
-
-                        "index_a":
-                            index_a,
-
-                        "index_b":
-                            index_b,
-
-                        "callsign_a":
-                            get_aircraft_callsign(
-                                aircraft_a
-                            ),
-
-                        "callsign_b":
-                            get_aircraft_callsign(
-                                aircraft_b
-                            ),
-
-                        "horizontal_nm":
-                            horizontal_nm,
-
-                        "vertical_ft":
-                            None,
-
-                        "state":
-                            pair_state,
-                    })
-
-
-                continue
-
-
-            # ------------------------------------------------
-            # COMPLETE 3D SEPARATION
-            # ------------------------------------------------
-
-            vertical_ft = abs(
-
-                altitude_a
-                - altitude_b
-            )
-
-
-            pair_state = classify_pair(
-
-                horizontal_nm,
-                vertical_ft,
-            )
-
-
-            if (
-                pair_state
-                == STATE_NORMAL
-            ):
-
-                continue
-
-
-            aircraft_states[
-                index_a
-            ] = combine_states(
-
-                aircraft_states[
-                    index_a
-                ],
-
-                pair_state,
-            )
-
-
-            aircraft_states[
-                index_b
-            ] = combine_states(
-
-                aircraft_states[
-                    index_b
-                ],
-
-                pair_state,
-            )
-
-
-            pair_results.append({
-
-                "index_a":
-                    index_a,
-
-                "index_b":
-                    index_b,
-
-                "callsign_a":
-                    get_aircraft_callsign(
-                        aircraft_a
-                    ),
-
-                "callsign_b":
-                    get_aircraft_callsign(
-                        aircraft_b
-                    ),
-
-                "horizontal_nm":
-                    horizontal_nm,
-
-                "vertical_ft":
-                    vertical_ft,
-
-                "state":
-                    pair_state,
-            })
-
-
-    return (
-        pair_results,
-        aircraft_states,
-        skipped_pairs,
-    )
+#
+# Pair classification, look-ahead prediction and CPA/TCPA calculations are
+# implemented in opensky_safety.py so the live snapshot and historical Trino
+# workflows use the same logic.
+#
 
 
 # ============================================================
@@ -1873,6 +1531,23 @@ aircraft = (
     .copy()
 )
 
+# Polygon presets are queried through their enclosing BBOX and clipped locally
+# so Trino/OpenSky can remain rectangular while the study area is exact.
+aircraft = filter_dataframe_to_area(
+    aircraft,
+    AREA,
+    latitude_column="latitude",
+    longitude_column="longitude",
+)
+
+if FILTER_CRUISE_FL_BAND:
+    cruise_mask = (
+        aircraft["baro_altitude_ft"].notna()
+        & (aircraft["baro_altitude_ft"] >= CRUISE_FL_MIN * 100.0)
+        & (aircraft["baro_altitude_ft"] <= CRUISE_FL_MAX * 100.0)
+    )
+    aircraft = aircraft.loc[cruise_mask].copy()
+
 
 ground_count = int(
 
@@ -1973,38 +1648,32 @@ print_aircraft_table(
 (
     pair_results,
     aircraft_states,
+    LOOKAHEAD_INTERVAL_STATES,
     skipped_pairs,
 
-) = analyse_separation(
-    aircraft
+) = analyse_aircraft_snapshot(
+    aircraft,
+    min_horizontal_nm=MIN_HORIZONTAL_SEPARATION_NM,
+    min_vertical_ft=MIN_VERTICAL_SEPARATION_FT,
+    warning_factor=WARNING_FACTOR,
+    lookahead_minutes=LOOKAHEAD_MINUTES,
+    prediction_step_seconds=PREDICTION_STEP_SECONDS,
+    check_ground_aircraft=CHECK_GROUND_AIRCRAFT_SAFETY,
 )
 
-
 warnings = [
-
-    pair
-
-    for pair
-    in pair_results
-
-    if (
-        pair["state"]
-        == STATE_WARNING
-    )
+    pair for pair in pair_results
+    if pair["state_current"] == STATE_PROXIMITY
 ]
 
+high_risk_pairs = [
+    pair for pair in pair_results
+    if pair["state_current"] == STATE_HIGH_RISK
+]
 
 conflicts = [
-
-    pair
-
-    for pair
-    in pair_results
-
-    if (
-        pair["state"]
-        == STATE_CONFLICT
-    )
+    pair for pair in pair_results
+    if pair["state_current"] == STATE_CONFLICT
 ]
 
 
@@ -2045,7 +1714,7 @@ print(
 print()
 
 print(
-    f"YELLOW warning envelope:"
+    f"WARNING envelope (yellow/orange):"
 )
 
 
@@ -2064,8 +1733,13 @@ print(
 print()
 
 print(
-    f"Yellow warnings: "
+    f"Yellow proximity pairs: "
     f"{len(warnings)}"
+)
+
+print(
+    f"Orange high-risk pairs: "
+    f"{len(high_risk_pairs)}"
 )
 
 
@@ -2094,7 +1768,7 @@ if warnings:
     print()
 
     print(
-        "YELLOW WARNINGS"
+        "YELLOW - PROXIMITY"
     )
 
     print("-" * 100)
@@ -2104,7 +1778,7 @@ if warnings:
 
 
         if (
-            pair["vertical_ft"]
+            pair["vertical_sep_ft"]
             is None
         ):
 
@@ -2118,7 +1792,7 @@ if warnings:
 
 
             vertical_text = (
-                f"{pair['vertical_ft']:.0f} ft"
+                f"{pair['vertical_sep_ft']:.0f} ft"
             )
 
 
@@ -2131,12 +1805,35 @@ if warnings:
             f" | "
 
             f"H = "
-            f"{pair['horizontal_nm']:6.2f} NM"
+            f"{pair['horizontal_sep_nm']:6.2f} NM"
 
             f" | "
 
             f"V = "
             f"{vertical_text}"
+        )
+
+
+# ============================================================
+# HIGH RISK
+# ============================================================
+
+if high_risk_pairs:
+    print()
+    print("ORANGE - HIGH RISK")
+    print("-" * 100)
+
+    for pair in high_risk_pairs:
+        vertical_value = pair.get("vertical_sep_ft")
+        vertical_text = (
+            "unknown"
+            if vertical_value is None
+            else f"{vertical_value:.0f} ft"
+        )
+        print(
+            f"{pair['callsign_a']:>10} <-> {pair['callsign_b']:<10}"
+            f" | H = {pair['horizontal_sep_nm']:6.2f} NM"
+            f" | V = {vertical_text}"
         )
 
 
@@ -2168,16 +1865,34 @@ if conflicts:
             f" | "
 
             f"H = "
-            f"{pair['horizontal_nm']:6.2f} NM"
+            f"{pair['horizontal_sep_nm']:6.2f} NM"
 
             f" | "
 
             f"V = "
-            f"{pair['vertical_ft']:.0f} ft"
+            f"{pair['vertical_sep_ft']:.0f} ft"
         )
 
 
 print("=" * 100)
+
+
+# Export pairwise safety results separately from the raw OpenSky snapshot.
+SEPARATION_RESULTS_FILE = (
+    PROJECT_ROOT / "results" / "figures" / "opensky_snapshot_separation.csv"
+)
+SEPARATION_RESULTS_FILE.parent.mkdir(parents=True, exist_ok=True)
+
+relevant_pairs = relevant_pair_results(pair_results)
+pd.DataFrame(relevant_pairs).to_csv(
+    SEPARATION_RESULTS_FILE,
+    index=False,
+)
+
+print(
+    "Relevant separation cases saved to:",
+    SEPARATION_RESULTS_FILE,
+)
 
 
 from opensky_plot import render_map
@@ -2186,4 +1901,5 @@ fig, ax = render_map(
     aircraft=aircraft, area=AREA, bbox=BBOX,
     aircraft_states=aircraft_states, warnings=warnings, conflicts=conflicts,
     snapshot_time=snapshot_time, map_file=MAP_FILE, config=globals(),
+    waypoints=WAYPOINTS,
 )

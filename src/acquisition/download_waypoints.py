@@ -12,6 +12,12 @@ from pathlib import Path
 import requests
 from pyproj import Geod
 
+from area_presets import (
+    load_area_presets,
+    resolve_area_preset,
+    point_is_inside_area,
+)
+
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
@@ -100,39 +106,15 @@ def normalize_bbox(bbox):
     }
 
 
-def resolve_study_area(preset):
-
-    if "vertices" in preset:
-        bbox = normalize_bbox(preset["vertices"])
-    elif "bbox" in preset:
-        bbox = normalize_bbox(preset["bbox"])
-    elif "center" in preset:
-        center = preset["center"]
-        if "radius_km" not in preset:
-            raise ValueError(
-                "Center BBOX preset must define radius_km"
-            )
-        bbox = bbox_from_center(
-            float(center["lat"]),
-            float(center["lon"]),
-            float(preset["radius_km"]),
-        )
-    else:
-        raise ValueError(
-            "BBOX preset must define center, bbox or vertices"
-        )
-
-    center_lat = (
-        bbox["lamin"]
-        + bbox["lamax"]
-    ) / 2.0
-
-    center_lon = (
-        bbox["lomin"]
-        + bbox["lomax"]
-    ) / 2.0
-
-    return bbox, center_lat, center_lon
+def resolve_study_area(area_key, preset):
+    resolved = resolve_area_preset(
+        area_key,
+        {area_key: preset},
+    )
+    bbox = resolved["bbox"]
+    center_lat = (bbox["lamin"] + bbox["lamax"]) / 2.0
+    center_lon = (bbox["lomin"] + bbox["lomax"]) / 2.0
+    return resolved, center_lat, center_lon
 
 
 def download_source_waypoints():
@@ -155,7 +137,7 @@ def download_source_waypoints():
 
 def filter_waypoints(
     source_waypoints,
-    bbox,
+    area,
 ):
 
     filtered = {}
@@ -173,10 +155,10 @@ def filter_waypoints(
         longitude = float(coords[0])
         latitude = float(coords[1])
 
-        if not (
-            bbox["lamin"] <= latitude <= bbox["lamax"]
-            and
-            bbox["lomin"] <= longitude <= bbox["lomax"]
+        if not point_is_inside_area(
+            latitude,
+            longitude,
+            area,
         ):
             continue
 
@@ -208,11 +190,15 @@ def build_area_record(
     source_waypoints,
 ):
 
-    bbox, center_lat, center_lon = resolve_study_area(preset)
+    area, center_lat, center_lon = resolve_study_area(
+        area_key,
+        preset,
+    )
+    bbox = area["bbox"]
 
     waypoints = filter_waypoints(
         source_waypoints,
-        bbox,
+        area,
     )
 
     return {
@@ -222,6 +208,7 @@ def build_area_record(
         ),
         "type": preset.get("type"),
         "bbox": bbox,
+        "polygon": area.get("polygon"),
         "center": {
             "lat": center_lat,
             "lon": center_lon,
@@ -235,7 +222,7 @@ def build_area_record(
         "filter": {
             "types": sorted(WAYPOINT_TYPES),
             "coordinates": "longitude, latitude",
-            "description": "Points whose coordinates fall inside the resolved BBOX",
+            "description": "Points inside the resolved study area; polygon presets are clipped exactly after BBOX resolution",
         },
         "count": len(waypoints),
         "waypoints": waypoints,
@@ -295,7 +282,7 @@ def parse_arguments():
 def main():
 
     arguments = parse_arguments()
-    all_areas = load_json(BBOX_PRESETS_FILE)
+    all_areas = load_area_presets(BBOX_PRESETS_FILE)
 
     if not isinstance(all_areas, dict):
         raise ValueError(

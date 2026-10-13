@@ -4,6 +4,13 @@ import os
 import time
 import requests
 import pandas as pd
+from pathlib import Path
+
+from area_presets import (
+    load_area_presets,
+    resolve_area_preset,
+    filter_dataframe_to_area,
+)
 
 
 TOKEN_URL = (
@@ -38,20 +45,18 @@ def get_token():
 token = get_token()
 
 
-# Hace 30 minutos
+# 30 minutes ago
 timestamp = int(time.time()) - 30 * 60
 
 
+BBOX_PRESETS_FILE = Path(__file__).with_name("bbox_presets.json")
+BBOX_PRESETS = load_area_presets(BBOX_PRESETS_FILE)
+SELECTED_REGION = "NORTHERN_SPAIN"
+AREA = resolve_area_preset(SELECTED_REGION, BBOX_PRESETS)
+
 params = {
     "time": timestamp,
-
-    # Norte de España
-    "lamin": 41.5,
-    "lamax": 44.0,
-    "lomin": -3.5,
-    "lomax": 1.5,
-
-    "extended": 1,
+    **AREA["bbox"],
 }
 
 
@@ -92,6 +97,13 @@ columns = [
 df = pd.DataFrame(
     data.get("states", []),
     columns=columns,
+)
+
+df = filter_dataframe_to_area(
+    df,
+    AREA,
+    latitude_column="latitude",
+    longitude_column="longitude",
 )
 
 print(df.head(20))

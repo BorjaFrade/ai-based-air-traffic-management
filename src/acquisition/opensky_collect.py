@@ -4,21 +4,29 @@ import time
 from pathlib import Path
 from datetime import datetime, timezone
 
+from area_presets import (
+    load_area_presets,
+    resolve_area_preset,
+    filter_dataframe_to_area,
+)
+
 import requests
 import pandas as pd
 
 
 URL = "https://opensky-network.org/api/states/all"
 
-BBOX = {
-    "lamin": 41.5,
-    "lamax": 44.0,
-    "lomin": -3.5,
-    "lomax": 1.5,
-    "extended": 1,
-}
+BBOX_PRESETS_FILE = Path(__file__).with_name("bbox_presets.json")
+BBOX_PRESETS = load_area_presets(BBOX_PRESETS_FILE)
 
-INTERVAL_SECONDS = 10
+SELECTED_REGION = "GALICIA"
+AREA = resolve_area_preset(
+    SELECTED_REGION,
+    BBOX_PRESETS,
+)
+BBOX = AREA["bbox"]
+
+INTERVAL_SECONDS = 5
 DURATION_MINUTES = 60
 
 COLUMNS = [
@@ -76,6 +84,13 @@ for i in range(samples):
             df = pd.DataFrame(
                 states,
                 columns=COLUMNS,
+            )
+
+            df = filter_dataframe_to_area(
+                df,
+                AREA,
+                latitude_column="latitude",
+                longitude_column="longitude",
             )
 
             df["snapshot_time"] = timestamp

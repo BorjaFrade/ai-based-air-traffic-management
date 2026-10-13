@@ -12,7 +12,7 @@ The script:
 1. Iterates over Mondays in a configurable date interval.
 2. Downloads one global hourly file at a time.
 3. Reads the CSV in chunks.
-4. Filters one or more geographic bounding boxes.
+4. Filters one or more configured study areas (rectangle, center-radius or polygon).
 5. Stores only the selected regions as Parquet files.
 6. Deletes the temporary global file.
 7. Continues with the next hour.
@@ -43,6 +43,12 @@ import requests
 
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
+
+from area_presets import (
+    load_area_presets,
+    resolve_area_preset,
+    filter_dataframe_to_area,
+)
 
 
 # ============================================================
@@ -76,34 +82,21 @@ END_DATE = "2022-06-27"
 # Geographic regions
 # ------------------------------------------------------------
 #
-# Each region is defined as a rectangular bounding box:
+# Study areas are loaded from bbox_presets.json through area_presets.py.
+# Rectangle, center-radius and exact polygon presets are supported.
 #
-# lamin = minimum latitude  -> South
-# lamax = maximum latitude  -> North
-# lomin = minimum longitude -> West
-# lomax = maximum longitude -> East
-#
-# You can define as many regions as required.
-#
+
+BBOX_PRESETS_FILE = Path(__file__).with_name("bbox_presets.json")
+BBOX_PRESETS = load_area_presets(BBOX_PRESETS_FILE)
+
+AREA_DEFINITIONS = {
+    key: resolve_area_preset(key, BBOX_PRESETS)
+    for key in BBOX_PRESETS
+}
 
 REGIONS = {
-
-    "GALICIA": {
-        "lamin": 41.75,
-        "lamax": 43.85,
-        "lomin": -9.40,
-        "lomax": -6.65,
-    },
-
-    # Example of a second region:
-    #
-    # "REGION_2": {
-    #     "lamin": 40.0,
-    #     "lamax": 42.0,
-    #     "lomin": -5.0,
-    #     "lomax": -2.0,
-    # },
-
+    key: area["bbox"]
+    for key, area in AREA_DEFINITIONS.items()
 }
 
 
@@ -776,6 +769,20 @@ def filter_regions(
                 chunk.loc[mask]
                 .copy()
             )
+
+            # Polygon presets use the enclosing BBOX for the cheap first pass,
+            # then apply the exact polygon locally.
+            area = AREA_DEFINITIONS[region_name]
+            if area.get("polygon"):
+                selected = filter_dataframe_to_area(
+                    selected,
+                    area,
+                    latitude_column="lat",
+                    longitude_column="lon",
+                )
+
+            if selected.empty:
+                continue
 
             # Useful for merging datasets later.
             selected.insert(

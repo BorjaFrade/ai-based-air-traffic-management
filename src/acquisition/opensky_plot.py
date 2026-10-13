@@ -24,6 +24,16 @@ MAP_FILE = Path("opensky_snapshot_map.png")
 AREA = {"name": "OpenSky"}
 AIRCRAFT_MARKER = None
 
+# Defaults are overwritten by config=globals() from the acquisition scripts.
+SHOW_WAYPOINTS = False
+SHOW_WAYPOINT_LABELS = False
+WAYPOINT_MARKER = "s"
+WAYPOINT_MARKER_SIZE = 34
+WAYPOINT_FACE_COLOR = "white"
+WAYPOINT_EDGE_COLOR = "black"
+WAYPOINT_EDGE_WIDTH = 0.9
+WAYPOINT_LABEL_COLOR = "white"
+
 _BASEMAP_CACHE = {}
 _CITY_CACHE = {}
 
@@ -310,30 +320,21 @@ def set_geographic_aspect(
 def get_state_color(
     state,
 ):
+    """Return the high-contrast colour assigned to a safety state."""
 
-    if (
-        state
-        == STATE_CONFLICT
-    ):
+    if state == STATE_CONFLICT:
+        return CONFLICT_AIRCRAFT_COLOR
 
-        return (
-            CONFLICT_AIRCRAFT_COLOR
-        )
+    if state == STATE_HIGH_RISK:
+        return HIGH_RISK_AIRCRAFT_COLOR
 
+    if state == STATE_PROXIMITY:
+        return PROXIMITY_AIRCRAFT_COLOR
 
-    if (
-        state
-        == STATE_WARNING
-    ):
+    if state == globals().get("STATE_WARNING", "__UNUSED__"):
+        return PROXIMITY_AIRCRAFT_COLOR
 
-        return (
-            WARNING_AIRCRAFT_COLOR
-        )
-
-
-    return (
-        NORMAL_AIRCRAFT_COLOR
-    )
+    return NORMAL_AIRCRAFT_COLOR
 
 
 # ============================================================
@@ -1041,78 +1042,150 @@ def draw_trajectory_vector(
     ax,
     row,
     state,
+    aircraft_index=None,
 ):
+    """
+    Draw a segmented look-ahead trajectory.
 
-    endpoint = (
-        calculate_trajectory_endpoint(
+    The aircraft and current safety circle keep the current state colour.
+    Each trajectory segment uses the worst predicted state in its own
+    interval (e.g. 0-1, 1-2 and 2-5 minutes).
+    """
 
-            row,
-
-            TRAJECTORY_MINUTES,
-        )
-    )
-
-
-    if endpoint is None:
-
+    horizons = list(globals().get("LOOKAHEAD_MINUTES", [1, 2, 5]))
+    if not horizons:
         return
 
+    lon = float(row["longitude"])
+    lat = float(row["latitude"])
 
-    lon = float(
-        row["longitude"]
+    interval_states_map = globals().get("LOOKAHEAD_INTERVAL_STATES", {})
+    future_states = interval_states_map.get(
+        aircraft_index,
+        [state for _ in horizons],
     )
 
+    previous_lon = lon
+    previous_lat = lat
 
-    lat = float(
-        row["latitude"]
-    )
+    for interval_index, minutes in enumerate(horizons):
+        endpoint = calculate_trajectory_endpoint(row, float(minutes))
+        if endpoint is None:
+            return
 
-
-    end_lon, end_lat = (
-        endpoint
-    )
-
-
-    color = (
-        get_state_color(
-            state
+        end_lon, end_lat = endpoint
+        segment_state = (
+            future_states[interval_index]
+            if interval_index < len(future_states)
+            else state
         )
+        color = get_state_color(segment_state)
+
+        arrow = FancyArrowPatch(
+            (previous_lon, previous_lat),
+            (end_lon, end_lat),
+            transform=ax.transData,
+            arrowstyle="-|>",
+            mutation_scale=9,
+            linewidth=1.35,
+            color=color,
+            alpha=0.88,
+            zorder=14,
+            clip_on=True,
+        )
+        ax.add_patch(arrow)
+
+        previous_lon = end_lon
+        previous_lat = end_lat
+
+
+# ============================================================
+# WAYPOINT LABEL
+# ============================================================
+
+def place_waypoint_label(
+    ax,
+    renderer,
+    waypoint,
+    bbox_geo,
+    rings,
+    fontsize,
+    occupied,
+    obstacles,
+):
+    """Place one waypoint label using the same collision logic as cities."""
+
+    axes_box = ax.get_window_extent(
+        renderer=renderer
     )
 
+    lon = float(waypoint["lon"])
+    lat = float(waypoint["lat"])
 
-    arrow = FancyArrowPatch(
+    for candidate in candidate_positions(
+        lon,
+        lat,
+        bbox_geo,
+        rings,
+    ):
+        artist = ax.annotate(
+            waypoint["name"],
+            xy=(lon, lat),
+            xytext=(
+                candidate["dx"],
+                candidate["dy"],
+            ),
+            textcoords="offset points",
+            fontsize=fontsize,
+            color=WAYPOINT_LABEL_COLOR,
+            ha=candidate["ha"],
+            va=candidate["va"],
+            zorder=10,
+            path_effects=[
+                pe.withStroke(
+                    linewidth=3,
+                    foreground="black",
+                )
+            ],
+        )
 
-        (
-            lon,
-            lat,
-        ),
+        raw_box = artist.get_window_extent(
+            renderer=renderer
+        )
 
-        (
-            end_lon,
-            end_lat,
-        ),
+        if not bbox_is_finite(raw_box):
+            artist.remove()
+            continue
 
-        transform=ax.transData,
+        box = expand_bbox(
+            raw_box,
+            3,
+        )
 
-        arrowstyle="-|>",
+        if not bbox_inside(
+            box,
+            axes_box,
+        ):
+            artist.remove()
+            continue
 
-        mutation_scale=8,
+        if intersects_any(
+            box,
+            occupied,
+        ):
+            artist.remove()
+            continue
 
-        linewidth=1.15,
+        if intersects_any(
+            box,
+            obstacles,
+        ):
+            artist.remove()
+            continue
 
-        color=color,
+        return artist, box
 
-        alpha=0.72,
-
-        zorder=14,
-
-        clip_on=True,
-    )
-
-
-    ax.add_patch(
-        arrow
-    )
+    return None, None
 
 
 # ============================================================
@@ -2366,6 +2439,7 @@ def get_cached_cities(bbox):
 def render_map(
     aircraft, area, bbox, aircraft_states, warnings, conflicts,
     snapshot_time, map_file, config=None,
+    waypoints=None,
     show=True,
     save=True,
 ):
@@ -2393,6 +2467,13 @@ def render_map(
                 BBOX
             )
         )
+
+
+    waypoint_points = []
+
+    if SHOW_WAYPOINTS and waypoints:
+
+        waypoint_points = list(waypoints)
     
     
     # ============================================================
@@ -2445,7 +2526,23 @@ def render_map(
     )
     
     
-    # ============================================================
+    
+    area_polygon = globals().get("AREA_POLYGON")
+    if area_polygon:
+        polygon_lon = [point[0] for point in area_polygon]
+        polygon_lat = [point[1] for point in area_polygon]
+        ax.plot(
+            polygon_lon,
+            polygon_lat,
+            color=globals().get("STUDY_AREA_BOUNDARY_COLOR", "#FFFFFF"),
+            linewidth=globals().get("STUDY_AREA_BOUNDARY_LINEWIDTH", 1.8),
+            linestyle=globals().get("STUDY_AREA_BOUNDARY_LINESTYLE", "-"),
+            alpha=0.90,
+            zorder=9,
+            clip_on=True,
+        )
+
+# ============================================================
     # CORRECT GEOGRAPHIC PROPORTIONS
     # ============================================================
     
@@ -2587,6 +2684,24 @@ def render_map(
     
     
     # ============================================================
+    # WAYPOINT POINTS
+    # ============================================================
+
+    for waypoint in waypoint_points:
+
+        ax.scatter(
+            waypoint["lon"],
+            waypoint["lat"],
+            s=WAYPOINT_MARKER_SIZE,
+            marker=WAYPOINT_MARKER,
+            facecolor=WAYPOINT_FACE_COLOR,
+            edgecolor=WAYPOINT_EDGE_COLOR,
+            linewidth=WAYPOINT_EDGE_WIDTH,
+            zorder=8.5,
+        )
+
+
+    # ============================================================
     # SAFETY AREAS
     # ============================================================
     
@@ -2640,12 +2755,10 @@ def render_map(
     
     
             draw_trajectory_vector(
-    
                 ax,
-    
                 row,
-    
                 state,
+                aircraft_index=aircraft_index,
             )
     
     
@@ -2798,6 +2911,19 @@ def render_map(
                     20,
                 ],
     
+            "waypoint_font":
+                7.5,
+
+            "waypoint_rings":
+                [
+                    8,
+                    12,
+                    16,
+                    20,
+                    24,
+                    30,
+                ],
+
             "aircraft_font":
                 7.5,
     
@@ -2827,6 +2953,20 @@ def render_map(
                     24,
                 ],
     
+            "waypoint_font":
+                7.2,
+
+            "waypoint_rings":
+                [
+                    8,
+                    12,
+                    16,
+                    20,
+                    24,
+                    30,
+                    36,
+                ],
+
             "aircraft_font":
                 7.1,
     
@@ -2858,6 +2998,21 @@ def render_map(
                     28,
                 ],
     
+            "waypoint_font":
+                6.9,
+
+            "waypoint_rings":
+                [
+                    8,
+                    12,
+                    16,
+                    20,
+                    24,
+                    30,
+                    36,
+                    44,
+                ],
+
             "aircraft_font":
                 6.7,
     
@@ -2877,7 +3032,9 @@ def render_map(
     
     
     final_city_artists = []
-    
+
+    final_waypoint_artists = []
+
     final_aircraft_artists = []
     
     
@@ -2914,6 +3071,7 @@ def render_map(
             for artist in (
     
                 final_city_artists
+                + final_waypoint_artists
                 + final_aircraft_artists
     
             ):
@@ -2930,7 +3088,9 @@ def render_map(
     
     
             final_city_artists = []
-    
+
+            final_waypoint_artists = []
+
             final_aircraft_artists = []
     
     
@@ -3016,6 +3176,66 @@ def render_map(
                 continue
     
     
+            # ----------------------------------------------------
+            # WAYPOINT LABELS
+            # ----------------------------------------------------
+
+            if SHOW_WAYPOINT_LABELS:
+
+                for waypoint in waypoint_points:
+
+                    artist, box = (
+                        place_waypoint_label(
+
+                            ax=ax,
+
+                            renderer=renderer,
+
+                            waypoint=waypoint,
+
+                            bbox_geo=BBOX,
+
+                            rings=(
+                                config[
+                                    "waypoint_rings"
+                                ]
+                            ),
+
+                            fontsize=(
+                                config[
+                                    "waypoint_font"
+                                ]
+                            ),
+
+                            occupied=occupied,
+
+                            obstacles=(
+                                aircraft_icon_boxes
+                            ),
+                        )
+                    )
+
+                    # Waypoints are contextual information. If one label cannot
+                    # be placed without an overlap, keep the marker and skip
+                    # only that label rather than invalidating the whole layout.
+                    if artist is None:
+
+                        print(
+                            "Could not place waypoint:",
+                            waypoint["name"],
+                        )
+
+                        continue
+
+                    final_waypoint_artists.append(
+                        artist
+                    )
+
+                    occupied.append(
+                        box
+                    )
+
+
             # ----------------------------------------------------
             # AIRCRAFT LABELS
             # ----------------------------------------------------
@@ -3106,8 +3326,9 @@ def render_map(
     
                 fig,
     
-                final_city_artists,
-    
+                final_city_artists
+                + final_waypoint_artists,
+
                 final_aircraft_artists,
     
                 aircraft_icon_boxes,
@@ -3196,15 +3417,16 @@ def render_map(
     )
     
     
-    warning_aircraft = sum(
-    
-        state == STATE_WARNING
-    
-        for state
-        in aircraft_states.values()
+    proximity_aircraft = sum(
+        state == STATE_PROXIMITY
+        for state in aircraft_states.values()
     )
-    
-    
+
+    high_risk_aircraft = sum(
+        state == STATE_HIGH_RISK
+        for state in aircraft_states.values()
+    )
+
     conflict_aircraft = sum(
     
         state == STATE_CONFLICT
@@ -3233,14 +3455,16 @@ def render_map(
     
     
     print(
-    
         f"YELLOW / proximity warning  : "
-        f"{warning_aircraft}"
+        f"{proximity_aircraft}"
     )
-    
-    
+
     print(
-    
+        f"ORANGE / high risk          : "
+        f"{high_risk_aircraft}"
+    )
+
+    print(
         f"RED    / loss of separation : "
         f"{conflict_aircraft}"
     )

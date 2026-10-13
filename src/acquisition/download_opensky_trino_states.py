@@ -39,6 +39,20 @@ from pyopensky.trino import Trino
 from pyproj import Geod
 
 from opensky_plot import render_map
+from area_presets import (
+    load_area_presets,
+    resolve_area_preset,
+    filter_dataframe_to_area,
+    load_waypoints_for_area,
+)
+from opensky_safety import (
+    STATE_NORMAL,
+    STATE_PROXIMITY,
+    STATE_HIGH_RISK,
+    STATE_CONFLICT,
+    analyse_aircraft_snapshot,
+    relevant_pair_results,
+)
 
 # ============================================================
 # ENVIRONMENT
@@ -84,7 +98,7 @@ def print_authentication_mode():
 
 START_UTC = "2025-06-16 20:00:00"
 
-END_UTC = "2025-06-16 20:15:00"
+END_UTC = "2025-06-16 20:20:00"
 
 
 # ------------------------------------------------------------
@@ -98,92 +112,21 @@ BBOX_PRESETS_FILE = Path(__file__).with_name(
 GEOD = Geod(ellps="WGS84")
 
 
-def load_bbox_presets():
+BBOX_PRESETS = load_area_presets(BBOX_PRESETS_FILE)
 
-    with BBOX_PRESETS_FILE.open(
-        encoding="utf-8"
-    ) as presets_file:
-        presets = json.load(presets_file)
-
-    if not isinstance(presets, dict):
-        raise ValueError(
-            "BBOX presets must be a JSON object"
-        )
-
-    return presets
-
-
-def bbox_from_center(
-    latitude,
-    longitude,
-    radius_km,
-):
-
-    radius_m = radius_km * 1000.0
-
-    _, latitude_max, _ = GEOD.fwd(
-        longitude,
-        latitude,
-        0,
-        radius_m,
-    )
-
-    _, latitude_min, _ = GEOD.fwd(
-        longitude,
-        latitude,
-        180,
-        radius_m,
-    )
-
-    longitude_max, _, _ = GEOD.fwd(
-        longitude,
-        latitude,
-        90,
-        radius_m,
-    )
-
-    longitude_min, _, _ = GEOD.fwd(
-        longitude,
-        latitude,
-        270,
-        radius_m,
-    )
-
-    return {
-        "lamin": latitude_min,
-        "lamax": latitude_max,
-        "lomin": longitude_min,
-        "lomax": longitude_max,
-    }
-
-
-def bbox_from_preset(preset):
-
-    if preset["type"] == "vertices":
-        return dict(preset["vertices"])
-
-    if preset["type"] == "center":
-        center = preset["center"]
-        return bbox_from_center(
-            float(center["lat"]),
-            float(center["lon"]),
-            float(preset["radius_km"]),
-        )
-
-    raise ValueError(
-        'BBOX preset type must be "vertices" or "center"'
-    )
-
-
-BBOX_PRESETS = load_bbox_presets()
+AREA_DEFINITIONS = {
+    preset_key: resolve_area_preset(preset_key, BBOX_PRESETS)
+    for preset_key in BBOX_PRESETS
+}
 
 REGIONS = {
-    preset_key: bbox_from_preset(preset)
-    for preset_key, preset in BBOX_PRESETS.items()
+    preset_key: area["bbox"]
+    for preset_key, area in AREA_DEFINITIONS.items()
 }
 
 
 SELECTED_REGION = "GALICIA"
+AREA_POLYGON = AREA_DEFINITIONS[SELECTED_REGION].get("polygon")
 
 
 # ------------------------------------------------------------
@@ -310,7 +253,7 @@ GENERATE_VIDEO = True
 
 
 #
-# State displayed every N seconds.
+# State displayed every N seconds. Historical snapshots remain at the source-oriented 10-second step; look-ahead prediction uses PREDICTION_STEP_SECONDS = 5.
 #
 
 FRAME_STEP_SECONDS = 10
@@ -390,6 +333,32 @@ SHOW_LABELS = True
 
 SHOW_CITIES = True
 
+# Aviation waypoints loaded once from waypoints.json and reused for every
+# historical frame.
+SHOW_WAYPOINTS = True
+SHOW_WAYPOINT_LABELS = True
+
+WAYPOINTS_FILE = Path(__file__).with_name(
+    "waypoints.json"
+)
+
+WAYPOINT_MARKER = "s"
+WAYPOINT_MARKER_SIZE = 34
+WAYPOINT_FACE_COLOR = "white"
+WAYPOINT_EDGE_COLOR = "black"
+WAYPOINT_EDGE_WIDTH = 0.9
+WAYPOINT_LABEL_COLOR = "white"
+
+WAYPOINTS = (
+    load_waypoints_for_area(
+        WAYPOINTS_FILE,
+        area_key=SELECTED_REGION,
+        area=AREA_DEFINITIONS[SELECTED_REGION],
+    )
+    if SHOW_WAYPOINTS
+    else []
+)
+
 SHOW_ALTITUDE = True
 
 SHOW_GROUND_SPEED = True
@@ -399,7 +368,8 @@ SHOW_VERTICAL_SPEED = True
 
 SHOW_TRAJECTORY_VECTOR = True
 
-TRAJECTORY_MINUTES = 2
+LOOKAHEAD_MINUTES = [1, 2, 5]
+PREDICTION_STEP_SECONDS = 5
 
 
 # ------------------------------------------------------------
@@ -412,10 +382,16 @@ MIN_HORIZONTAL_SEPARATION_NM = 5.0
 
 MIN_VERTICAL_SEPARATION_FT = 1000.0
 
+FILTER_CRUISE_FL_BAND = True
+CRUISE_FL_MIN = 290
+CRUISE_FL_MAX = 410
 
-WARNING_HORIZONTAL_FACTOR = 2.0
 
-WARNING_VERTICAL_FACTOR = 2.0
+WARNING_FACTOR = 1.50
+
+WARNING_HORIZONTAL_FACTOR = WARNING_FACTOR
+
+WARNING_VERTICAL_FACTOR = WARNING_FACTOR
 
 
 WARNING_HORIZONTAL_NM = (
@@ -445,26 +421,26 @@ CHECK_GROUND_AIRCRAFT_SAFETY = False
 SAFETY_AREA_POINTS = 120
 
 
-STATE_NORMAL = "NORMAL"
-
-STATE_WARNING = "WARNING"
-
-STATE_CONFLICT = "CONFLICT"
+STATE_WARNING = STATE_PROXIMITY  # backward-compatible alias
 
 
-NORMAL_AIRCRAFT_COLOR = "#00C853"
+NORMAL_AIRCRAFT_COLOR = "#00A651"
+PROXIMITY_AIRCRAFT_COLOR = "#FFD400"
+HIGH_RISK_AIRCRAFT_COLOR = "#FF6F00"
+CONFLICT_AIRCRAFT_COLOR = "#D7191C"
 
-WARNING_AIRCRAFT_COLOR = "#FFD600"
-
-CONFLICT_AIRCRAFT_COLOR = "#FF2020"
+WARNING_AIRCRAFT_COLOR = PROXIMITY_AIRCRAFT_COLOR
 
 
 SAFETY_AREA_NORMAL_COLOR = (
     NORMAL_AIRCRAFT_COLOR
 )
 
+SAFETY_AREA_PROXIMITY_COLOR = PROXIMITY_AIRCRAFT_COLOR
+SAFETY_AREA_HIGH_RISK_COLOR = HIGH_RISK_AIRCRAFT_COLOR
+
 SAFETY_AREA_WARNING_COLOR = (
-    WARNING_AIRCRAFT_COLOR
+    PROXIMITY_AIRCRAFT_COLOR
 )
 
 SAFETY_AREA_CONFLICT_COLOR = (
@@ -735,6 +711,10 @@ def query_hour(
         SELECTED_REGION
     ]
 
+    selected_area = AREA_DEFINITIONS[SELECTED_REGION]
+    global AREA_POLYGON
+    AREA_POLYGON = selected_area.get("polygon")
+
 
     bounds = (
 
@@ -794,8 +774,20 @@ def query_hour(
             columns=TRINO_COLUMNS
         )
 
+    result = result.copy()
 
-    return result.copy()
+    # Polygon presets are queried by their enclosing BBOX in Trino and then
+    # clipped locally to the exact polygon.
+    selected_area = AREA_DEFINITIONS[SELECTED_REGION]
+    if selected_area.get("polygon"):
+        result = filter_dataframe_to_area(
+            result,
+            selected_area,
+            latitude_column="lat",
+            longitude_column="lon",
+        )
+
+    return result
 
 
 # ============================================================
@@ -1177,6 +1169,18 @@ def prepare_history(
 
         )
 
+    # Re-apply the exact local polygon filter here as well. This is important
+    # when USE_EXISTING_CSV=True and the cached CSV was produced from the
+    # enclosing rectangular query bounds.
+    selected_area = AREA_DEFINITIONS[SELECTED_REGION]
+    if selected_area.get("polygon"):
+        df = filter_dataframe_to_area(
+            df,
+            selected_area,
+            latitude_column="latitude",
+            longitude_column="longitude",
+        )
+
 
     # --------------------------------------------------------
     # Same derived units as opensky_snapshot.py
@@ -1221,9 +1225,17 @@ def prepare_history(
 
     )
 
+    if FILTER_CRUISE_FL_BAND:
+        cruise_mask = (
+            df["baro_altitude_ft"].notna()
+            & (df["baro_altitude_ft"] >= CRUISE_FL_MIN * 100.0)
+            & (df["baro_altitude_ft"] <= CRUISE_FL_MAX * 100.0)
+        )
+        df = df.loc[cruise_mask].copy()
+
 
     # --------------------------------------------------------
-    # 10-second time bucket
+    # Analysis time bucket
     # --------------------------------------------------------
 
     start_epoch = int(
@@ -1315,372 +1327,47 @@ def prepare_history(
 # ============================================================
 # SEPARATION ANALYSIS
 # ============================================================
-
-STATE_PRIORITY = {
-
-    STATE_NORMAL:
-        0,
-
-    STATE_WARNING:
-        1,
-
-    STATE_CONFLICT:
-        2,
-}
-
-
-def callsign_of(
-    row,
-):
-
-    callsign = str(
-        row.get(
-            "callsign",
-            "",
-        )
-        or ""
-    ).strip()
-
-
-    if callsign:
-
-        return callsign
-
-
-    return str(
-        row["icao24"]
-    ).upper()
-
-
-def aircraft_on_ground(
-    row,
-):
-
-    value = row.get(
-        "on_ground",
-        False,
-    )
-
-
-    if pd.isna(value):
-
-        return False
-
-
-    return bool(value)
-
-
-def classify_pair(
-    horizontal_nm,
-    vertical_ft,
-):
-
-    if (
-
-        horizontal_nm
-        < MIN_HORIZONTAL_SEPARATION_NM
-
-        and
-
-        vertical_ft
-        < MIN_VERTICAL_SEPARATION_FT
-
-    ):
-
-        return STATE_CONFLICT
-
-
-    if (
-
-        horizontal_nm
-        < WARNING_HORIZONTAL_NM
-
-        and
-
-        vertical_ft
-        < WARNING_VERTICAL_FT
-
-    ):
-
-        return STATE_WARNING
-
-
-    return STATE_NORMAL
+#
+# Shared with the live snapshot through opensky_safety.py.
+#
 
 
 def analyse_snapshot(
     aircraft,
 ):
-
-    """
-    Same basic 3D separation classification used by the
-    current snapshot visualisation.
-    """
-
-    from pyproj import Geod
-
-    geod = Geod(
-        ellps="WGS84"
+    pair_results, states, interval_states, skipped_pairs = (
+        analyse_aircraft_snapshot(
+            aircraft,
+            min_horizontal_nm=MIN_HORIZONTAL_SEPARATION_NM,
+            min_vertical_ft=MIN_VERTICAL_SEPARATION_FT,
+            warning_factor=WARNING_FACTOR,
+            lookahead_minutes=LOOKAHEAD_MINUTES,
+            prediction_step_seconds=PREDICTION_STEP_SECONDS,
+            check_ground_aircraft=CHECK_GROUND_AIRCRAFT_SAFETY,
+        )
     )
 
-
-    states = {
-
-        index:
-            STATE_NORMAL
-
-        for index
-        in aircraft.index
-
-    }
-
-
-    pairs = []
-
-
-    rows = list(
-        aircraft.iterrows()
-    )
-
-
-    for i in range(
-        len(rows)
-    ):
-
-        index_a, aircraft_a = (
-            rows[i]
-        )
-
-
-        if (
-
-            aircraft_on_ground(
-                aircraft_a
-            )
-
-            and
-
-            not CHECK_GROUND_AIRCRAFT_SAFETY
-
-        ):
-
-            continue
-
-
-        for j in range(
-            i + 1,
-            len(rows)
-        ):
-
-            index_b, aircraft_b = (
-                rows[j]
-            )
-
-
-            if (
-
-                aircraft_on_ground(
-                    aircraft_b
-                )
-
-                and
-
-                not CHECK_GROUND_AIRCRAFT_SAFETY
-
-            ):
-
-                continue
-
-
-            _, _, distance_m = (
-                geod.inv(
-
-                    float(
-                        aircraft_a[
-                            "longitude"
-                        ]
-                    ),
-
-                    float(
-                        aircraft_a[
-                            "latitude"
-                        ]
-                    ),
-
-                    float(
-                        aircraft_b[
-                            "longitude"
-                        ]
-                    ),
-
-                    float(
-                        aircraft_b[
-                            "latitude"
-                        ]
-                    ),
-
-                )
-            )
-
-
-            horizontal_nm = (
-
-                distance_m
-                / 1852.0
-
-            )
-
-
-            altitude_a = (
-                aircraft_a.get(
-                    "baro_altitude_ft",
-                    np.nan,
-                )
-            )
-
-
-            altitude_b = (
-                aircraft_b.get(
-                    "baro_altitude_ft",
-                    np.nan,
-                )
-            )
-
-
-            if (
-
-                pd.isna(altitude_a)
-
-                or
-
-                pd.isna(altitude_b)
-
-            ):
-
-                if (
-
-                    horizontal_nm
-                    < WARNING_HORIZONTAL_NM
-
-                ):
-
-                    state = (
-                        STATE_WARNING
-                    )
-
-                    vertical_ft = None
-
-                else:
-
-                    continue
-
-
-            else:
-
-                vertical_ft = abs(
-
-                    float(altitude_a)
-
-                    - float(altitude_b)
-
-                )
-
-
-                state = classify_pair(
-
-                    horizontal_nm,
-
-                    vertical_ft,
-
-                )
-
-
-                if state == STATE_NORMAL:
-
-                    continue
-
-
-            for index in (
-                index_a,
-                index_b,
-            ):
-
-                if (
-
-                    STATE_PRIORITY[state]
-
-                    >
-
-                    STATE_PRIORITY[
-                        states[index]
-                    ]
-
-                ):
-
-                    states[index] = state
-
-
-            pairs.append({
-
-                "index_a":
-                    index_a,
-
-                "index_b":
-                    index_b,
-
-                "callsign_a":
-                    callsign_of(
-                        aircraft_a
-                    ),
-
-                "callsign_b":
-                    callsign_of(
-                        aircraft_b
-                    ),
-
-                "horizontal_nm":
-                    horizontal_nm,
-
-                "vertical_ft":
-                    vertical_ft,
-
-                "state":
-                    state,
-            })
-
-
-    warnings = [
-
-        pair
-
-        for pair in pairs
-
-        if (
-            pair["state"]
-            == STATE_WARNING
-        )
-
+    proximity = [
+        pair for pair in pair_results
+        if pair["state_current"] == STATE_PROXIMITY
     ]
-
-
+    high_risk = [
+        pair for pair in pair_results
+        if pair["state_current"] == STATE_HIGH_RISK
+    ]
     conflicts = [
-
-        pair
-
-        for pair in pairs
-
-        if (
-            pair["state"]
-            == STATE_CONFLICT
-        )
-
+        pair for pair in pair_results
+        if pair["state_current"] == STATE_CONFLICT
     ]
-
 
     return (
         states,
-        warnings,
+        proximity,
+        high_risk,
         conflicts,
+        pair_results,
+        interval_states,
+        skipped_pairs,
     )
 
 
@@ -1753,6 +1440,7 @@ def generate_frames(
 
 
     frame_paths = []
+    separation_event_rows = []
 
 
     frame_number = 0
@@ -1845,11 +1533,22 @@ def generate_frames(
         (
             aircraft_states,
             warnings,
+            high_risk_pairs,
             conflicts,
+            pair_results,
+            LOOKAHEAD_INTERVAL_STATES,
+            skipped_pairs,
 
         ) = analyse_snapshot(
             snapshot
         )
+
+        globals()["LOOKAHEAD_INTERVAL_STATES"] = LOOKAHEAD_INTERVAL_STATES
+
+        for pair in relevant_pair_results(pair_results):
+            event = dict(pair)
+            event["snapshot_time"] = timestamp
+            separation_event_rows.append(event)
 
 
         snapshot_time = (
@@ -1919,6 +1618,9 @@ def generate_frames(
             config=
                 globals(),
 
+            waypoints=
+                WAYPOINTS,
+
             show=False,
 
             save=False,
@@ -1949,6 +1651,14 @@ def generate_frames(
 
         frame_number += 1
 
+
+    if separation_event_rows:
+        events_file = frames_directory.parent / "separation_events.csv"
+        pd.DataFrame(separation_event_rows).to_csv(
+            events_file,
+            index=False,
+        )
+        print("Separation events saved:", events_file)
 
     return frame_paths
 
