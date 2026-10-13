@@ -26,6 +26,38 @@ Select one with `SELECTED_BBOX_PRESET`. A preset can use `type: "vertices"`
 with `lamin`, `lamax`, `lomin` and `lomax`, or `type: "center"` with `center`
 (`lat` and `lon`) plus `radius_km`.
 
+### `download_waypoints.py`
+
+Downloads the public waypoint dataset once, filters `WYP` points for every
+study area in [`bbox_presets.json`](bbox_presets.json), and writes the results
+to [`waypoints.json`](waypoints.json). Areas can be rectangular (`vertices` or
+`bbox`) or circular around a `center` with a configured `radius_km`. The
+resulting JSON contains only the BBOX areas, so stale entries from
+`location_presets.json` are not retained.
+
+Run it from the repository root:
+
+```bash
+python3 src/acquisition/download_waypoints.py
+```
+
+To update only selected BBOX areas:
+
+```bash
+python3 src/acquisition/download_waypoints.py \
+  --areas GALICIA BARCELONA_50KM
+```
+
+### `waypoints.json`
+
+Contains the aviation waypoints filtered for each area in `bbox_presets.json`:
+`GALICIA`, `NORTHERN_SPAIN` and `BARCELONA_50KM` by default. `GALICIA` is the
+name of the study area, not an administrative-boundary filter: its rectangle
+includes parts of Portugal, Asturias, Leon, Zamora, the Cantabrian Sea and the
+Atlantic Ocean. The file records the resolved BBOX, source, licence, filter
+and coordinate convention alongside the points so additional study areas can
+be added reproducibly.
+
 Run from the repository root:
 
 ```bash
