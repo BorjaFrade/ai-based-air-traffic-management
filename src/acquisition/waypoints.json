@@ -1,0 +1,1022 @@
+{
+  "GALICIA": {
+    "name": "Galicia study area",
+    "description": "Rectangular study area defined by the supplied BBOX; it is not an administrative Galicia boundary and includes parts of Portugal, Asturias, Leon, Zamora, the Cantabrian Sea and the Atlantic Ocean.",
+    "bbox": {
+      "lamin": 41.75,
+      "lamax": 43.85,
+      "lomin": -9.4,
+      "lomax": -6.65
+    },
+    "source": {
+      "name": "euvl/aviation-waypoints",
+      "url": "https://github.com/euvl/aviation-waypoints",
+      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
+      "license": "MIT"
+    },
+    "filter": {
+      "type": "WYP",
+      "coordinates": "longitude, latitude",
+      "description": "Only WYP records whose coordinates fall inside the BBOX"
+    },
+    "count": 17,
+    "waypoints": [
+      {
+        "name": "AGADO",
+        "type": "WYP",
+        "lon": -8.926686,
+        "lat": 41.872879
+      },
+      {
+        "name": "ASTUR",
+        "type": "WYP",
+        "lon": -7.360097,
+        "lat": 43.218437
+      },
+      {
+        "name": "BARKO",
+        "type": "WYP",
+        "lon": -6.944603,
+        "lat": 42.200607
+      },
+      {
+        "name": "BERAX",
+        "type": "WYP",
+        "lon": -8.176666,
+        "lat": 43.252052
+      },
+      {
+        "name": "D101R",
+        "type": "WYP",
+        "lon": -8.200148,
+        "lat": 42.294655
+      },
+      {
+        "name": "DEMOS",
+        "type": "WYP",
+        "lon": -9.361998,
+        "lat": 41.925705
+      },
+      {
+        "name": "FORNO",
+        "type": "WYP",
+        "lon": -7.481464,
+        "lat": 42.468109
+      },
+      {
+        "name": "KORAV",
+        "type": "WYP",
+        "lon": -7.865586,
+        "lat": 43.653103
+      },
+      {
+        "name": "LOMDA",
+        "type": "WYP",
+        "lon": -7.296025,
+        "lat": 42.852798
+      },
+      {
+        "name": "MALIS",
+        "type": "WYP",
+        "lon": -7.604781,
+        "lat": 41.855568
+      },
+      {
+        "name": "MEGAT",
+        "type": "WYP",
+        "lon": -7.596469,
+        "lat": 43.498871
+      },
+      {
+        "name": "MISTE",
+        "type": "WYP",
+        "lon": -8.085203,
+        "lat": 43.35535
+      },
+      {
+        "name": "NARBO",
+        "type": "WYP",
+        "lon": -8.228289,
+        "lat": 42.139812
+      },
+      {
+        "name": "RELVA",
+        "type": "WYP",
+        "lon": -8.597417,
+        "lat": 41.852657
+      },
+      {
+        "name": "TURON",
+        "type": "WYP",
+        "lon": -8.563416,
+        "lat": 42.067924
+      },
+      {
+        "name": "VGO38",
+        "type": "WYP",
+        "lon": -7.751872,
+        "lat": 42.26321
+      },
+      {
+        "name": "VIS83",
+        "type": "WYP",
+        "lon": -7.093333,
+        "lat": 41.976665
+      }
+    ]
+  },
+  "BCN": {
+    "name": "Barcelona-El Prat",
+    "bbox": {
+      "lamin": 40.847173876669636,
+      "lamax": 41.747590794597066,
+      "lomin": 1.4863363314377316,
+      "lomax": 2.6802636685622683
+    },
+    "center": {
+      "lat": 41.29738233563335,
+      "lon": 2.0833
+    },
+    "source": {
+      "name": "euvl/aviation-waypoints",
+      "repository": "https://github.com/euvl/aviation-waypoints",
+      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
+      "license": "MIT"
+    },
+    "filter": {
+      "types": [
+        "WYP"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Points whose coordinates fall inside the resolved BBOX"
+    },
+    "count": 8,
+    "waypoints": [
+      {
+        "name": "BANEX",
+        "type": "WYP",
+        "lon": 2.598928,
+        "lat": 41.45031
+      },
+      {
+        "name": "BARUS",
+        "type": "WYP",
+        "lon": 1.729992,
+        "lat": 41.054127
+      },
+      {
+        "name": "BISES",
+        "type": "WYP",
+        "lon": 1.697508,
+        "lat": 41.264484
+      },
+      {
+        "name": "CAVES",
+        "type": "WYP",
+        "lon": 1.666542,
+        "lat": 41.463749
+      },
+      {
+        "name": "MATIS",
+        "type": "WYP",
+        "lon": 1.618475,
+        "lat": 40.977821
+      },
+      {
+        "name": "MONEV",
+        "type": "WYP",
+        "lon": 1.684728,
+        "lat": 41.34687
+      },
+      {
+        "name": "TASOS",
+        "type": "WYP",
+        "lon": 2.630906,
+        "lat": 40.938393
+      },
+      {
+        "name": "VIBOK",
+        "type": "WYP",
+        "lon": 1.490839,
+        "lat": 41.533722
+      }
+    ]
+  },
+  "MAD": {
+    "name": "Madrid-Barajas",
+    "bbox": {
+      "lamin": 40.048011359016996,
+      "lamax": 40.9485534475337,
+      "lomin": -4.15742319406861,
+      "lomax": -2.9777768059313905
+    },
+    "center": {
+      "lat": 40.49828240327535,
+      "lon": -3.5676
+    },
+    "source": {
+      "name": "euvl/aviation-waypoints",
+      "repository": "https://github.com/euvl/aviation-waypoints",
+      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
+      "license": "MIT"
+    },
+    "filter": {
+      "types": [
+        "WYP"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Points whose coordinates fall inside the resolved BBOX"
+    },
+    "count": 12,
+    "waypoints": [
+      {
+        "name": "ARGAS",
+        "type": "WYP",
+        "lon": -3.524836,
+        "lat": 40.29829
+      },
+      {
+        "name": "BOSIO",
+        "type": "WYP",
+        "lon": -3.52057,
+        "lat": 40.340858
+      },
+      {
+        "name": "COTOS",
+        "type": "WYP",
+        "lon": -4.060992,
+        "lat": 40.732296
+      },
+      {
+        "name": "D101V",
+        "type": "WYP",
+        "lon": -3.784497,
+        "lat": 40.323418
+      },
+      {
+        "name": "GOTOR",
+        "type": "WYP",
+        "lon": -3.724503,
+        "lat": 40.110771
+      },
+      {
+        "name": "HORTA",
+        "type": "WYP",
+        "lon": -3.286292,
+        "lat": 40.660442
+      },
+      {
+        "name": "INTEK",
+        "type": "WYP",
+        "lon": -3.792264,
+        "lat": 40.853462
+      },
+      {
+        "name": "MAGIN",
+        "type": "WYP",
+        "lon": -3.564511,
+        "lat": 40.766991
+      },
+      {
+        "name": "MITUM",
+        "type": "WYP",
+        "lon": -3.247797,
+        "lat": 40.64563
+      },
+      {
+        "name": "PALIO",
+        "type": "WYP",
+        "lon": -3.038581,
+        "lat": 40.264385
+      },
+      {
+        "name": "SIE35",
+        "type": "WYP",
+        "lon": -3.759011,
+        "lat": 40.588398
+      },
+      {
+        "name": "VISON",
+        "type": "WYP",
+        "lon": -3.5022,
+        "lat": 40.161079
+      }
+    ]
+  },
+  "SCQ": {
+    "name": "Santiago-Rosalia de Castro",
+    "bbox": {
+      "lamin": 42.446199632878844,
+      "lamax": 43.34636485050161,
+      "lomin": -9.02724944551467,
+      "lomax": -7.8029505544853315
+    },
+    "center": {
+      "lat": 42.89628224169023,
+      "lon": -8.4151
+    },
+    "source": {
+      "name": "euvl/aviation-waypoints",
+      "repository": "https://github.com/euvl/aviation-waypoints",
+      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
+      "license": "MIT"
+    },
+    "filter": {
+      "types": [
+        "WYP"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Points whose coordinates fall inside the resolved BBOX"
+    },
+    "count": 1,
+    "waypoints": [
+      {
+        "name": "BERAX",
+        "type": "WYP",
+        "lon": -8.176666,
+        "lat": 43.252052
+      }
+    ]
+  },
+  "LCG": {
+    "name": "A Coruna",
+    "bbox": {
+      "lamin": 42.852031654635425,
+      "lamax": 43.752132798672676,
+      "lomin": -8.993505064689568,
+      "lomax": -7.761094935310432
+    },
+    "center": {
+      "lat": 43.30208222665405,
+      "lon": -8.3773
+    },
+    "source": {
+      "name": "euvl/aviation-waypoints",
+      "repository": "https://github.com/euvl/aviation-waypoints",
+      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
+      "license": "MIT"
+    },
+    "filter": {
+      "types": [
+        "WYP"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Points whose coordinates fall inside the resolved BBOX"
+    },
+    "count": 3,
+    "waypoints": [
+      {
+        "name": "BERAX",
+        "type": "WYP",
+        "lon": -8.176666,
+        "lat": 43.252052
+      },
+      {
+        "name": "KORAV",
+        "type": "WYP",
+        "lon": -7.865586,
+        "lat": 43.653103
+      },
+      {
+        "name": "MISTE",
+        "type": "WYP",
+        "lon": -8.085203,
+        "lat": 43.35535
+      }
+    ]
+  },
+  "VGO": {
+    "name": "Vigo-Peinador",
+    "bbox": {
+      "lamin": 41.78164727812608,
+      "lamax": 42.68191726990698,
+      "lomin": -9.232487757362435,
+      "lomax": -8.021112242637564
+    },
+    "center": {
+      "lat": 42.23178227401653,
+      "lon": -8.6268
+    },
+    "source": {
+      "name": "euvl/aviation-waypoints",
+      "repository": "https://github.com/euvl/aviation-waypoints",
+      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
+      "license": "MIT"
+    },
+    "filter": {
+      "types": [
+        "WYP"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Points whose coordinates fall inside the resolved BBOX"
+    },
+    "count": 5,
+    "waypoints": [
+      {
+        "name": "AGADO",
+        "type": "WYP",
+        "lon": -8.926686,
+        "lat": 41.872879
+      },
+      {
+        "name": "D101R",
+        "type": "WYP",
+        "lon": -8.200148,
+        "lat": 42.294655
+      },
+      {
+        "name": "NARBO",
+        "type": "WYP",
+        "lon": -8.228289,
+        "lat": 42.139812
+      },
+      {
+        "name": "RELVA",
+        "type": "WYP",
+        "lon": -8.597417,
+        "lat": 41.852657
+      },
+      {
+        "name": "TURON",
+        "type": "WYP",
+        "lon": -8.563416,
+        "lat": 42.067924
+      }
+    ]
+  },
+  "OVD": {
+    "name": "Asturias",
+    "bbox": {
+      "lamin": 43.11355230581709,
+      "lamax": 44.01361213189537,
+      "lomin": -6.653463751062293,
+      "lomax": -5.415736248937708
+    },
+    "center": {
+      "lat": 43.563582218856226,
+      "lon": -6.0346
+    },
+    "source": {
+      "name": "euvl/aviation-waypoints",
+      "repository": "https://github.com/euvl/aviation-waypoints",
+      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
+      "license": "MIT"
+    },
+    "filter": {
+      "types": [
+        "WYP"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Points whose coordinates fall inside the resolved BBOX"
+    },
+    "count": 6,
+    "waypoints": [
+      {
+        "name": "ARPOM",
+        "type": "WYP",
+        "lon": -5.984414,
+        "lat": 43.829174
+      },
+      {
+        "name": "KANDA",
+        "type": "WYP",
+        "lon": -5.797403,
+        "lat": 43.770607
+      },
+      {
+        "name": "LURIM",
+        "type": "WYP",
+        "lon": -6.376625,
+        "lat": 43.476379
+      },
+      {
+        "name": "MERCE",
+        "type": "WYP",
+        "lon": -5.949283,
+        "lat": 43.152122
+      },
+      {
+        "name": "MUSIL",
+        "type": "WYP",
+        "lon": -5.563931,
+        "lat": 43.542839
+      },
+      {
+        "name": "RATPO",
+        "type": "WYP",
+        "lon": -5.981703,
+        "lat": 43.317108
+      }
+    ]
+  },
+  "SDR": {
+    "name": "Santander-Seve Ballesteros",
+    "bbox": {
+      "lamin": 42.97704152470174,
+      "lamax": 43.87712292078148,
+      "lomin": -4.437471477580778,
+      "lomax": -3.2025285224192217
+    },
+    "center": {
+      "lat": 43.42708222274161,
+      "lon": -3.82
+    },
+    "source": {
+      "name": "euvl/aviation-waypoints",
+      "repository": "https://github.com/euvl/aviation-waypoints",
+      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
+      "license": "MIT"
+    },
+    "filter": {
+      "types": [
+        "WYP"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Points whose coordinates fall inside the resolved BBOX"
+    },
+    "count": 8,
+    "waypoints": [
+      {
+        "name": "AMTOS",
+        "type": "WYP",
+        "lon": -3.218897,
+        "lat": 43.0
+      },
+      {
+        "name": "BEATI",
+        "type": "WYP",
+        "lon": -4.333333,
+        "lat": 43.476265
+      },
+      {
+        "name": "CALCE",
+        "type": "WYP",
+        "lon": -3.316667,
+        "lat": 43.362808
+      },
+      {
+        "name": "COLIN",
+        "type": "WYP",
+        "lon": -3.871294,
+        "lat": 43.683334
+      },
+      {
+        "name": "EMANU",
+        "type": "WYP",
+        "lon": -3.791222,
+        "lat": 43.0
+      },
+      {
+        "name": "FERMO",
+        "type": "WYP",
+        "lon": -4.3727,
+        "lat": 43.435886
+      },
+      {
+        "name": "TACHA",
+        "type": "WYP",
+        "lon": -3.268178,
+        "lat": 43.683334
+      },
+      {
+        "name": "TITAN",
+        "type": "WYP",
+        "lon": -3.968828,
+        "lat": 43.0
+      }
+    ]
+  },
+  "BIO": {
+    "name": "Bilbao",
+    "bbox": {
+      "lamin": 42.851031575686015,
+      "lamax": 43.7511328776874,
+      "lomin": -3.5267949662164737,
+      "lomax": -2.2944050337835264
+    },
+    "center": {
+      "lat": 43.3010822266867,
+      "lon": -2.9106
+    },
+    "source": {
+      "name": "euvl/aviation-waypoints",
+      "repository": "https://github.com/euvl/aviation-waypoints",
+      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
+      "license": "MIT"
+    },
+    "filter": {
+      "types": [
+        "WYP"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Points whose coordinates fall inside the resolved BBOX"
+    },
+    "count": 7,
+    "waypoints": [
+      {
+        "name": "AMTOS",
+        "type": "WYP",
+        "lon": -3.218897,
+        "lat": 43.0
+      },
+      {
+        "name": "BISKA",
+        "type": "WYP",
+        "lon": -2.811389,
+        "lat": 43.683334
+      },
+      {
+        "name": "CALCE",
+        "type": "WYP",
+        "lon": -3.316667,
+        "lat": 43.362808
+      },
+      {
+        "name": "SALVA",
+        "type": "WYP",
+        "lon": -2.377222,
+        "lat": 42.868958
+      },
+      {
+        "name": "TACHA",
+        "type": "WYP",
+        "lon": -3.268178,
+        "lat": 43.683334
+      },
+      {
+        "name": "UDALA",
+        "type": "WYP",
+        "lon": -2.508039,
+        "lat": 43.109768
+      },
+      {
+        "name": "URQUI",
+        "type": "WYP",
+        "lon": -2.665083,
+        "lat": 43.074848
+      }
+    ]
+  },
+  "VIT": {
+    "name": "Vitoria",
+    "bbox": {
+      "lamin": 42.43269856817743,
+      "lamax": 43.332865916326156,
+      "lomin": -3.3365159714289274,
+      "lomax": -2.1124840285710724
+    },
+    "center": {
+      "lat": 42.88278224225179,
+      "lon": -2.7245
+    },
+    "source": {
+      "name": "euvl/aviation-waypoints",
+      "repository": "https://github.com/euvl/aviation-waypoints",
+      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
+      "license": "MIT"
+    },
+    "filter": {
+      "types": [
+        "WYP"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Points whose coordinates fall inside the resolved BBOX"
+    },
+    "count": 7,
+    "waypoints": [
+      {
+        "name": "AMTOS",
+        "type": "WYP",
+        "lon": -3.218897,
+        "lat": 43.0
+      },
+      {
+        "name": "CEGAM",
+        "type": "WYP",
+        "lon": -2.236061,
+        "lat": 42.983982
+      },
+      {
+        "name": "NAZAR",
+        "type": "WYP",
+        "lon": -2.240889,
+        "lat": 42.607449
+      },
+      {
+        "name": "OLTRE",
+        "type": "WYP",
+        "lon": -2.196558,
+        "lat": 42.965618
+      },
+      {
+        "name": "SALVA",
+        "type": "WYP",
+        "lon": -2.377222,
+        "lat": 42.868958
+      },
+      {
+        "name": "UDALA",
+        "type": "WYP",
+        "lon": -2.508039,
+        "lat": 43.109768
+      },
+      {
+        "name": "URQUI",
+        "type": "WYP",
+        "lon": -2.665083,
+        "lat": 43.074848
+      }
+    ]
+  },
+  "OPO": {
+    "name": "Porto-Francisco Sa Carneiro",
+    "bbox": {
+      "lamin": 40.797870012286474,
+      "lamax": 41.6982946665297,
+      "lomin": -9.27791475471333,
+      "lomax": -8.08488524528667
+    },
+    "center": {
+      "lat": 41.248082339408086,
+      "lon": -8.6814
+    },
+    "source": {
+      "name": "euvl/aviation-waypoints",
+      "repository": "https://github.com/euvl/aviation-waypoints",
+      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
+      "license": "MIT"
+    },
+    "filter": {
+      "types": [
+        "WYP"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Points whose coordinates fall inside the resolved BBOX"
+    },
+    "count": 1,
+    "waypoints": [
+      {
+        "name": "PESUL",
+        "type": "WYP",
+        "lon": -8.115103,
+        "lat": 40.882034
+      }
+    ]
+  },
+  "ZRH": {
+    "name": "Zurich",
+    "bbox": {
+      "lamin": 47.0083601761623,
+      "lamax": 47.90780438014331,
+      "lomin": 7.892416804956504,
+      "lomax": 9.218583195043497
+    },
+    "center": {
+      "lat": 47.4580822781528,
+      "lon": 8.5555
+    },
+    "source": {
+      "name": "euvl/aviation-waypoints",
+      "repository": "https://github.com/euvl/aviation-waypoints",
+      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
+      "license": "MIT"
+    },
+    "filter": {
+      "types": [
+        "WYP"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Points whose coordinates fall inside the resolved BBOX"
+    },
+    "count": 23,
+    "waypoints": [
+      {
+        "name": "ABKLO",
+        "type": "WYP",
+        "lon": 8.5075,
+        "lat": 47.451946
+      },
+      {
+        "name": "AGERI",
+        "type": "WYP",
+        "lon": 8.605,
+        "lat": 47.117222
+      },
+      {
+        "name": "ALBIX",
+        "type": "WYP",
+        "lon": 8.564445,
+        "lat": 47.249722
+      },
+      {
+        "name": "AMALI",
+        "type": "WYP",
+        "lon": 8.446389,
+        "lat": 47.775555
+      },
+      {
+        "name": "ANELA",
+        "type": "WYP",
+        "lon": 8.761111,
+        "lat": 47.861111
+      },
+      {
+        "name": "BATEK",
+        "type": "WYP",
+        "lon": 8.884444,
+        "lat": 47.088612
+      },
+      {
+        "name": "BERSU",
+        "type": "WYP",
+        "lon": 7.943889,
+        "lat": 47.133888
+      },
+      {
+        "name": "EDUMI",
+        "type": "WYP",
+        "lon": 8.463889,
+        "lat": 47.780277
+      },
+      {
+        "name": "EKRON",
+        "type": "WYP",
+        "lon": 8.096389,
+        "lat": 47.591946
+      },
+      {
+        "name": "ELMUR",
+        "type": "WYP",
+        "lon": 8.871111,
+        "lat": 47.166111
+      },
+      {
+        "name": "GERSA",
+        "type": "WYP",
+        "lon": 8.552778,
+        "lat": 47.042221
+      },
+      {
+        "name": "GOLIT",
+        "type": "WYP",
+        "lon": 8.898889,
+        "lat": 47.784168
+      },
+      {
+        "name": "GOPAN",
+        "type": "WYP",
+        "lon": 8.678889,
+        "lat": 47.837776
+      },
+      {
+        "name": "HOC37",
+        "type": "WYP",
+        "lon": 8.526466,
+        "lat": 47.251518
+      },
+      {
+        "name": "MANOG",
+        "type": "WYP",
+        "lon": 8.7425,
+        "lat": 47.198891
+      },
+      {
+        "name": "MOSIT",
+        "type": "WYP",
+        "lon": 8.743889,
+        "lat": 47.069168
+      },
+      {
+        "name": "RASIK",
+        "type": "WYP",
+        "lon": 8.531667,
+        "lat": 47.798611
+      },
+      {
+        "name": "RIPUS",
+        "type": "WYP",
+        "lon": 8.514722,
+        "lat": 47.256668
+      },
+      {
+        "name": "RUMAS",
+        "type": "WYP",
+        "lon": 9.048889,
+        "lat": 47.787498
+      },
+      {
+        "name": "SAFFA",
+        "type": "WYP",
+        "lon": 8.793889,
+        "lat": 47.702221
+      },
+      {
+        "name": "SARME",
+        "type": "WYP",
+        "lon": 8.284722,
+        "lat": 47.314167
+      },
+      {
+        "name": "SUL49",
+        "type": "WYP",
+        "lon": 8.057777,
+        "lat": 47.671665
+      },
+      {
+        "name": "UIR32",
+        "type": "WYP",
+        "lon": 8.288889,
+        "lat": 47.733334
+      }
+    ]
+  },
+  "FRA": {
+    "name": "Frankfurt",
+    "bbox": {
+      "lamin": 49.58836263498925,
+      "lamax": 50.487402360100596,
+      "lomin": 7.864280079832074,
+      "lomax": 9.260119920167927
+    },
+    "center": {
+      "lat": 50.03788249754493,
+      "lon": 8.5622
+    },
+    "source": {
+      "name": "euvl/aviation-waypoints",
+      "repository": "https://github.com/euvl/aviation-waypoints",
+      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
+      "license": "MIT"
+    },
+    "filter": {
+      "types": [
+        "WYP"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Points whose coordinates fall inside the resolved BBOX"
+    },
+    "count": 10,
+    "waypoints": [
+      {
+        "name": "AKONI",
+        "type": "WYP",
+        "lon": 9.166945,
+        "lat": 49.75861
+      },
+      {
+        "name": "DAMOR",
+        "type": "WYP",
+        "lon": 7.944722,
+        "lat": 50.45639
+      },
+      {
+        "name": "ECCHO",
+        "type": "WYP",
+        "lon": 7.9525,
+        "lat": 49.81778
+      },
+      {
+        "name": "GEDSI",
+        "type": "WYP",
+        "lon": 9.125125,
+        "lat": 50.284126
+      },
+      {
+        "name": "LAHNE",
+        "type": "WYP",
+        "lon": 8.501945,
+        "lat": 50.450832
+      },
+      {
+        "name": "LIMBU",
+        "type": "WYP",
+        "lon": 8.375,
+        "lat": 50.453335
+      },
+      {
+        "name": "MODAU",
+        "type": "WYP",
+        "lon": 8.813889,
+        "lat": 49.772499
+      },
+      {
+        "name": "NISTE",
+        "type": "WYP",
+        "lon": 8.625,
+        "lat": 49.788887
+      },
+      {
+        "name": "RUDUS",
+        "type": "WYP",
+        "lon": 7.96,
+        "lat": 50.045834
+      },
+      {
+        "name": "SURIL",
+        "type": "WYP",
+        "lon": 8.030556,
+        "lat": 49.603889
+      }
+    ]
+  }
+}
