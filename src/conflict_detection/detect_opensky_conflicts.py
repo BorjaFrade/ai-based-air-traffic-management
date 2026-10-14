@@ -14,15 +14,20 @@ implemented in opensky_safety.py:
     HIGH_RISK   -> orange
     CONFLICT    -> red / loss of separation
 
-For every monthly input CSV, three derived CSV files are written under:
+For every monthly input CSV, derived NON-NORMAL event CSV files are written under:
 
     data/processed/opensky_separation/<BBOX_PRESET>/year=YYYY/month=MM/
 
 with one row per relevant aircraft pair / timestamp:
 
     *_separation_proximity_events.csv
-    *_separation_high_risk_events.csv
+    *_separation_high_risk_events.csv   # only if HIGH_RISK is enabled
     *_loss_of_separation_events.csv
+
+GREEN/NORMAL pairs are intentionally not exported by default because they are
+not violations and exporting every normal pair at every timestamp would create
+a very large combinatorial dataset. A sampled NORMAL dataset can be generated
+later for machine-learning negatives if required.
 
 The output category is the WORST state reached by the pair either now or in
 the configured look-ahead intervals (default: 0-1, 1-2 and 2-5 minutes).
@@ -47,11 +52,47 @@ import csv
 import json
 import math
 import re
+import sys
 from pathlib import Path
 from typing import Iterator
 
 import numpy as np
 import pandas as pd
+
+
+# =============================================================================
+# LOCAL MODULE PATH
+# =============================================================================
+#
+# This detector is expected to live in:
+#
+#     project_root/src/conflict_detection/
+#
+# Its shared OpenSky acquisition dependencies live in:
+#
+#     project_root/src/acquisition/
+#
+# Resolve that directory from this file instead of depending on the current
+# working directory or hardcoding an absolute machine-specific path.
+SCRIPT_DIR = Path(__file__).resolve().parent
+SRC_DIR = SCRIPT_DIR.parent
+ACQUISITION_DIR = SRC_DIR / "acquisition"
+
+if not ACQUISITION_DIR.exists():
+    raise FileNotFoundError(
+        "OpenSky acquisition dependency directory not found:\n"
+        f"{ACQUISITION_DIR}"
+    )
+
+if str(ACQUISITION_DIR) not in sys.path:
+    sys.path.insert(0, str(ACQUISITION_DIR))
+
+
+from area_presets import (
+    load_area_presets,
+    resolve_area_preset,
+    filter_dataframe_to_area,
+)
 
 from opensky_safety import (
     STATE_NORMAL,
@@ -87,8 +128,14 @@ OUTPUT_ROOT = (
     / "opensky_separation"
 )
 
-SEPARATION_PROFILES_FILE = Path(__file__).with_name(
-    "separation_profiles.json"
+SEPARATION_PROFILES_FILE = (
+    ACQUISITION_DIR
+    / "separation_profiles.json"
+)
+
+BBOX_PRESETS_FILE = (
+    ACQUISITION_DIR
+    / "bbox_presets.json"
 )
 
 
@@ -96,7 +143,8 @@ SEPARATION_PROFILES_FILE = Path(__file__).with_name(
 # DEFAULT ANALYSIS CONFIGURATION
 # =============================================================================
 
-DEFAULT_SECTOR = "GALICIA"
+DEFAULT_SECTOR = "LECMSAN_ENVELOPE"
+DEFAULT_ANALYSIS_AREA = "LECMSAN"
 
 SEPARATION_PROFILE = "ENROUTE"
 
@@ -467,8 +515,113 @@ def numeric_series(
     )
 
 
+def to_epoch_seconds(
+    series: pd.Series,
+) -> pd.Series:
+    """
+    Convert OpenSky timestamps robustly to Unix seconds.
+
+    Supports:
+      - pandas datetime columns,
+      - ISO-8601 strings,
+      - Unix seconds,
+      - milliseconds,
+      - microseconds,
+      - nanoseconds.
+    """
+    if pd.api.types.is_numeric_dtype(
+        series
+    ):
+        numeric = pd.to_numeric(
+            series,
+            errors="coerce",
+        ).astype("float64")
+
+        finite = numeric[
+            np.isfinite(
+                numeric
+            )
+        ]
+
+        if finite.empty:
+            return numeric
+
+        magnitude = float(
+            finite.abs().median()
+        )
+
+        if magnitude > 1e17:
+            return (
+                numeric
+                / 1_000_000_000.0
+            )
+
+        if magnitude > 1e14:
+            return (
+                numeric
+                / 1_000_000.0
+            )
+
+        if magnitude > 1e11:
+            return (
+                numeric
+                / 1_000.0
+            )
+
+        return numeric
+
+    values = pd.to_datetime(
+        series,
+        utc=True,
+        errors="coerce",
+        format="mixed",
+    )
+
+    epoch = pd.Timestamp(
+        "1970-01-01",
+        tz="UTC",
+    )
+
+    return (
+        values
+        .sub(epoch)
+        .dt.total_seconds()
+        .astype("float64")
+    )
+
+
+def load_analysis_area(
+    area_key: str | None,
+) -> dict | None:
+    """
+    Resolve the exact local analysis area.
+
+    The input archive can be a rectangular envelope (for example
+    LECMSAN_ENVELOPE) while this detector clips every chunk locally to the
+    exact polygon (for example LECMSAN) before building aircraft pairs.
+    """
+    if not area_key:
+        return None
+
+    presets = load_area_presets(
+        BBOX_PRESETS_FILE
+    )
+
+    if area_key not in presets:
+        raise ValueError(
+            f"Unknown analysis area '{area_key}' in "
+            f"{BBOX_PRESETS_FILE}"
+        )
+
+    return resolve_area_preset(
+        area_key,
+        presets,
+    )
+
+
 def prepare_rows(
     dataframe: pd.DataFrame,
+    analysis_area: dict | None = None,
 ) -> pd.DataFrame:
     """
     Normalize the subset needed for snapshot analysis.
@@ -497,9 +650,8 @@ def prepare_rows(
             + ", ".join(sorted(missing))
         )
 
-    dataframe["time"] = pd.to_numeric(
-        dataframe["time"],
-        errors="coerce",
+    dataframe["time"] = to_epoch_seconds(
+        dataframe["time"]
     )
 
     dataframe["lat"] = pd.to_numeric(
@@ -529,6 +681,14 @@ def prepare_rows(
     dataframe = dataframe.loc[
         valid
     ].copy()
+
+    if analysis_area is not None:
+        dataframe = filter_dataframe_to_area(
+            dataframe,
+            analysis_area,
+            latitude_column="lat",
+            longitude_column="lon",
+        )
 
     if FILTER_CRUISE_FL_BAND:
 
@@ -636,6 +796,7 @@ def prepare_snapshot(
 def iter_snapshots_from_month(
     csv_file: Path,
     chunksize: int,
+    analysis_area: dict | None = None,
 ) -> Iterator[tuple[float, pd.DataFrame]]:
     """
     Stream a large monthly CSV while preserving complete OpenSky hour partitions.
@@ -659,7 +820,8 @@ def iter_snapshots_from_month(
     ):
 
         chunk = prepare_rows(
-            raw_chunk
+            raw_chunk,
+            analysis_area=analysis_area,
         )
 
         if not carry.empty:
@@ -786,6 +948,37 @@ def iter_snapshots_from_month(
 
             last_emitted_hour = hour_key
 
+
+
+def count_snapshots_in_month(
+    csv_file: Path,
+    chunksize: int,
+    analysis_area: dict | None = None,
+) -> int:
+    """
+    Count the exact number of snapshots that will be analysed.
+
+    This performs a lightweight first pass through the monthly CSV using the
+    same input normalisation, FL filter and exact polygon filter as the main
+    analysis. The pairwise conflict calculations are NOT executed during this
+    pass.
+
+    The extra pass makes it possible to report progress as:
+
+        snapshots=8,000/123,456 (6.5%)
+
+    instead of only showing the number already processed.
+    """
+    total = 0
+
+    for _timestamp, _snapshot in iter_snapshots_from_month(
+        csv_file,
+        chunksize,
+        analysis_area=analysis_area,
+    ):
+        total += 1
+
+    return total
 
 
 # =============================================================================
@@ -2149,7 +2342,9 @@ def month_outputs_complete(
 
 
 def analyse_month(
-    sector: str,
+    source_sector: str,
+    analysis_area_key: str,
+    analysis_area: dict | None,
     input_csv: Path,
     year: int,
     month: int,
@@ -2158,7 +2353,7 @@ def analyse_month(
 ) -> dict:
 
     paths = build_output_paths(
-        sector,
+        analysis_area_key,
         year,
         month,
     )
@@ -2181,6 +2376,20 @@ def analyse_month(
             STATE_CONFLICT: 0,
             "skipped": True,
         }
+
+    print(
+        "  Counting snapshots before analysis..."
+    )
+
+    total_snapshots = count_snapshots_in_month(
+        input_csv,
+        chunksize,
+        analysis_area=analysis_area,
+    )
+
+    print(
+        f"  snapshots to analyse: {total_snapshots:,}"
+    )
 
     handles = {}
     writers = {}
@@ -2205,6 +2414,7 @@ def analyse_month(
         for timestamp, snapshot in iter_snapshots_from_month(
             input_csv,
             chunksize,
+            analysis_area=analysis_area,
         ):
 
             counts["snapshots"] += 1
@@ -2260,7 +2470,7 @@ def analyse_month(
                     continue
 
                 row = build_event_row(
-                    sector,
+                    analysis_area_key,
                     timestamp,
                     snapshot,
                     pair,
@@ -2282,8 +2492,18 @@ def analyse_month(
                 % 1000
                 == 0
             ):
+                progress_pct = (
+                    100.0
+                    * counts["snapshots"]
+                    / total_snapshots
+                    if total_snapshots > 0
+                    else 100.0
+                )
+
                 print(
-                    f"  snapshots={counts['snapshots']:,} | "
+                    f"  snapshots={counts['snapshots']:,}"
+                    f"/{total_snapshots:,} "
+                    f"({progress_pct:5.1f}%) | "
                     f"yellow={counts[STATE_PROXIMITY]:,} | "
                     f"orange={counts[STATE_HIGH_RISK]:,} | "
                     f"red={counts[STATE_CONFLICT]:,}"
@@ -2321,7 +2541,7 @@ def analyse_month(
 
     print(
         f"  snapshots analysed : "
-        f"{counts['snapshots']:,}"
+        f"{counts['snapshots']:,}/{total_snapshots:,}"
     )
 
     print(
@@ -2368,6 +2588,16 @@ def parse_arguments():
         help=(
             "BBOX preset / sector folder name under "
             "data/raw/opensky_sectors/"
+        ),
+    )
+
+    parser.add_argument(
+        "--analysis-area",
+        default=DEFAULT_ANALYSIS_AREA,
+        help=(
+            "Exact area/polygon key from bbox_presets.json used for local "
+            "filtering before pairwise analysis. Use an empty string to disable "
+            f"local area clipping (default: {DEFAULT_ANALYSIS_AREA})."
         ),
     )
 
@@ -2427,6 +2657,24 @@ def main():
         arguments.sector
     )
 
+    analysis_area_key = (
+        arguments.analysis_area.strip()
+        if arguments.analysis_area
+        else ""
+    )
+
+    analysis_area = load_analysis_area(
+        analysis_area_key
+        if analysis_area_key
+        else None
+    )
+
+    output_area_key = (
+        analysis_area_key
+        if analysis_area_key
+        else sector
+    )
+
     start_month = (
         parse_month_key(
             arguments.start_month
@@ -2474,13 +2722,17 @@ def main():
     )
     print("=" * 78)
     print(
-        f"Sector: {sector}"
+        f"Source archive: {sector}"
+    )
+    print(
+        f"Exact analysis area: "
+        f"{analysis_area_key if analysis_area_key else 'disabled'}"
     )
     print(
         f"Input root: {INPUT_ROOT / sector}"
     )
     print(
-        f"Output root: {OUTPUT_ROOT / sector}"
+        f"Output root: {OUTPUT_ROOT / output_area_key}"
     )
     print(
         f"Monthly files: {len(monthly_files)}"
@@ -2550,7 +2802,9 @@ def main():
 
         counts = (
             analyse_month(
-                sector=sector,
+                source_sector=sector,
+                analysis_area_key=output_area_key,
+                analysis_area=analysis_area,
                 input_csv=input_csv,
                 year=year,
                 month=month,
