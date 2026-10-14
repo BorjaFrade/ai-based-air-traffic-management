@@ -52,6 +52,32 @@ from pathlib import Path
 
 import pandas as pd
 from dotenv import load_dotenv
+
+# IMPORTANT: pyOpenSky reads OPENSKY_USERNAME / OPENSKY_PASSWORD when
+# pyopensky.config is imported. Load credentials.env BEFORE importing
+# pyopensky.schema or pyopensky.trino.
+CREDENTIALS_FILE = Path(__file__).with_name(
+    "credentials.env"
+)
+
+load_dotenv(
+    CREDENTIALS_FILE,
+    override=True,
+)
+
+# Fail fast instead of silently opening hundreds of browser-authentication tabs.
+_opensky_username = os.getenv("OPENSKY_USERNAME")
+_opensky_password = os.getenv("OPENSKY_PASSWORD")
+
+if not _opensky_username or not _opensky_password:
+    raise RuntimeError(
+        "Missing OPENSKY_USERNAME / OPENSKY_PASSWORD in "
+        f"{CREDENTIALS_FILE}. Trino download aborted before pyOpenSky import."
+    )
+
+# OpenSky usernames are expected in lowercase for programmatic Trino access.
+os.environ["OPENSKY_USERNAME"] = _opensky_username.lower()
+
 from pyopensky.schema import StateVectorsData4
 from pyopensky.trino import Trino
 
@@ -68,7 +94,6 @@ from area_presets import (
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
-load_dotenv(PROJECT_ROOT / "credentials.env")
 
 BBOX_PRESETS_FILE = Path(__file__).with_name("bbox_presets.json")
 
@@ -255,18 +280,82 @@ def print_authentication_mode() -> None:
     username = os.getenv("OPENSKY_USERNAME")
     password = os.getenv("OPENSKY_PASSWORD")
 
+    print(f"Credentials file: {CREDENTIALS_FILE}")
+    print(f"Credentials file exists: {CREDENTIALS_FILE.exists()}")
+
     if username and password:
-        print("OpenSky authentication: credentials loaded from environment/.env")
+        print(
+            "OpenSky authentication: username/password loaded BEFORE "
+            "pyOpenSky import"
+        )
+        print(
+            "OpenSky username loaded: "
+            f"{username.lower()}"
+        )
     else:
         print(
-            "OpenSky authentication: no username/password found in "
-            "environment/.env; pyOpenSky may use browser authentication"
+            "OpenSky authentication: OPENSKY_USERNAME / OPENSKY_PASSWORD "
+            "not found in credentials.env"
         )
 
 
 def load_sector(sector_key: str) -> dict:
     presets = load_area_presets(BBOX_PRESETS_FILE)
     return resolve_area_preset(sector_key, presets)
+
+
+def to_epoch_seconds(series: pd.Series) -> pd.Series:
+    """Convert OpenSky timestamps robustly to Unix seconds.
+
+    Supports datetime values, ISO strings, and Unix timestamps in seconds,
+    milliseconds, microseconds or nanoseconds.
+    """
+    if pd.api.types.is_numeric_dtype(series):
+        numeric = pd.to_numeric(
+            series,
+            errors="coerce",
+        ).astype("float64")
+
+        finite = numeric[
+            numeric.notna()
+        ]
+
+        if finite.empty:
+            return numeric
+
+        magnitude = float(
+            finite.abs().median()
+        )
+
+        if magnitude > 1e17:
+            return numeric / 1_000_000_000.0
+
+        if magnitude > 1e14:
+            return numeric / 1_000_000.0
+
+        if magnitude > 1e11:
+            return numeric / 1_000.0
+
+        return numeric
+
+    values = pd.to_datetime(
+        series,
+        utc=True,
+        errors="coerce",
+        format="mixed",
+    )
+
+    epoch = pd.Timestamp(
+        "1970-01-01",
+        tz="UTC",
+    )
+
+    return (
+        values
+        .sub(epoch)
+        .dt.total_seconds()
+        .astype("float64")
+    )
 
 
 def trino_filters():
@@ -339,9 +428,8 @@ def query_window(
 
     # Defensive exact temporal clipping to [start, end), preventing duplicate
     # boundary rows when adjacent windows are concatenated.
-    numeric_time = pd.to_numeric(
-        result["time"],
-        errors="coerce",
+    numeric_time = to_epoch_seconds(
+        result["time"]
     )
 
     start_epoch = window.start.timestamp()

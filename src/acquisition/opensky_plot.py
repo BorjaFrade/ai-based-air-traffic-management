@@ -34,6 +34,29 @@ WAYPOINT_EDGE_COLOR = "black"
 WAYPOINT_EDGE_WIDTH = 0.9
 WAYPOINT_LABEL_COLOR = "white"
 
+# Dynamic safety-state configuration. These defaults are replaced by
+# config=globals() from the acquisition script.
+ENABLED_SAFETY_STATES = {
+    "NORMAL",
+    "PROXIMITY",
+    "HIGH_RISK",
+    "CONFLICT",
+}
+
+SAFETY_STATE_COLORS = {
+    "NORMAL": "#00A651",
+    "PROXIMITY": "#FFD400",
+    "HIGH_RISK": "#FF6F00",
+    "CONFLICT": "#D7191C",
+}
+
+SAFETY_STATE_DISPLAY_NAMES = {
+    "NORMAL": "Normal separation",
+    "PROXIMITY": "Proximity warning",
+    "HIGH_RISK": "High-risk separation",
+    "CONFLICT": "Loss of separation",
+}
+
 _BASEMAP_CACHE = {}
 _CITY_CACHE = {}
 
@@ -320,21 +343,50 @@ def set_geographic_aspect(
 def get_state_color(
     state,
 ):
-    """Return the high-contrast colour assigned to a safety state."""
+    """Return the colour configured for the canonical safety state."""
 
-    if state == STATE_CONFLICT:
-        return CONFLICT_AIRCRAFT_COLOR
+    colours = globals().get(
+        "SAFETY_STATE_COLORS",
+        {},
+    )
 
-    if state == STATE_HIGH_RISK:
-        return HIGH_RISK_AIRCRAFT_COLOR
+    if state in colours:
+        return colours[
+            state
+        ]
 
-    if state == STATE_PROXIMITY:
-        return PROXIMITY_AIRCRAFT_COLOR
+    # Backward-compatible fallbacks.
+    if state == globals().get(
+        "STATE_CONFLICT",
+        "CONFLICT",
+    ):
+        return globals().get(
+            "CONFLICT_AIRCRAFT_COLOR",
+            "#D7191C",
+        )
 
-    if state == globals().get("STATE_WARNING", "__UNUSED__"):
-        return PROXIMITY_AIRCRAFT_COLOR
+    if state == globals().get(
+        "STATE_HIGH_RISK",
+        "HIGH_RISK",
+    ):
+        return globals().get(
+            "HIGH_RISK_AIRCRAFT_COLOR",
+            "#FF6F00",
+        )
 
-    return NORMAL_AIRCRAFT_COLOR
+    if state == globals().get(
+        "STATE_PROXIMITY",
+        "PROXIMITY",
+    ):
+        return globals().get(
+            "PROXIMITY_AIRCRAFT_COLOR",
+            "#FFD400",
+        )
+
+    return globals().get(
+        "NORMAL_AIRCRAFT_COLOR",
+        "#00A651",
+    )
 
 
 # ============================================================
@@ -3408,71 +3460,72 @@ def render_map(
     # FINAL SAFETY SUMMARY
     # ============================================================
     
-    normal_aircraft = sum(
-    
-        state == STATE_NORMAL
-    
-        for state
-        in aircraft_states.values()
-    )
-    
-    
-    proximity_aircraft = sum(
-        state == STATE_PROXIMITY
-        for state in aircraft_states.values()
+    state_counts = {
+        state: sum(
+            current_state == state
+            for current_state
+            in aircraft_states.values()
+        )
+        for state in (
+            STATE_NORMAL,
+            STATE_PROXIMITY,
+            STATE_HIGH_RISK,
+            STATE_CONFLICT,
+        )
+    }
+
+    enabled = set(
+        globals().get(
+            "ENABLED_SAFETY_STATES",
+            {
+                STATE_NORMAL,
+                STATE_PROXIMITY,
+                STATE_HIGH_RISK,
+                STATE_CONFLICT,
+            },
+        )
     )
 
-    high_risk_aircraft = sum(
-        state == STATE_HIGH_RISK
-        for state in aircraft_states.values()
+    display_names = globals().get(
+        "SAFETY_STATE_DISPLAY_NAMES",
+        {},
     )
 
-    conflict_aircraft = sum(
-    
-        state == STATE_CONFLICT
-    
-        for state
-        in aircraft_states.values()
-    )
-    
-    
     print()
-    
+
     print("=" * 80)
-    
+
     print(
         "AIRCRAFT SAFETY STATES"
     )
-    
+
     print("=" * 80)
-    
-    
-    print(
-    
-        f"GREEN  / normal             : "
-        f"{normal_aircraft}"
-    )
-    
-    
-    print(
-        f"YELLOW / proximity warning  : "
-        f"{proximity_aircraft}"
+
+    ordered_states = (
+        STATE_NORMAL,
+        STATE_PROXIMITY,
+        STATE_HIGH_RISK,
+        STATE_CONFLICT,
     )
 
-    print(
-        f"ORANGE / high risk          : "
-        f"{high_risk_aircraft}"
-    )
+    for configured_state in ordered_states:
 
-    print(
-        f"RED    / loss of separation : "
-        f"{conflict_aircraft}"
-    )
-    
-    
+        if configured_state not in enabled:
+            continue
+
+        display_name = display_names.get(
+            configured_state,
+            configured_state,
+        )
+
+        print(
+            f"{display_name:<30}: "
+            f"{state_counts[configured_state]}"
+        )
+
     print("=" * 80)
-    
-    
+
+
     if save:
 
         # ========================================================

@@ -52,6 +52,10 @@ from opensky_safety import (
     STATE_CONFLICT,
     analyse_aircraft_snapshot,
     relevant_pair_results,
+    load_safety_profile,
+    enabled_states,
+    state_colours,
+    state_display_names,
 )
 
 # ============================================================
@@ -64,8 +68,12 @@ PROJECT_ROOT = (
     .parents[2]
 )
 
+CREDENTIALS_FILE = Path(__file__).with_name(
+    "credentials.env"
+)
+
 load_dotenv(
-    PROJECT_ROOT / "credentials.env"
+    CREDENTIALS_FILE
 )
 
 
@@ -378,36 +386,85 @@ PREDICTION_STEP_SECONDS = 5
 
 SEPARATION_PROFILE = "ENROUTE"
 
-MIN_HORIZONTAL_SEPARATION_NM = 5.0
+SEPARATION_PROFILES_FILE = Path(__file__).with_name(
+    "separation_profiles.json"
+)
 
-MIN_VERTICAL_SEPARATION_FT = 1000.0
+ACTIVE_SAFETY_PROFILE = load_safety_profile(
+    SEPARATION_PROFILES_FILE,
+    SEPARATION_PROFILE,
+)
+
+SAFETY_STATE_RULES = ACTIVE_SAFETY_PROFILE["states"]
+
+ENABLED_SAFETY_STATES = enabled_states(
+    SAFETY_STATE_RULES
+)
+
+SAFETY_STATE_COLORS = state_colours(
+    SAFETY_STATE_RULES
+)
+
+SAFETY_STATE_DISPLAY_NAMES = state_display_names(
+    SAFETY_STATE_RULES
+)
+
+RED_SEPARATION_RULE = SAFETY_STATE_RULES[
+    STATE_CONFLICT
+]
+
+MIN_HORIZONTAL_SEPARATION_NM = float(
+    RED_SEPARATION_RULE[
+        "horizontal_nm"
+    ]
+)
+
+MIN_VERTICAL_SEPARATION_FT = float(
+    RED_SEPARATION_RULE[
+        "vertical_ft"
+    ]
+)
+
+# Compatibility values for older renderer/helper code. The actual classifier
+# uses SAFETY_STATE_RULES directly.
+_WARNING_REFERENCE_RULE = (
+    SAFETY_STATE_RULES.get(STATE_PROXIMITY)
+    or SAFETY_STATE_RULES.get(STATE_HIGH_RISK)
+    or RED_SEPARATION_RULE
+)
+
+WARNING_HORIZONTAL_NM = float(
+    _WARNING_REFERENCE_RULE.get(
+        "horizontal_nm",
+        MIN_HORIZONTAL_SEPARATION_NM,
+    )
+)
+
+WARNING_VERTICAL_FT = float(
+    _WARNING_REFERENCE_RULE.get(
+        "vertical_ft",
+        MIN_VERTICAL_SEPARATION_FT,
+    )
+)
+
+WARNING_HORIZONTAL_FACTOR = (
+    WARNING_HORIZONTAL_NM
+    / MIN_HORIZONTAL_SEPARATION_NM
+)
+
+WARNING_VERTICAL_FACTOR = (
+    WARNING_VERTICAL_FT
+    / MIN_VERTICAL_SEPARATION_FT
+)
+
+WARNING_FACTOR = max(
+    WARNING_HORIZONTAL_FACTOR,
+    WARNING_VERTICAL_FACTOR,
+)
 
 FILTER_CRUISE_FL_BAND = True
 CRUISE_FL_MIN = 290
 CRUISE_FL_MAX = 410
-
-
-WARNING_FACTOR = 1.50
-
-WARNING_HORIZONTAL_FACTOR = WARNING_FACTOR
-
-WARNING_VERTICAL_FACTOR = WARNING_FACTOR
-
-
-WARNING_HORIZONTAL_NM = (
-
-    MIN_HORIZONTAL_SEPARATION_NM
-    * WARNING_HORIZONTAL_FACTOR
-
-)
-
-
-WARNING_VERTICAL_FT = (
-
-    MIN_VERTICAL_SEPARATION_FT
-    * WARNING_VERTICAL_FACTOR
-
-)
 
 
 # ------------------------------------------------------------
@@ -424,10 +481,18 @@ SAFETY_AREA_POINTS = 120
 STATE_WARNING = STATE_PROXIMITY  # backward-compatible alias
 
 
-NORMAL_AIRCRAFT_COLOR = "#00A651"
-PROXIMITY_AIRCRAFT_COLOR = "#FFD400"
-HIGH_RISK_AIRCRAFT_COLOR = "#FF6F00"
-CONFLICT_AIRCRAFT_COLOR = "#D7191C"
+NORMAL_AIRCRAFT_COLOR = SAFETY_STATE_COLORS[
+    STATE_NORMAL
+]
+PROXIMITY_AIRCRAFT_COLOR = SAFETY_STATE_COLORS[
+    STATE_PROXIMITY
+]
+HIGH_RISK_AIRCRAFT_COLOR = SAFETY_STATE_COLORS[
+    STATE_HIGH_RISK
+]
+CONFLICT_AIRCRAFT_COLOR = SAFETY_STATE_COLORS[
+    STATE_CONFLICT
+]
 
 WARNING_AIRCRAFT_COLOR = PROXIMITY_AIRCRAFT_COLOR
 
@@ -1341,6 +1406,7 @@ def analyse_snapshot(
             min_horizontal_nm=MIN_HORIZONTAL_SEPARATION_NM,
             min_vertical_ft=MIN_VERTICAL_SEPARATION_FT,
             warning_factor=WARNING_FACTOR,
+            state_rules=SAFETY_STATE_RULES,
             lookahead_minutes=LOOKAHEAD_MINUTES,
             prediction_step_seconds=PREDICTION_STEP_SECONDS,
             check_ground_aircraft=CHECK_GROUND_AIRCRAFT_SAFETY,

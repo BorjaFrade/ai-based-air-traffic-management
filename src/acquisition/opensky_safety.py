@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import json
 import math
+from pathlib import Path
 from typing import Iterable
 
 import numpy as np
@@ -23,6 +25,362 @@ STATE_PRIORITY = {
 }
 
 
+
+DEFAULT_STATE_COLOURS = {
+    STATE_NORMAL: "#00A651",
+    STATE_PROXIMITY: "#FFD400",
+    STATE_HIGH_RISK: "#FF6F00",
+    STATE_CONFLICT: "#D7191C",
+}
+
+DEFAULT_STATE_DISPLAY_NAMES = {
+    STATE_NORMAL: "Normal separation",
+    STATE_PROXIMITY: "Proximity warning",
+    STATE_HIGH_RISK: "High-risk separation",
+    STATE_CONFLICT: "Loss of separation",
+}
+
+
+def normalize_state_rules(
+    states_config: dict | None,
+) -> dict[str, dict]:
+    """
+    Convert descriptive JSON keys such as ORANGE_HIGH_RISK into a mapping keyed
+    by the canonical internal state names.
+
+    A state is active when:
+      - its block exists, and
+      - enabled is omitted or True.
+
+    Therefore a state can be disabled either by deleting its JSON block or by
+    setting "enabled": false.
+    """
+    output: dict[str, dict] = {}
+
+    if not isinstance(states_config, dict):
+        return output
+
+    for config_key, raw_rule in states_config.items():
+        if not isinstance(raw_rule, dict):
+            continue
+
+        if raw_rule.get("enabled", True) is False:
+            continue
+
+        state = str(
+            raw_rule.get("state", "")
+        ).strip().upper()
+
+        if state not in STATE_PRIORITY:
+            continue
+
+        rule = dict(raw_rule)
+        rule["config_key"] = str(config_key)
+        output[state] = rule
+
+    return output
+
+
+def resolve_safety_profile(
+    profile: dict,
+) -> dict:
+    """
+    Resolve a profile from separation_profiles.json.
+
+    New format:
+        profile["states"]
+
+    Legacy format:
+        horizontal_nm
+        vertical_ft
+
+    Legacy profiles are automatically expanded to the four-state model using
+    warning_factor=1.5 unless another value is present.
+    """
+    if not isinstance(profile, dict):
+        raise ValueError("Separation profile must be a JSON object")
+
+    state_rules = normalize_state_rules(
+        profile.get("states")
+    )
+
+    if not state_rules:
+        min_horizontal = float(
+            profile["horizontal_nm"]
+        )
+        min_vertical = float(
+            profile["vertical_ft"]
+        )
+        warning_factor = float(
+            profile.get(
+                "warning_factor",
+                1.5,
+            )
+        )
+
+        state_rules = {
+            STATE_NORMAL: {
+                "state": STATE_NORMAL,
+                "display_name": DEFAULT_STATE_DISPLAY_NAMES[STATE_NORMAL],
+                "colour": DEFAULT_STATE_COLOURS[STATE_NORMAL],
+                "rule": "otherwise",
+            },
+            STATE_PROXIMITY: {
+                "state": STATE_PROXIMITY,
+                "display_name": DEFAULT_STATE_DISPLAY_NAMES[STATE_PROXIMITY],
+                "colour": DEFAULT_STATE_COLOURS[STATE_PROXIMITY],
+                "horizontal_nm": min_horizontal * warning_factor,
+                "vertical_ft": min_vertical * warning_factor,
+                "rule": "inside_envelope_if_no_more_severe_state_matches",
+            },
+            STATE_HIGH_RISK: {
+                "state": STATE_HIGH_RISK,
+                "display_name": DEFAULT_STATE_DISPLAY_NAMES[STATE_HIGH_RISK],
+                "colour": DEFAULT_STATE_COLOURS[STATE_HIGH_RISK],
+                "horizontal_nm": min_horizontal * warning_factor,
+                "vertical_ft": min_vertical * warning_factor,
+                "rule": "inside_envelope_and_exactly_one_red_minimum_is_breached",
+            },
+            STATE_CONFLICT: {
+                "state": STATE_CONFLICT,
+                "display_name": DEFAULT_STATE_DISPLAY_NAMES[STATE_CONFLICT],
+                "colour": DEFAULT_STATE_COLOURS[STATE_CONFLICT],
+                "horizontal_nm": min_horizontal,
+                "vertical_ft": min_vertical,
+                "rule": "both_below",
+            },
+        }
+
+    if STATE_CONFLICT not in state_rules:
+        raise ValueError(
+            "The separation profile must contain an enabled CONFLICT / "
+            "RED_LOSS_OF_SEPARATION state because it defines the regulatory "
+            "minimum separation thresholds."
+        )
+
+    red_rule = state_rules[STATE_CONFLICT]
+
+    for field in ("horizontal_nm", "vertical_ft"):
+        if field not in red_rule:
+            raise ValueError(
+                f"CONFLICT state is missing required field: {field}"
+            )
+
+    return {
+        "profile_name": str(
+            profile.get(
+                "profile_name",
+                "Unnamed separation profile",
+            )
+        ),
+        "states": state_rules,
+        "legacy_horizontal_nm": float(
+            profile.get(
+                "horizontal_nm",
+                red_rule["horizontal_nm"],
+            )
+        ),
+        "legacy_vertical_ft": float(
+            profile.get(
+                "vertical_ft",
+                red_rule["vertical_ft"],
+            )
+        ),
+    }
+
+
+def load_safety_profile(
+    path: str | Path,
+    profile_name: str,
+) -> dict:
+    path = Path(path)
+
+    with path.open(
+        encoding="utf-8"
+    ) as profile_file:
+        payload = json.load(
+            profile_file
+        )
+
+    if profile_name not in payload:
+        raise ValueError(
+            f"Unknown separation profile: {profile_name}"
+        )
+
+    resolved = resolve_safety_profile(
+        payload[profile_name]
+    )
+
+    resolved["profile_key"] = profile_name
+
+    return resolved
+
+
+def state_rule(
+    state_rules: dict[str, dict] | None,
+    state: str,
+) -> dict | None:
+    if not state_rules:
+        return None
+
+    # Accept both already-normalised rules and raw JSON states.
+    if state in state_rules:
+        rule = state_rules[state]
+        if (
+            isinstance(rule, dict)
+            and rule.get("enabled", True) is not False
+        ):
+            return rule
+
+    return normalize_state_rules(
+        state_rules
+    ).get(
+        state
+    )
+
+
+def enabled_states(
+    state_rules: dict[str, dict] | None,
+) -> set[str]:
+    if not state_rules:
+        return set(
+            STATE_PRIORITY
+        )
+
+    if all(
+        key in STATE_PRIORITY
+        for key in state_rules
+    ):
+        return {
+            state
+            for state, rule in state_rules.items()
+            if (
+                isinstance(rule, dict)
+                and rule.get("enabled", True) is not False
+            )
+        }
+
+    return set(
+        normalize_state_rules(
+            state_rules
+        )
+    )
+
+
+def state_colours(
+    state_rules: dict[str, dict] | None,
+) -> dict[str, str]:
+    colours = dict(
+        DEFAULT_STATE_COLOURS
+    )
+
+    if not state_rules:
+        return colours
+
+    rules = (
+        state_rules
+        if all(
+            key in STATE_PRIORITY
+            for key in state_rules
+        )
+        else normalize_state_rules(
+            state_rules
+        )
+    )
+
+    for state, rule in rules.items():
+        colour = rule.get(
+            "colour",
+            rule.get(
+                "color"
+            ),
+        )
+
+        if colour:
+            colours[state] = str(
+                colour
+            )
+
+    return colours
+
+
+def state_display_names(
+    state_rules: dict[str, dict] | None,
+) -> dict[str, str]:
+    names = dict(
+        DEFAULT_STATE_DISPLAY_NAMES
+    )
+
+    if not state_rules:
+        return names
+
+    rules = (
+        state_rules
+        if all(
+            key in STATE_PRIORITY
+            for key in state_rules
+        )
+        else normalize_state_rules(
+            state_rules
+        )
+    )
+
+    for state, rule in rules.items():
+        display_name = rule.get(
+            "display_name"
+        )
+
+        if display_name:
+            names[state] = str(
+                display_name
+            )
+
+    return names
+
+
+def _inside_rule_envelope(
+    horizontal_nm: float,
+    vertical_ft: float | None,
+    rule: dict | None,
+) -> bool:
+    if rule is None:
+        return False
+
+    horizontal_limit = rule.get(
+        "horizontal_nm"
+    )
+    vertical_limit = rule.get(
+        "vertical_ft"
+    )
+
+    if horizontal_limit is None:
+        return False
+
+    if horizontal_nm >= float(
+        horizontal_limit
+    ):
+        return False
+
+    if (
+        vertical_ft is None
+        or not np.isfinite(
+            vertical_ft
+        )
+    ):
+        # With no vertical information, only proximity can be asserted
+        # conservatively. Callers decide whether that state is enabled.
+        return True
+
+    if vertical_limit is None:
+        return True
+
+    return (
+        vertical_ft
+        < float(
+            vertical_limit
+        )
+    )
+
 def combine_states(current_state: str, new_state: str) -> str:
     return (
         new_state
@@ -35,47 +393,187 @@ def classify_pair(
     horizontal_nm: float,
     vertical_ft: float | None,
     *,
-    min_horizontal_nm: float,
-    min_vertical_ft: float,
-    warning_horizontal_nm: float,
-    warning_vertical_ft: float,
+    min_horizontal_nm: float | None = None,
+    min_vertical_ft: float | None = None,
+    warning_horizontal_nm: float | None = None,
+    warning_vertical_ft: float | None = None,
+    state_rules: dict[str, dict] | None = None,
 ) -> str:
     """
-    Four-state classification used by the research visualisation.
+    Classify one aircraft pair.
 
-    RED / CONFLICT:
-        H < minimum horizontal AND V < minimum vertical.
+    Preferred mode
+    --------------
+    Pass state_rules loaded from separation_profiles.json.
 
-    ORANGE / HIGH_RISK:
-        Inside the warning envelope AND exactly one minimum has already
-        been infringed.
+    In that mode each safety state can be independently present/absent.
+    For example, if HIGH_RISK / orange is deleted or disabled, a pair that
+    would previously have been orange falls through to PROXIMITY / yellow
+    when it is inside the yellow envelope.
 
-    YELLOW / PROXIMITY:
-        Inside the warning envelope, but neither minimum is infringed.
-
-    GREEN / NORMAL:
-        Everything else.
-
-    Missing vertical information can never be classified as a confirmed
-    loss of separation. A close horizontal pair is conservatively marked as
-    PROXIMITY only when it is inside the horizontal warning threshold.
+    Backward-compatible mode
+    ------------------------
+    If state_rules is omitted, the original four-state thresholds supplied
+    through min_* and warning_* arguments are used.
     """
+
+    if state_rules is not None:
+        rules = (
+            state_rules
+            if all(
+                key in STATE_PRIORITY
+                for key in state_rules
+            )
+            else normalize_state_rules(
+                state_rules
+            )
+        )
+
+        red_rule = rules.get(
+            STATE_CONFLICT
+        )
+        orange_rule = rules.get(
+            STATE_HIGH_RISK
+        )
+        yellow_rule = rules.get(
+            STATE_PROXIMITY
+        )
+
+        if red_rule is None:
+            raise ValueError(
+                "state_rules must contain an enabled CONFLICT state"
+            )
+
+        red_horizontal = float(
+            red_rule[
+                "horizontal_nm"
+            ]
+        )
+        red_vertical = float(
+            red_rule[
+                "vertical_ft"
+            ]
+        )
+
+        vertical_valid = (
+            vertical_ft is not None
+            and np.isfinite(
+                vertical_ft
+            )
+        )
+
+        h_red = (
+            horizontal_nm
+            < red_horizontal
+        )
+
+        v_red = (
+            vertical_valid
+            and vertical_ft
+            < red_vertical
+        )
+
+        # RED always has first priority.
+        if (
+            vertical_valid
+            and h_red
+            and v_red
+        ):
+            return STATE_CONFLICT
+
+        # Without vertical information we cannot assert orange/red. If yellow
+        # exists and the horizontal threshold is breached, mark proximity.
+        if not vertical_valid:
+            if (
+                yellow_rule is not None
+                and _inside_rule_envelope(
+                    horizontal_nm,
+                    vertical_ft,
+                    yellow_rule,
+                )
+            ):
+                return STATE_PROXIMITY
+
+            return STATE_NORMAL
+
+        # ORANGE is optional.
+        if (
+            orange_rule is not None
+            and _inside_rule_envelope(
+                horizontal_nm,
+                vertical_ft,
+                orange_rule,
+            )
+            and (
+                h_red
+                ^ bool(
+                    v_red
+                )
+            )
+        ):
+            return STATE_HIGH_RISK
+
+        # YELLOW is optional. If orange is absent, orange-like geometry
+        # naturally falls through here and is treated as proximity.
+        if (
+            yellow_rule is not None
+            and _inside_rule_envelope(
+                horizontal_nm,
+                vertical_ft,
+                yellow_rule,
+            )
+        ):
+            return STATE_PROXIMITY
+
+        return STATE_NORMAL
+
+    # -----------------------------------------------------------------
+    # Legacy numeric-threshold mode
+    # -----------------------------------------------------------------
+    if None in (
+        min_horizontal_nm,
+        min_vertical_ft,
+        warning_horizontal_nm,
+        warning_vertical_ft,
+    ):
+        raise ValueError(
+            "Either state_rules or all legacy numeric thresholds must be supplied"
+        )
+
     if vertical_ft is None or not np.isfinite(vertical_ft):
         return (
             STATE_PROXIMITY
-            if horizontal_nm < warning_horizontal_nm
+            if horizontal_nm < float(
+                warning_horizontal_nm
+            )
             else STATE_NORMAL
         )
 
-    h_min = horizontal_nm < min_horizontal_nm
-    v_min = vertical_ft < min_vertical_ft
+    h_min = (
+        horizontal_nm
+        < float(
+            min_horizontal_nm
+        )
+    )
+    v_min = (
+        vertical_ft
+        < float(
+            min_vertical_ft
+        )
+    )
 
     if h_min and v_min:
         return STATE_CONFLICT
 
     inside_warning = (
-        horizontal_nm < warning_horizontal_nm
-        and vertical_ft < warning_vertical_ft
+        horizontal_nm
+        < float(
+            warning_horizontal_nm
+        )
+        and vertical_ft
+        < float(
+            warning_vertical_ft
+        )
     )
 
     if inside_warning and (h_min ^ v_min):
@@ -283,7 +781,8 @@ def analyse_aircraft_snapshot(
     *,
     min_horizontal_nm: float,
     min_vertical_ft: float,
-    warning_factor: float,
+    warning_factor: float = 1.5,
+    state_rules: dict[str, dict] | None = None,
     lookahead_minutes: Iterable[float] = (1, 2, 5),
     prediction_step_seconds: int = 5,
     check_ground_aircraft: bool = False,
@@ -349,6 +848,7 @@ def analyse_aircraft_snapshot(
                 min_vertical_ft=min_vertical_ft,
                 warning_horizontal_nm=warning_horizontal_nm,
                 warning_vertical_ft=warning_vertical_ft,
+                state_rules=state_rules,
             )
 
             aircraft_states[index_a] = combine_states(
@@ -410,6 +910,7 @@ def analyse_aircraft_snapshot(
                         min_vertical_ft=min_vertical_ft,
                         warning_horizontal_nm=warning_horizontal_nm,
                         warning_vertical_ft=warning_vertical_ft,
+                        state_rules=state_rules,
                     )
                     worst = combine_states(worst, state)
 

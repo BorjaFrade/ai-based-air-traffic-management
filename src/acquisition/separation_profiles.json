@@ -1,18 +1,166 @@
 {
   "ENROUTE": {
+    "profile_name": "En-route / RVSM",
     "horizontal_nm": 5.0,
-    "vertical_ft": 1000.0
+    "vertical_ft": 1000.0,
+    "states": {
+      "GREEN_NORMAL_OPERATION": {
+        "state": "NORMAL",
+        "enabled": true,
+        "display_name": "Normal separation",
+        "colour": "#00A651",
+        "rule": "otherwise"
+      },
+      "YELLOW_PROXIMITY_WARNING": {
+        "state": "PROXIMITY",
+        "enabled": true,
+        "display_name": "Proximity warning",
+        "colour": "#FFD400",
+        "horizontal_nm": 7.5,
+        "vertical_ft": 1500.0,
+        "rule": "inside_envelope_if_no_more_severe_state_matches"
+      },
+      "ORANGE_HIGH_RISK": {
+        "state": "HIGH_RISK",
+        "enabled": true,
+        "display_name": "High-risk separation",
+        "colour": "#FF6F00",
+        "horizontal_nm": 7.5,
+        "vertical_ft": 1500.0,
+        "rule": "inside_envelope_and_exactly_one_red_minimum_is_breached"
+      },
+      "RED_LOSS_OF_SEPARATION": {
+        "state": "CONFLICT",
+        "enabled": true,
+        "display_name": "Loss of separation",
+        "colour": "#D7191C",
+        "horizontal_nm": 5.0,
+        "vertical_ft": 1000.0,
+        "rule": "both_below"
+      }
+    }
   },
   "TERMINAL": {
+    "profile_name": "Terminal area",
     "horizontal_nm": 3.0,
-    "vertical_ft": 1000.0
+    "vertical_ft": 1000.0,
+    "states": {
+      "GREEN_NORMAL_OPERATION": {
+        "state": "NORMAL",
+        "enabled": true,
+        "display_name": "Normal separation",
+        "colour": "#00A651",
+        "rule": "otherwise"
+      },
+      "YELLOW_PROXIMITY_WARNING": {
+        "state": "PROXIMITY",
+        "enabled": true,
+        "display_name": "Proximity warning",
+        "colour": "#FFD400",
+        "horizontal_nm": 4.5,
+        "vertical_ft": 1500.0,
+        "rule": "inside_envelope_if_no_more_severe_state_matches"
+      },
+      "ORANGE_HIGH_RISK": {
+        "state": "HIGH_RISK",
+        "enabled": true,
+        "display_name": "High-risk separation",
+        "colour": "#FF6F00",
+        "horizontal_nm": 4.5,
+        "vertical_ft": 1500.0,
+        "rule": "inside_envelope_and_exactly_one_red_minimum_is_breached"
+      },
+      "RED_LOSS_OF_SEPARATION": {
+        "state": "CONFLICT",
+        "enabled": true,
+        "display_name": "Loss of separation",
+        "colour": "#D7191C",
+        "horizontal_nm": 3.0,
+        "vertical_ft": 1000.0,
+        "rule": "both_below"
+      }
+    }
   },
   "FINAL_APPROACH": {
+    "profile_name": "Final approach",
     "horizontal_nm": 2.5,
-    "vertical_ft": 1000.0
+    "vertical_ft": 1000.0,
+    "states": {
+      "GREEN_NORMAL_OPERATION": {
+        "state": "NORMAL",
+        "enabled": true,
+        "display_name": "Normal separation",
+        "colour": "#00A651",
+        "rule": "otherwise"
+      },
+      "YELLOW_PROXIMITY_WARNING": {
+        "state": "PROXIMITY",
+        "enabled": true,
+        "display_name": "Proximity warning",
+        "colour": "#FFD400",
+        "horizontal_nm": 3.75,
+        "vertical_ft": 1500.0,
+        "rule": "inside_envelope_if_no_more_severe_state_matches"
+      },
+      "ORANGE_HIGH_RISK": {
+        "state": "HIGH_RISK",
+        "enabled": true,
+        "display_name": "High-risk separation",
+        "colour": "#FF6F00",
+        "horizontal_nm": 3.75,
+        "vertical_ft": 1500.0,
+        "rule": "inside_envelope_and_exactly_one_red_minimum_is_breached"
+      },
+      "RED_LOSS_OF_SEPARATION": {
+        "state": "CONFLICT",
+        "enabled": true,
+        "display_name": "Loss of separation",
+        "colour": "#D7191C",
+        "horizontal_nm": 2.5,
+        "vertical_ft": 1000.0,
+        "rule": "both_below"
+      }
+    }
   },
   "CUSTOM": {
+    "profile_name": "Custom research profile",
     "horizontal_nm": 5.0,
-    "vertical_ft": 1000.0
+    "vertical_ft": 1000.0,
+    "states": {
+      "GREEN_NORMAL_OPERATION": {
+        "state": "NORMAL",
+        "enabled": true,
+        "display_name": "Normal separation",
+        "colour": "#00A651",
+        "rule": "otherwise"
+      },
+      "YELLOW_PROXIMITY_WARNING": {
+        "state": "PROXIMITY",
+        "enabled": true,
+        "display_name": "Proximity warning",
+        "colour": "#FFD400",
+        "horizontal_nm": 7.5,
+        "vertical_ft": 1500.0,
+        "rule": "inside_envelope_if_no_more_severe_state_matches"
+      },
+      "ORANGE_HIGH_RISK": {
+        "state": "HIGH_RISK",
+        "enabled": true,
+        "display_name": "High-risk separation",
+        "colour": "#FF6F00",
+        "horizontal_nm": 7.5,
+        "vertical_ft": 1500.0,
+        "rule": "inside_envelope_and_exactly_one_red_minimum_is_breached"
+      },
+      "RED_LOSS_OF_SEPARATION": {
+        "state": "CONFLICT",
+        "enabled": true,
+        "display_name": "Loss of separation",
+        "colour": "#D7191C",
+        "horizontal_nm": 5.0,
+        "vertical_ft": 1000.0,
+        "rule": "both_below"
+      }
+    }
   }
 }
