@@ -389,6 +389,356 @@ def combine_states(current_state: str, new_state: str) -> str:
     )
 
 
+
+def _normalised_state_rules(
+    state_rules: dict[str, dict] | None,
+) -> dict[str, dict]:
+    if not state_rules:
+        return {}
+
+    if all(
+        key in STATE_PRIORITY
+        for key in state_rules
+    ):
+        return state_rules
+
+    return normalize_state_rules(
+        state_rules
+    )
+
+
+def vertical_separation_for_rule(
+    vertical_ft: float | None,
+    *,
+    red_vertical_ft: float,
+    tolerance_ft: float = 0.0,
+) -> float | None:
+    """
+    Apply the numerical tolerance used by the separation rule.
+
+    Example for ENROUTE:
+        red_vertical_ft = 1000
+        tolerance_ft = 1
+
+    999.0 .. 1001.0 ft is treated as exactly 1000 ft. This prevents a
+    metres->feet conversion / CSV quantisation artefact such as 999.9998 ft
+    from being labelled as a loss of separation.
+    """
+    if (
+        vertical_ft is None
+        or not np.isfinite(
+            vertical_ft
+        )
+    ):
+        return None
+
+    value = float(
+        vertical_ft
+    )
+
+    tolerance_ft = max(
+        0.0,
+        float(
+            tolerance_ft
+        ),
+    )
+
+    if (
+        abs(
+            value
+            - float(
+                red_vertical_ft
+            )
+        )
+        <= tolerance_ft
+    ):
+        return float(
+            red_vertical_ft
+        )
+
+    return value
+
+
+def profile_vertical_rate_deadband_fpm(
+    state_rules: dict[str, dict] | None,
+) -> float:
+    """
+    Return the vertical-rate deadband configured in the CONFLICT rule.
+    """
+    rules = _normalised_state_rules(
+        state_rules
+    )
+
+    red_rule = rules.get(
+        STATE_CONFLICT,
+        {},
+    )
+
+    try:
+        return max(
+            0.0,
+            float(
+                red_rule.get(
+                    "vertical_rate_deadband_fpm",
+                    0.0,
+                )
+            ),
+        )
+    except (
+        TypeError,
+        ValueError,
+    ):
+        return 0.0
+
+
+def classify_pair_dynamic(
+    horizontal_nm: float,
+    vertical_ft: float | None,
+    *,
+    next_horizontal_nm: float | None,
+    next_vertical_ft: float | None,
+    state_rules: dict[str, dict],
+) -> str:
+    """
+    Dynamic ENROUTE-style classification.
+
+    RED
+        H < red horizontal minimum AND effective V < red vertical minimum.
+
+    ORANGE / YELLOW
+        No current RED.
+        Pair lies inside the state's 2-D envelope.
+        The separator that is currently keeping the pair legal is actually
+        deteriorating between the current and next prediction samples.
+
+    Active separator logic
+    ----------------------
+    H < red H, V >= red V:
+        vertical separation is the active separator. It must be decreasing.
+
+    H >= red H, V < red V:
+        horizontal separation is the active separator. It must be decreasing.
+
+    H >= red H, V >= red V:
+        both dimensions independently satisfy the minima. Both must be
+        decreasing before a yellow/orange dynamic warning is asserted.
+
+    This deliberately leaves a stable RVSM crossing such as:
+        H = 0.3 NM, V = 1000 ft, relative vertical trend = 0
+    as NORMAL rather than HIGH_RISK/CONFLICT.
+    """
+    rules = _normalised_state_rules(
+        state_rules
+    )
+
+    red_rule = rules.get(
+        STATE_CONFLICT
+    )
+
+    if red_rule is None:
+        raise ValueError(
+            "state_rules must contain an enabled CONFLICT state"
+        )
+
+    red_horizontal = float(
+        red_rule[
+            "horizontal_nm"
+        ]
+    )
+
+    red_vertical = float(
+        red_rule[
+            "vertical_ft"
+        ]
+    )
+
+    vertical_tolerance = float(
+        red_rule.get(
+            "vertical_tolerance_ft",
+            0.0,
+        )
+    )
+
+    vertical_rule = (
+        vertical_separation_for_rule(
+            vertical_ft,
+            red_vertical_ft=red_vertical,
+            tolerance_ft=vertical_tolerance,
+        )
+    )
+
+    next_vertical_rule = (
+        vertical_separation_for_rule(
+            next_vertical_ft,
+            red_vertical_ft=red_vertical,
+            tolerance_ft=vertical_tolerance,
+        )
+    )
+
+    vertical_valid = (
+        vertical_rule is not None
+        and np.isfinite(
+            vertical_rule
+        )
+    )
+
+    h_red = (
+        float(
+            horizontal_nm
+        )
+        < red_horizontal
+    )
+
+    v_red = (
+        vertical_valid
+        and float(
+            vertical_rule
+        )
+        < red_vertical
+    )
+
+    if (
+        vertical_valid
+        and h_red
+        and v_red
+    ):
+        return STATE_CONFLICT
+
+    yellow_rule = rules.get(
+        STATE_PROXIMITY
+    )
+
+    orange_rule = rules.get(
+        STATE_HIGH_RISK
+    )
+
+    # Missing vertical information cannot justify orange/red. Preserve the
+    # conservative legacy behaviour by allowing YELLOW on horizontal proximity.
+    if not vertical_valid:
+        if (
+            yellow_rule is not None
+            and _inside_rule_envelope(
+                horizontal_nm,
+                vertical_ft,
+                yellow_rule,
+            )
+        ):
+            return STATE_PROXIMITY
+
+        return STATE_NORMAL
+
+    if (
+        next_horizontal_nm is None
+        or not np.isfinite(
+            next_horizontal_nm
+        )
+    ):
+        return STATE_NORMAL
+
+    if (
+        next_vertical_rule is None
+        or not np.isfinite(
+            next_vertical_rule
+        )
+    ):
+        return STATE_NORMAL
+
+    # Use the looser yellow rule for trend epsilons when available, otherwise
+    # fall back to small numerical epsilons.
+    trend_rule = (
+        yellow_rule
+        or orange_rule
+        or {}
+    )
+
+    horizontal_epsilon_nm = float(
+        trend_rule.get(
+            "horizontal_deterioration_epsilon_nm",
+            0.01,
+        )
+    )
+
+    vertical_epsilon_ft = float(
+        trend_rule.get(
+            "vertical_deterioration_epsilon_ft",
+            1.0,
+        )
+    )
+
+    horizontal_deteriorating = (
+        float(
+            next_horizontal_nm
+        )
+        < float(
+            horizontal_nm
+        )
+        - horizontal_epsilon_nm
+    )
+
+    vertical_deteriorating = (
+        float(
+            next_vertical_rule
+        )
+        < float(
+            vertical_rule
+        )
+        - vertical_epsilon_ft
+    )
+
+    # Determine which dimension is currently preventing a true loss of
+    # separation and require that separator to be deteriorating.
+    if (
+        h_red
+        and not v_red
+    ):
+        active_separator_deteriorating = (
+            vertical_deteriorating
+        )
+
+    elif (
+        not h_red
+        and v_red
+    ):
+        active_separator_deteriorating = (
+            horizontal_deteriorating
+        )
+
+    else:
+        # Both dimensions currently satisfy their regulatory minima.
+        # Do not issue a dynamic alert unless both are moving toward the
+        # protected volume.
+        active_separator_deteriorating = (
+            horizontal_deteriorating
+            and vertical_deteriorating
+        )
+
+    if not active_separator_deteriorating:
+        return STATE_NORMAL
+
+    # Tight envelope gets priority over the broader proximity envelope.
+    if (
+        orange_rule is not None
+        and _inside_rule_envelope(
+            horizontal_nm,
+            vertical_rule,
+            orange_rule,
+        )
+    ):
+        return STATE_HIGH_RISK
+
+    if (
+        yellow_rule is not None
+        and _inside_rule_envelope(
+            horizontal_nm,
+            vertical_rule,
+            yellow_rule,
+        )
+    ):
+        return STATE_PROXIMITY
+
+    return STATE_NORMAL
+
+
 def classify_pair(
     horizontal_nm: float,
     vertical_ft: float | None,
@@ -467,9 +817,27 @@ def classify_pair(
             < red_horizontal
         )
 
+        vertical_tolerance = float(
+            red_rule.get(
+                "vertical_tolerance_ft",
+                0.0,
+            )
+        )
+
+        vertical_rule = (
+            vertical_separation_for_rule(
+                vertical_ft,
+                red_vertical_ft=red_vertical,
+                tolerance_ft=vertical_tolerance,
+            )
+        )
+
         v_red = (
-            vertical_valid
-            and vertical_ft
+            vertical_rule is not None
+            and np.isfinite(
+                vertical_rule
+            )
+            and vertical_rule
             < red_vertical
         )
 
@@ -653,57 +1021,146 @@ def _callsign(row: pd.Series) -> str:
 def project_aircraft_state(
     row: pd.Series,
     time_seconds: float,
+    *,
+    vertical_rate_deadband_fpm: float = 0.0,
 ) -> tuple[float, float, float | None]:
     """
     Constant-velocity/track/vertical-rate kinematic projection.
+
+    Small reported vertical rates can be suppressed with
+    vertical_rate_deadband_fpm so nominally level aircraft remain level in
+    the prediction model.
     """
     lon = _numeric(row, "longitude", "lon")
     lat = _numeric(row, "latitude", "lat")
+
     if lon is None or lat is None:
-        raise ValueError("Aircraft position is missing")
+        raise ValueError(
+            "Aircraft position is missing"
+        )
 
     speed_ms = _speed_ms(row)
     track_deg = _track_deg(row)
 
-    if speed_ms is not None and track_deg is not None:
+    if (
+        speed_ms is not None
+        and track_deg is not None
+    ):
         projected_lon, projected_lat, _ = GEOD.fwd(
             lon,
             lat,
             track_deg,
-            speed_ms * float(time_seconds),
+            speed_ms
+            * float(
+                time_seconds
+            ),
         )
     else:
-        projected_lon, projected_lat = lon, lat
+        projected_lon, projected_lat = (
+            lon,
+            lat,
+        )
 
-    altitude_ft = _baro_altitude_ft(row)
+    altitude_ft = _baro_altitude_ft(
+        row
+    )
+
     if altitude_ft is not None:
+        vertical_rate_fpm = (
+            _vertical_rate_fpm(
+                row
+            )
+        )
+
+        if (
+            abs(
+                vertical_rate_fpm
+            )
+            <= max(
+                0.0,
+                float(
+                    vertical_rate_deadband_fpm
+                ),
+            )
+        ):
+            vertical_rate_fpm = 0.0
+
         altitude_ft += (
-            _vertical_rate_fpm(row)
-            * float(time_seconds)
+            vertical_rate_fpm
+            * float(
+                time_seconds
+            )
             / 60.0
         )
 
-    return float(projected_lon), float(projected_lat), altitude_ft
+    return (
+        float(
+            projected_lon
+        ),
+        float(
+            projected_lat
+        ),
+        altitude_ft,
+    )
 
 
 def pair_separation_at_time(
     aircraft_a: pd.Series,
     aircraft_b: pd.Series,
     time_seconds: float,
+    *,
+    vertical_rate_deadband_fpm: float = 0.0,
 ) -> tuple[float, float | None]:
-    lon_a, lat_a, alt_a = project_aircraft_state(aircraft_a, time_seconds)
-    lon_b, lat_b, alt_b = project_aircraft_state(aircraft_b, time_seconds)
+    lon_a, lat_a, alt_a = project_aircraft_state(
+        aircraft_a,
+        time_seconds,
+        vertical_rate_deadband_fpm=(
+            vertical_rate_deadband_fpm
+        ),
+    )
 
-    _, _, distance_m = GEOD.inv(lon_a, lat_a, lon_b, lat_b)
-    horizontal_nm = float(distance_m) / 1852.0
+    lon_b, lat_b, alt_b = project_aircraft_state(
+        aircraft_b,
+        time_seconds,
+        vertical_rate_deadband_fpm=(
+            vertical_rate_deadband_fpm
+        ),
+    )
+
+    _, _, distance_m = GEOD.inv(
+        lon_a,
+        lat_a,
+        lon_b,
+        lat_b,
+    )
+
+    horizontal_nm = (
+        float(
+            distance_m
+        )
+        / 1852.0
+    )
 
     vertical_ft = (
         None
-        if alt_a is None or alt_b is None
-        else abs(float(alt_a) - float(alt_b))
+        if (
+            alt_a is None
+            or alt_b is None
+        )
+        else abs(
+            float(
+                alt_a
+            )
+            - float(
+                alt_b
+            )
+        )
     )
 
-    return horizontal_nm, vertical_ft
+    return (
+        horizontal_nm,
+        vertical_ft,
+    )
 
 
 def _continuous_tcpa_seconds(
@@ -790,6 +1247,9 @@ def analyse_aircraft_snapshot(
     """
     Analyse current and predicted pairwise separation.
 
+    With state_rules, the current ENROUTE profile can use dynamic active-
+    separator logic for NORMAL / PROXIMITY / HIGH_RISK / CONFLICT.
+
     Returns:
       pair_results
       aircraft_current_states
@@ -797,15 +1257,29 @@ def analyse_aircraft_snapshot(
       skipped_pairs
     """
     if prediction_step_seconds <= 0:
-        raise ValueError("prediction_step_seconds must be positive")
+        raise ValueError(
+            "prediction_step_seconds must be positive"
+        )
 
-    warning_horizontal_nm = min_horizontal_nm * warning_factor
-    warning_vertical_ft = min_vertical_ft * warning_factor
+    warning_horizontal_nm = (
+        min_horizontal_nm
+        * warning_factor
+    )
 
-    intervals = _interval_boundaries_seconds(lookahead_minutes)
+    warning_vertical_ft = (
+        min_vertical_ft
+        * warning_factor
+    )
+
+    intervals = _interval_boundaries_seconds(
+        lookahead_minutes
+    )
+
     max_seconds = intervals[-1][1]
 
-    rows = list(aircraft.iterrows())
+    rows = list(
+        aircraft.iterrows()
+    )
 
     aircraft_states = {
         index: STATE_NORMAL
@@ -813,26 +1287,196 @@ def analyse_aircraft_snapshot(
     }
 
     interval_states = {
-        index: [STATE_NORMAL for _ in intervals]
+        index: [
+            STATE_NORMAL
+            for _ in intervals
+        ]
         for index in aircraft.index
     }
 
     pair_results: list[dict] = []
     skipped_pairs = 0
 
-    for i in range(len(rows)):
+    dynamic_rules = (
+        _normalised_state_rules(
+            state_rules
+        )
+    )
+
+    use_dynamic = bool(
+        dynamic_rules
+        and (
+            dynamic_rules.get(
+                STATE_PROXIMITY,
+                {},
+            ).get(
+                "requires_active_separator_deterioration",
+                False,
+            )
+            or dynamic_rules.get(
+                STATE_HIGH_RISK,
+                {},
+            ).get(
+                "requires_active_separator_deterioration",
+                False,
+            )
+        )
+    )
+
+    vertical_rate_deadband_fpm = (
+        profile_vertical_rate_deadband_fpm(
+            state_rules
+        )
+        if state_rules
+        else 0.0
+    )
+
+    red_rule = (
+        dynamic_rules.get(
+            STATE_CONFLICT,
+            {},
+        )
+        if dynamic_rules
+        else {}
+    )
+
+    red_vertical = float(
+        red_rule.get(
+            "vertical_ft",
+            min_vertical_ft,
+        )
+    )
+
+    vertical_tolerance = float(
+        red_rule.get(
+            "vertical_tolerance_ft",
+            0.0,
+        )
+    )
+
+    def separation_at(
+        aircraft_a,
+        aircraft_b,
+        time_s,
+    ):
+        return pair_separation_at_time(
+            aircraft_a,
+            aircraft_b,
+            float(
+                time_s
+            ),
+            vertical_rate_deadband_fpm=(
+                vertical_rate_deadband_fpm
+            ),
+        )
+
+    def classify_at(
+        aircraft_a,
+        aircraft_b,
+        time_s,
+        h_nm,
+        v_ft,
+    ):
+        if (
+            use_dynamic
+            and state_rules is not None
+        ):
+            next_time_s = min(
+                float(
+                    time_s
+                )
+                + float(
+                    prediction_step_seconds
+                ),
+                float(
+                    max_seconds
+                ),
+            )
+
+            if next_time_s <= float(
+                time_s
+            ):
+                next_h_nm = h_nm
+                next_v_ft = v_ft
+            else:
+                (
+                    next_h_nm,
+                    next_v_ft,
+                ) = separation_at(
+                    aircraft_a,
+                    aircraft_b,
+                    next_time_s,
+                )
+
+            return classify_pair_dynamic(
+                h_nm,
+                v_ft,
+                next_horizontal_nm=(
+                    next_h_nm
+                ),
+                next_vertical_ft=(
+                    next_v_ft
+                ),
+                state_rules=(
+                    state_rules
+                ),
+            )
+
+        return classify_pair(
+            h_nm,
+            v_ft,
+            min_horizontal_nm=(
+                min_horizontal_nm
+            ),
+            min_vertical_ft=(
+                min_vertical_ft
+            ),
+            warning_horizontal_nm=(
+                warning_horizontal_nm
+            ),
+            warning_vertical_ft=(
+                warning_vertical_ft
+            ),
+            state_rules=(
+                state_rules
+            ),
+        )
+
+    for i in range(
+        len(
+            rows
+        )
+    ):
         index_a, aircraft_a = rows[i]
 
-        if _on_ground(aircraft_a) and not check_ground_aircraft:
+        if (
+            _on_ground(
+                aircraft_a
+            )
+            and not check_ground_aircraft
+        ):
             continue
 
-        for j in range(i + 1, len(rows)):
+        for j in range(
+            i + 1,
+            len(
+                rows
+            ),
+        ):
             index_b, aircraft_b = rows[j]
 
-            if _on_ground(aircraft_b) and not check_ground_aircraft:
+            if (
+                _on_ground(
+                    aircraft_b
+                )
+                and not check_ground_aircraft
+            ):
                 continue
 
-            horizontal_nm, vertical_ft = pair_separation_at_time(
+            (
+                horizontal_nm,
+                vertical_ft,
+            ) = separation_at(
                 aircraft_a,
                 aircraft_b,
                 0.0,
@@ -841,117 +1485,246 @@ def analyse_aircraft_snapshot(
             if vertical_ft is None:
                 skipped_pairs += 1
 
-            current_state = classify_pair(
+            current_state = classify_at(
+                aircraft_a,
+                aircraft_b,
+                0.0,
                 horizontal_nm,
                 vertical_ft,
-                min_horizontal_nm=min_horizontal_nm,
-                min_vertical_ft=min_vertical_ft,
-                warning_horizontal_nm=warning_horizontal_nm,
-                warning_vertical_ft=warning_vertical_ft,
-                state_rules=state_rules,
             )
 
-            aircraft_states[index_a] = combine_states(
-                aircraft_states[index_a],
+            aircraft_states[
+                index_a
+            ] = combine_states(
+                aircraft_states[
+                    index_a
+                ],
                 current_state,
             )
-            aircraft_states[index_b] = combine_states(
-                aircraft_states[index_b],
+
+            aircraft_states[
+                index_b
+            ] = combine_states(
+                aircraft_states[
+                    index_b
+                ],
                 current_state,
             )
 
             pair_interval_states: list[str] = []
-            pair_min_horizontal_nm = horizontal_nm
-            pair_min_vertical_at_cpa_ft = vertical_ft
+
+            pair_min_horizontal_nm = (
+                horizontal_nm
+            )
+
+            pair_min_vertical_at_cpa_ft = (
+                vertical_ft
+            )
+
             pair_tcpa_s = 0.0
 
-            # Continuous horizontal TCPA/CPA estimate.
-            continuous_tcpa = _continuous_tcpa_seconds(
-                aircraft_a,
-                aircraft_b,
-                max_seconds,
+            continuous_tcpa = (
+                _continuous_tcpa_seconds(
+                    aircraft_a,
+                    aircraft_b,
+                    max_seconds,
+                )
             )
+
             if continuous_tcpa is not None:
-                cpa_h, cpa_v = pair_separation_at_time(
+                (
+                    cpa_h,
+                    cpa_v,
+                ) = separation_at(
                     aircraft_a,
                     aircraft_b,
                     continuous_tcpa,
                 )
-                pair_min_horizontal_nm = cpa_h
-                pair_min_vertical_at_cpa_ft = cpa_v
-                pair_tcpa_s = continuous_tcpa
 
-            for interval_index, (start_s, end_s) in enumerate(intervals):
+                pair_min_horizontal_nm = (
+                    cpa_h
+                )
+
+                pair_min_vertical_at_cpa_ft = (
+                    cpa_v
+                )
+
+                pair_tcpa_s = (
+                    continuous_tcpa
+                )
+
+            for (
+                interval_index,
+                (
+                    start_s,
+                    end_s,
+                ),
+            ) in enumerate(
+                intervals
+            ):
                 worst = STATE_NORMAL
 
-                # Evaluate the full interval. The end point is included so that
-                # a conflict exactly at 1/2/5 min is not missed.
                 sample_times = np.arange(
                     start_s,
-                    end_s + prediction_step_seconds * 0.5,
+                    end_s
+                    + prediction_step_seconds
+                    * 0.5,
                     prediction_step_seconds,
                     dtype=float,
                 )
 
-                if sample_times.size == 0 or sample_times[-1] < end_s:
-                    sample_times = np.append(sample_times, end_s)
+                if (
+                    sample_times.size == 0
+                    or sample_times[-1] < end_s
+                ):
+                    sample_times = np.append(
+                        sample_times,
+                        end_s,
+                    )
 
                 for time_s in sample_times:
-                    h_nm, v_ft = pair_separation_at_time(
-                        aircraft_a,
-                        aircraft_b,
-                        float(time_s),
-                    )
-
-                    state = classify_pair(
+                    (
                         h_nm,
                         v_ft,
-                        min_horizontal_nm=min_horizontal_nm,
-                        min_vertical_ft=min_vertical_ft,
-                        warning_horizontal_nm=warning_horizontal_nm,
-                        warning_vertical_ft=warning_vertical_ft,
-                        state_rules=state_rules,
+                    ) = separation_at(
+                        aircraft_a,
+                        aircraft_b,
+                        float(
+                            time_s
+                        ),
                     )
-                    worst = combine_states(worst, state)
 
-                pair_interval_states.append(worst)
+                    state = classify_at(
+                        aircraft_a,
+                        aircraft_b,
+                        float(
+                            time_s
+                        ),
+                        h_nm,
+                        v_ft,
+                    )
 
-                interval_states[index_a][interval_index] = combine_states(
-                    interval_states[index_a][interval_index],
+                    worst = combine_states(
+                        worst,
+                        state,
+                    )
+
+                pair_interval_states.append(
+                    worst
+                )
+
+                interval_states[
+                    index_a
+                ][
+                    interval_index
+                ] = combine_states(
+                    interval_states[
+                        index_a
+                    ][
+                        interval_index
+                    ],
                     worst,
                 )
-                interval_states[index_b][interval_index] = combine_states(
-                    interval_states[index_b][interval_index],
+
+                interval_states[
+                    index_b
+                ][
+                    interval_index
+                ] = combine_states(
+                    interval_states[
+                        index_b
+                    ][
+                        interval_index
+                    ],
                     worst,
                 )
+
+            vertical_rule_ft = (
+                vertical_separation_for_rule(
+                    vertical_ft,
+                    red_vertical_ft=(
+                        red_vertical
+                    ),
+                    tolerance_ft=(
+                        vertical_tolerance
+                    ),
+                )
+            )
 
             result = {
                 "index_a": index_a,
                 "index_b": index_b,
-                "icao24_a": str(aircraft_a.get("icao24", "") or ""),
-                "icao24_b": str(aircraft_b.get("icao24", "") or ""),
-                "callsign_a": _callsign(aircraft_a),
-                "callsign_b": _callsign(aircraft_b),
-                "horizontal_sep_nm": horizontal_nm,
-                "vertical_sep_ft": vertical_ft,
-                "state_current": current_state,
-                "status_current": current_state,
-                "cpa_nm": pair_min_horizontal_nm,
-                "tcpa_s": pair_tcpa_s,
-                "vertical_sep_at_cpa_ft": pair_min_vertical_at_cpa_ft,
+                "icao24_a": str(
+                    aircraft_a.get(
+                        "icao24",
+                        "",
+                    )
+                    or ""
+                ),
+                "icao24_b": str(
+                    aircraft_b.get(
+                        "icao24",
+                        "",
+                    )
+                    or ""
+                ),
+                "callsign_a": _callsign(
+                    aircraft_a
+                ),
+                "callsign_b": _callsign(
+                    aircraft_b
+                ),
+                "horizontal_sep_nm": (
+                    horizontal_nm
+                ),
+                "vertical_sep_ft": (
+                    vertical_ft
+                ),
+                "vertical_sep_rule_ft": (
+                    vertical_rule_ft
+                ),
+                "state_current": (
+                    current_state
+                ),
+                "status_current": (
+                    current_state
+                ),
+                "cpa_nm": (
+                    pair_min_horizontal_nm
+                ),
+                "tcpa_s": (
+                    pair_tcpa_s
+                ),
+                "vertical_sep_at_cpa_ft": (
+                    pair_min_vertical_at_cpa_ft
+                ),
                 "predicted_conflict": any(
                     state == STATE_CONFLICT
-                    for state in pair_interval_states
+                    for state
+                    in pair_interval_states
                 ),
             }
 
-            for (start_s, end_s), state in zip(
+            for (
+                (
+                    start_s,
+                    end_s,
+                ),
+                state,
+            ) in zip(
                 intervals,
                 pair_interval_states,
             ):
-                result[_interval_column_name(start_s, end_s)] = state
+                result[
+                    _interval_column_name(
+                        start_s,
+                        end_s,
+                    )
+                ] = state
 
-            pair_results.append(result)
+            pair_results.append(
+                result
+            )
 
     return (
         pair_results,

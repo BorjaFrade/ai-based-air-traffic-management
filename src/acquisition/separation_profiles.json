@@ -1,8 +1,28 @@
 {
   "ENROUTE": {
     "profile_name": "En-route / RVSM",
+    "logic_version": "2026-10-16-v3-active-separator",
     "horizontal_nm": 5.0,
     "vertical_ft": 1000.0,
+    "comparison": {
+      "loss_horizontal": "<",
+      "loss_vertical": "<",
+      "boundary_is_safe": true,
+      "vertical_tolerance_ft": 1.0,
+      "description": "Loss of separation requires H < 5 NM AND effective V < 1000 ft. A raw vertical separation within +/-1 ft of 1000 ft is normalised to exactly 1000 ft before the rule comparison."
+    },
+    "prediction": {
+      "lookahead_minutes": [
+        1,
+        2,
+        5
+      ],
+      "prediction_step_seconds": 5,
+      "event_state_aggregation": "worst_of_current_and_0_1_1_2_2_5_min",
+      "vertical_rate_deadband_fpm": 100.0,
+      "logic": "active_separator_dynamic_envelopes",
+      "description": "Yellow/orange are dynamic near-miss states. They require the dimension(s) currently providing legal separation to be deteriorating. A level crossing at >=1000 ft vertical separation is not yellow/orange merely because H falls below 5 NM."
+    },
     "states": {
       "GREEN_NORMAL_OPERATION": {
         "state": "NORMAL",
@@ -18,16 +38,22 @@
         "colour": "#FFD400",
         "horizontal_nm": 7.5,
         "vertical_ft": 1500.0,
-        "rule": "inside_envelope_if_no_more_severe_state_matches"
+        "requires_active_separator_deterioration": true,
+        "horizontal_deterioration_epsilon_nm": 0.01,
+        "vertical_deterioration_epsilon_ft": 1.0,
+        "rule": "inside_envelope_and_active_separator_deteriorating"
       },
       "ORANGE_HIGH_RISK": {
         "state": "HIGH_RISK",
         "enabled": true,
-        "display_name": "High-risk separation",
+        "display_name": "High-risk near miss",
         "colour": "#FF6F00",
-        "horizontal_nm": 7.5,
-        "vertical_ft": 1500.0,
-        "rule": "inside_envelope_and_exactly_one_red_minimum_is_breached"
+        "horizontal_nm": 6.0,
+        "vertical_ft": 1200.0,
+        "requires_active_separator_deterioration": true,
+        "horizontal_deterioration_epsilon_nm": 0.01,
+        "vertical_deterioration_epsilon_ft": 1.0,
+        "rule": "inside_tight_envelope_and_active_separator_deteriorating"
       },
       "RED_LOSS_OF_SEPARATION": {
         "state": "CONFLICT",
@@ -36,6 +62,10 @@
         "colour": "#D7191C",
         "horizontal_nm": 5.0,
         "vertical_ft": 1000.0,
+        "vertical_tolerance_ft": 1.0,
+        "vertical_rate_deadband_fpm": 100.0,
+        "horizontal_operator": "<",
+        "vertical_operator": "<",
         "rule": "both_below"
       }
     }

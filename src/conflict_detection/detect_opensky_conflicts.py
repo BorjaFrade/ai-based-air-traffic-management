@@ -1,82 +1,36 @@
 #!/usr/bin/env python3
 """
-Detect OpenSky separation events in archived sector CSV files.
+Evaluate 1-, 2- and 5-minute separation alerts from preprocessed OpenSky
+10-second aircraft-state CSVs. Keep in project_root/src/conflict_detection/.
 
-The script reads monthly state-vector CSV files created under:
-
-    data/raw/opensky_sectors/<BBOX_PRESET>/year=YYYY/month=MM/
-
-and analyses every timestamp/snapshot using the same four-state safety logic
-implemented in opensky_safety.py:
-
-    NORMAL      -> green
-    PROXIMITY   -> yellow
-    HIGH_RISK   -> orange
-    CONFLICT    -> red / loss of separation
-
-For every monthly input CSV, derived NON-NORMAL event CSV files are written under:
-
-    data/processed/opensky_separation/<BBOX_PRESET>/year=YYYY/month=MM/
-
-with one row per relevant aircraft pair / timestamp:
-
-    *_separation_proximity_events.csv
-    *_separation_high_risk_events.csv   # only if HIGH_RISK is enabled
-    *_loss_of_separation_events.csv
-
-GREEN/NORMAL pairs are intentionally not exported by default because they are
-not violations and exporting every normal pair at every timestamp would create
-a very large combinatorial dataset. A sampled NORMAL dataset can be generated
-later for machine-learning negatives if required.
-
-The output category is the WORST state reached by the pair either now or in
-the configured look-ahead intervals (default: 0-1, 1-2 and 2-5 minutes).
-
-The output row still contains the complete state timeline so it is possible to
-distinguish:
-    - a current problem,
-    - a problem predicted in 0-1 min,
-    - a problem predicted in 1-2 min,
-    - a problem predicted in 2-5 min.
-
-The analysis uses barometric altitude for vertical separation.
-
-Master's Thesis:
-AI-Based Air Traffic Management
+Dependencies and separation_profiles.json remain in src/acquisition/.
+The raw Trino archives are not reread by this detector.
 """
 
 from __future__ import annotations
 
 import argparse
 import csv
-import json
 import math
 import re
 import sys
+import time
 from pathlib import Path
 from typing import Iterator
 
 import numpy as np
 import pandas as pd
+from pyproj import Geod
 
 
 # =============================================================================
-# LOCAL MODULE PATH
+# LOCAL DEPENDENCIES
 # =============================================================================
-#
-# This detector is expected to live in:
-#
-#     project_root/src/conflict_detection/
-#
-# Its shared OpenSky acquisition dependencies live in:
-#
-#     project_root/src/acquisition/
-#
-# Resolve that directory from this file instead of depending on the current
-# working directory or hardcoding an absolute machine-specific path.
+
 SCRIPT_DIR = Path(__file__).resolve().parent
 SRC_DIR = SCRIPT_DIR.parent
 ACQUISITION_DIR = SRC_DIR / "acquisition"
+PROJECT_ROOT = Path(__file__).resolve().parents[2]
 
 if not ACQUISITION_DIR.exists():
     raise FileNotFoundError(
@@ -87,107 +41,78 @@ if not ACQUISITION_DIR.exists():
 if str(ACQUISITION_DIR) not in sys.path:
     sys.path.insert(0, str(ACQUISITION_DIR))
 
-
-from area_presets import (
+from area_presets import (  # noqa: E402
+    filter_dataframe_to_area,
     load_area_presets,
     resolve_area_preset,
-    filter_dataframe_to_area,
 )
 
-from opensky_safety import (
+from opensky_safety import (  # noqa: E402
     STATE_NORMAL,
     STATE_PROXIMITY,
     STATE_HIGH_RISK,
     STATE_CONFLICT,
     STATE_PRIORITY,
-    analyse_aircraft_snapshot,
     classify_pair,
+    classify_pair_dynamic,
     pair_separation_at_time,
     load_safety_profile,
     enabled_states,
+    profile_vertical_rate_deadband_fpm,
+    vertical_separation_for_rule,
 )
 
 
 # =============================================================================
-# PROJECT PATHS
+# PATHS / DEFAULTS
 # =============================================================================
 
-PROJECT_ROOT = Path(__file__).resolve().parents[2]
+INPUT_ROOT = PROJECT_ROOT / "data" / "processed" / "opensky_10s"
+EVENT_OUTPUT_ROOT = PROJECT_ROOT / "data" / "processed" / "opensky_separation"
+SNAPSHOT_OUTPUT_ROOT = PROJECT_ROOT / "data" / "processed" / "opensky_snapshots"
 
-INPUT_ROOT = (
-    PROJECT_ROOT
-    / "data"
-    / "raw"
-    / "opensky_sectors"
-)
-
-OUTPUT_ROOT = (
-    PROJECT_ROOT
-    / "data"
-    / "processed"
-    / "opensky_separation"
-)
-
-SEPARATION_PROFILES_FILE = (
-    ACQUISITION_DIR
-    / "separation_profiles.json"
-)
-
-BBOX_PRESETS_FILE = (
-    ACQUISITION_DIR
-    / "bbox_presets.json"
-)
-
-
-# =============================================================================
-# DEFAULT ANALYSIS CONFIGURATION
-# =============================================================================
+BBOX_PRESETS_FILE = ACQUISITION_DIR / "bbox_presets.json"
+SEPARATION_PROFILES_FILE = ACQUISITION_DIR / "separation_profiles.json"
 
 DEFAULT_SECTOR = "LECMSAN_ENVELOPE"
 DEFAULT_ANALYSIS_AREA = "LECMSAN"
-
 SEPARATION_PROFILE = "ENROUTE"
 
-# Experimental warning envelope used by the current thesis configuration.
-WARNING_FACTOR = 1.50
+# Observation grid.
+SNAPSHOT_STEP_SECONDS = 10
 
-# Three prediction intervals:
-#   0-1 min
-#   1-2 min
-#   2-5 min
+# Prediction grid.
 LOOKAHEAD_MINUTES = (1, 2, 5)
-
-# Evaluate the complete look-ahead trajectory every 5 s.
+LOOKAHEAD_SECONDS = int(max(LOOKAHEAD_MINUTES) * 60)
 PREDICTION_STEP_SECONDS = 5
 
-# Ground aircraft are not part of en-route separation analysis.
-CHECK_GROUND_AIRCRAFT = False
+# Reconstruction safeguards.
+MAX_INTERPOLATION_GAP_SECONDS = 20.0
+MAX_EXTRAPOLATION_SECONDS = 10.0
+MAX_STATE_AGE_SECONDS = 15.0
+EXACT_POSITION_TOLERANCE_SECONDS = 0.75
 
-# Defensive cruise-band filter. The archive downloader can already apply this,
-# but keeping it here guarantees that this detector analyses the intended band.
+# Cruise experiment.
 FILTER_CRUISE_FL_BAND = True
 CRUISE_FL_MIN = 290
 CRUISE_FL_MAX = 410
+CHECK_GROUND_AIRCRAFT = False
 
-# CSV streaming. Increase on machines with more RAM.
+# Input streaming.
 READ_CHUNK_ROWS = 250_000
-
-# Re-running the detector is safe:
-# False -> skip a month if all three output files already exist.
-# True  -> regenerate that month's outputs.
-OVERWRITE_EXISTING = False
-
-# A monthly archive produced by download_opensky_sector_archive.py is expected
-# to be chronological by query window. Rows inside each read chunk are sorted
-# before grouping. If a later chunk contains timestamps older than an already
-# emitted snapshot, the script raises an error rather than silently producing
-# incomplete pairwise comparisons.
 REQUIRE_CHRONOLOGICAL_INPUT = True
 
+# Pair-screening switches.
+ENABLE_DISTANCE_PREFILTER = True
+ENABLE_CPA_PREFILTER = True
+CPA_PREFILTER_MARGIN_NM = 1.0
 
-# =============================================================================
-# OUTPUT NAMES
-# =============================================================================
+# Save regularised 10-second traffic states by default.
+SAVE_REGULARIZED_SNAPSHOTS = True
+
+MPS_TO_KT = 1.9438444924406
+MPS_TO_FPM = 196.8503937008
+GEOD = Geod(ellps="WGS84")
 
 OUTPUT_SUFFIXES = {
     STATE_PROXIMITY: "separation_proximity_events",
@@ -203,109 +128,7 @@ STATE_COLOURS = {
 
 
 # =============================================================================
-# OUTPUT COLUMNS
-# =============================================================================
-
-OUTPUT_COLUMNS = [
-    "sector",
-    "timestamp",
-    "timestamp_utc",
-
-    "event_state",
-    "event_colour",
-    "problem_description",
-    "event_timeline",
-    "first_alert_window",
-    "first_worst_state_window",
-
-    "alert_current",
-    "alert_0_1min",
-    "alert_1_2min",
-    "alert_2_5min",
-
-    "state_current",
-    "worst_status_0_1min",
-    "worst_status_1_2min",
-    "worst_status_2_5min",
-
-    "icao24_a",
-    "callsign_a",
-    "lat_a",
-    "lon_a",
-    "baro_altitude_ft_a",
-    "ground_speed_ms_a",
-    "ground_speed_kt_a",
-    "true_track_deg_a",
-    "vertical_rate_ms_a",
-    "vertical_rate_fpm_a",
-
-    "icao24_b",
-    "callsign_b",
-    "lat_b",
-    "lon_b",
-    "baro_altitude_ft_b",
-    "ground_speed_ms_b",
-    "ground_speed_kt_b",
-    "true_track_deg_b",
-    "vertical_rate_ms_b",
-    "vertical_rate_fpm_b",
-
-    "relative_horizontal_speed_kt",
-    "horizontal_closing_rate_kt",
-    "vertical_closing_rate_fpm",
-
-    "horizontal_sep_nm",
-    "vertical_sep_ft",
-
-    "cpa_nm",
-    "tcpa_s",
-    "vertical_sep_at_cpa_ft",
-
-    "min_horizontal_0_1min_nm",
-    "time_to_min_horizontal_0_1min_s",
-    "vertical_sep_at_min_horizontal_0_1min_ft",
-    "min_vertical_0_1min_ft",
-    "time_to_min_vertical_0_1min_s",
-    "horizontal_sep_at_min_vertical_0_1min_nm",
-
-    "min_horizontal_1_2min_nm",
-    "time_to_min_horizontal_1_2min_s",
-    "vertical_sep_at_min_horizontal_1_2min_ft",
-    "min_vertical_1_2min_ft",
-    "time_to_min_vertical_1_2min_s",
-    "horizontal_sep_at_min_vertical_1_2min_nm",
-
-    "min_horizontal_2_5min_nm",
-    "time_to_min_horizontal_2_5min_s",
-    "vertical_sep_at_min_horizontal_2_5min_ft",
-    "min_vertical_2_5min_ft",
-    "time_to_min_vertical_2_5min_s",
-    "horizontal_sep_at_min_vertical_2_5min_nm",
-
-    "min_horizontal_0_5min_nm",
-    "time_to_min_horizontal_0_5min_s",
-    "timestamp_min_horizontal_0_5min_utc",
-    "vertical_sep_at_min_horizontal_0_5min_ft",
-
-    "min_vertical_0_5min_ft",
-    "time_to_min_vertical_0_5min_s",
-    "timestamp_min_vertical_0_5min_utc",
-    "horizontal_sep_at_min_vertical_0_5min_nm",
-
-    "first_proximity_s",
-    "first_proximity_timestamp_utc",
-    "first_high_risk_s",
-    "first_high_risk_timestamp_utc",
-    "first_conflict_s",
-    "first_conflict_timestamp_utc",
-
-    "predicted_conflict",
-]
-
-
-
-# =============================================================================
-# CONFIGURATION HELPERS
+# SAFETY PROFILE
 # =============================================================================
 
 ACTIVE_SAFETY_PROFILE = load_safety_profile(
@@ -313,28 +136,17 @@ ACTIVE_SAFETY_PROFILE = load_safety_profile(
     SEPARATION_PROFILE,
 )
 
-SAFETY_STATE_RULES = ACTIVE_SAFETY_PROFILE[
-    "states"
-]
+SAFETY_STATE_RULES = ACTIVE_SAFETY_PROFILE["states"]
+ENABLED_SAFETY_STATES = enabled_states(SAFETY_STATE_RULES)
 
-ENABLED_SAFETY_STATES = enabled_states(
+RED_RULE = SAFETY_STATE_RULES[STATE_CONFLICT]
+MIN_HORIZONTAL_SEPARATION_NM = float(RED_RULE["horizontal_nm"])
+MIN_VERTICAL_SEPARATION_FT = float(RED_RULE["vertical_ft"])
+VERTICAL_SEPARATION_TOLERANCE_FT = float(
+    RED_RULE.get("vertical_tolerance_ft", 0.0)
+)
+VERTICAL_RATE_DEADBAND_FPM = profile_vertical_rate_deadband_fpm(
     SAFETY_STATE_RULES
-)
-
-RED_SEPARATION_RULE = SAFETY_STATE_RULES[
-    STATE_CONFLICT
-]
-
-MIN_HORIZONTAL_SEPARATION_NM = float(
-    RED_SEPARATION_RULE[
-        "horizontal_nm"
-    ]
-)
-
-MIN_VERTICAL_SEPARATION_FT = float(
-    RED_SEPARATION_RULE[
-        "vertical_ft"
-    ]
 )
 
 ACTIVE_EVENT_STATES = tuple(
@@ -348,2536 +160,1051 @@ ACTIVE_EVENT_STATES = tuple(
 )
 
 
-# =============================================================================
-# FILE DISCOVERY
-# =============================================================================
-
-MONTHLY_FILE_RE = re.compile(
-    r"^(?P<name>.+)_(?P<year>\d{4})-(?P<month>\d{2})\.csv$"
-)
-
-
-def parse_month_key(value: str | None) -> tuple[int, int] | None:
-    if value is None:
-        return None
-
-    match = re.fullmatch(
-        r"(\d{4})-(\d{2})",
-        value.strip(),
-    )
-
-    if not match:
-        raise ValueError(
-            "Month must use YYYY-MM format"
-        )
-
-    year = int(match.group(1))
-    month = int(match.group(2))
-
-    if not 1 <= month <= 12:
-        raise ValueError(
-            f"Invalid month: {month}"
-        )
-
-    return year, month
-
-
-def month_tuple_to_int(value: tuple[int, int]) -> int:
-    year, month = value
-    return year * 12 + month
-
-
-def discover_monthly_csvs(
-    sector: str,
-    start_month: tuple[int, int] | None,
-    end_month: tuple[int, int] | None,
-) -> list[tuple[Path, int, int]]:
-    sector_root = INPUT_ROOT / sector
-
-    if not sector_root.exists():
-        raise FileNotFoundError(
-            f"Sector archive folder not found:\n{sector_root}"
-        )
-
-    output = []
-
-    start_value = (
-        None
-        if start_month is None
-        else month_tuple_to_int(start_month)
-    )
-
-    end_value = (
-        None
-        if end_month is None
-        else month_tuple_to_int(end_month)
-    )
-
-    for csv_file in sector_root.rglob("*.csv"):
-
-        if "_window_cache" in csv_file.parts:
+def active_warning_horizontal_nm() -> float:
+    values = []
+    for state, rule in SAFETY_STATE_RULES.items():
+        if state == STATE_NORMAL or state not in ENABLED_SAFETY_STATES:
             continue
-
-        match = MONTHLY_FILE_RE.match(
-            csv_file.name
-        )
-
-        if not match:
+        try:
+            value = float(rule.get("horizontal_nm"))
+        except (TypeError, ValueError):
             continue
+        if np.isfinite(value):
+            values.append(value)
+    return max(values) if values else MIN_HORIZONTAL_SEPARATION_NM * 1.5
 
-        year = int(match.group("year"))
-        month = int(match.group("month"))
 
-        month_value = month_tuple_to_int(
-            (year, month)
-        )
-
-        if (
-            start_value is not None
-            and month_value < start_value
-        ):
+def active_warning_vertical_ft() -> float:
+    values = []
+    for state, rule in SAFETY_STATE_RULES.items():
+        if state == STATE_NORMAL or state not in ENABLED_SAFETY_STATES:
             continue
-
-        if (
-            end_value is not None
-            and month_value > end_value
-        ):
+        try:
+            value = float(rule.get("vertical_ft"))
+        except (TypeError, ValueError):
             continue
-
-        output.append(
-            (csv_file, year, month)
-        )
-
-    output.sort(
-        key=lambda item: (
-            item[1],
-            item[2],
-            str(item[0]),
-        )
-    )
-
-    return output
+        if np.isfinite(value):
+            values.append(value)
+    return max(values) if values else MIN_VERTICAL_SEPARATION_FT * 1.5
 
 
-def build_output_paths(
-    sector: str,
-    year: int,
-    month: int,
-) -> dict[str, Path]:
-
-    directory = (
-        OUTPUT_ROOT
-        / sector
-        / f"year={year:04d}"
-        / f"month={month:02d}"
-    )
-
-    base = (
-        f"{sector.lower()}_"
-        f"{year:04d}-{month:02d}"
-    )
-
-    return {
-        "directory": directory,
-
-        STATE_PROXIMITY:
-            directory
-            / f"{base}_separation_proximity_events.csv",
-
-        STATE_HIGH_RISK:
-            directory
-            / f"{base}_separation_high_risk_events.csv",
-
-        STATE_CONFLICT:
-            directory
-            / f"{base}_loss_of_separation_events.csv",
-    }
-
-
-# =============================================================================
-# INPUT NORMALISATION
-# =============================================================================
-
-def numeric_series(
-    dataframe: pd.DataFrame,
-    column: str,
-) -> pd.Series:
-    if column not in dataframe.columns:
-        return pd.Series(
-            np.nan,
-            index=dataframe.index,
-            dtype="float64",
-        )
-
-    return pd.to_numeric(
-        dataframe[column],
-        errors="coerce",
-    )
-
-
-def to_epoch_seconds(
-    series: pd.Series,
-) -> pd.Series:
+def classify_pair_active(
+    horizontal_nm: float,
+    vertical_ft: float | None,
+    *,
+    next_horizontal_nm: float | None = None,
+    next_vertical_ft: float | None = None,
+) -> str:
     """
-    Convert OpenSky timestamps robustly to Unix seconds.
+    Use the dynamic active-separator rules when enabled by the profile.
 
-    Supports:
-      - pandas datetime columns,
-      - ISO-8601 strings,
-      - Unix seconds,
-      - milliseconds,
-      - microseconds,
-      - nanoseconds.
+    Falls back to the legacy static classifier for older profiles.
     """
-    if pd.api.types.is_numeric_dtype(
-        series
-    ):
-        numeric = pd.to_numeric(
-            series,
-            errors="coerce",
-        ).astype("float64")
+    dynamic_enabled = (
+        SAFETY_STATE_RULES.get(
+            STATE_PROXIMITY,
+            {},
+        ).get(
+            "requires_active_separator_deterioration",
+            False,
+        )
+        or SAFETY_STATE_RULES.get(
+            STATE_HIGH_RISK,
+            {},
+        ).get(
+            "requires_active_separator_deterioration",
+            False,
+        )
+    )
 
-        finite = numeric[
-            np.isfinite(
-                numeric
-            )
-        ]
+    if dynamic_enabled:
+        return classify_pair_dynamic(
+            horizontal_nm,
+            vertical_ft,
+            next_horizontal_nm=(
+                next_horizontal_nm
+            ),
+            next_vertical_ft=(
+                next_vertical_ft
+            ),
+            state_rules=(
+                SAFETY_STATE_RULES
+            ),
+        )
 
+    kwargs = dict(
+        min_horizontal_nm=(
+            MIN_HORIZONTAL_SEPARATION_NM
+        ),
+        min_vertical_ft=(
+            MIN_VERTICAL_SEPARATION_FT
+        ),
+        warning_horizontal_nm=(
+            active_warning_horizontal_nm()
+        ),
+        warning_vertical_ft=(
+            active_warning_vertical_ft()
+        ),
+    )
+
+    try:
+        return classify_pair(
+            horizontal_nm,
+            vertical_ft,
+            state_rules=(
+                SAFETY_STATE_RULES
+            ),
+            **kwargs,
+        )
+    except TypeError:
+        return classify_pair(
+            horizontal_nm,
+            vertical_ft,
+            **kwargs,
+        )
+
+
+def combine_state(a: str, b: str) -> str:
+    return b if STATE_PRIORITY.get(b, -1) > STATE_PRIORITY.get(a, -1) else a
+
+
+# =============================================================================
+# GENERIC HELPERS
+# =============================================================================
+
+MONTHLY_FILE_RE = re.compile(r"^(?P<name>.+)_(?P<year>\d{4})-(?P<month>\d{2})\.csv$")
+
+
+def parse_day_utc(value: str) -> pd.Timestamp:
+    ts = pd.Timestamp(value)
+    if ts.tzinfo is None:
+        ts = ts.tz_localize("UTC")
+    else:
+        ts = ts.tz_convert("UTC")
+    return ts.normalize()
+
+
+def to_epoch_seconds(series: pd.Series) -> pd.Series:
+    if pd.api.types.is_numeric_dtype(series):
+        numeric = pd.to_numeric(series, errors="coerce").astype("float64")
+        finite = numeric[np.isfinite(numeric)]
         if finite.empty:
             return numeric
-
-        magnitude = float(
-            finite.abs().median()
-        )
-
+        magnitude = float(finite.abs().median())
         if magnitude > 1e17:
-            return (
-                numeric
-                / 1_000_000_000.0
-            )
-
+            return numeric / 1_000_000_000.0
         if magnitude > 1e14:
-            return (
-                numeric
-                / 1_000_000.0
-            )
-
+            return numeric / 1_000_000.0
         if magnitude > 1e11:
-            return (
-                numeric
-                / 1_000.0
-            )
-
+            return numeric / 1_000.0
         return numeric
 
-    values = pd.to_datetime(
-        series,
-        utc=True,
-        errors="coerce",
-        format="mixed",
-    )
-
-    epoch = pd.Timestamp(
-        "1970-01-01",
-        tz="UTC",
-    )
-
-    return (
-        values
-        .sub(epoch)
-        .dt.total_seconds()
-        .astype("float64")
-    )
+    values = pd.to_datetime(series, utc=True, errors="coerce", format="mixed")
+    epoch = pd.Timestamp("1970-01-01", tz="UTC")
+    return values.sub(epoch).dt.total_seconds().astype("float64")
 
 
-def load_analysis_area(
-    area_key: str | None,
-) -> dict | None:
-    """
-    Resolve the exact local analysis area.
+def row_numeric(row: pd.Series, *names: str) -> float | None:
+    for name in names:
+        value = row.get(name, np.nan)
+        try:
+            value = float(value)
+        except (TypeError, ValueError):
+            continue
+        if np.isfinite(value):
+            return value
+    return None
 
-    The input archive can be a rectangular envelope (for example
-    LECMSAN_ENVELOPE) while this detector clips every chunk locally to the
-    exact polygon (for example LECMSAN) before building aircraft pairs.
-    """
+
+def ground_speed_ms(row: pd.Series) -> float | None:
+    value = row_numeric(row, "velocity")
+    if value is not None:
+        return value
+    value_kt = row_numeric(row, "velocity_kts")
+    return None if value_kt is None else value_kt / MPS_TO_KT
+
+
+def track_deg(row: pd.Series) -> float | None:
+    return row_numeric(row, "true_track", "heading")
+
+
+def vertical_rate_ms(row: pd.Series) -> float | None:
+    value = row_numeric(row, "vertical_rate", "vertrate")
+    if value is not None:
+        return value
+    value_fpm = row_numeric(row, "vertical_rate_fpm")
+    return None if value_fpm is None else value_fpm / MPS_TO_FPM
+
+
+def altitude_ft(row: pd.Series) -> float | None:
+    value = row_numeric(row, "baroaltitude")
+    return None if value is None else value * 3.2808398950131
+
+
+def callsign_of(row: pd.Series) -> str:
+    value = str(row.get("callsign", "") or "").strip()
+    return value if value else str(row.get("icao24", "") or "").upper()
+
+
+def is_true_value(value) -> bool:
+    return str(value).strip().lower() in {"true", "1", "1.0", "yes"}
+
+
+def load_analysis_area(area_key: str | None) -> dict | None:
     if not area_key:
         return None
-
-    presets = load_area_presets(
-        BBOX_PRESETS_FILE
-    )
-
-    if area_key not in presets:
-        raise ValueError(
-            f"Unknown analysis area '{area_key}' in "
-            f"{BBOX_PRESETS_FILE}"
-        )
-
-    return resolve_area_preset(
-        area_key,
-        presets,
-    )
+    presets = load_area_presets(BBOX_PRESETS_FILE)
+    return resolve_area_preset(area_key, presets)
 
 
-def prepare_rows(
-    dataframe: pd.DataFrame,
-    analysis_area: dict | None = None,
-) -> pd.DataFrame:
-    """
-    Normalize the subset needed for snapshot analysis.
-    """
-    if dataframe.empty:
-        return dataframe
-
-    dataframe = dataframe.copy()
-
-    required_columns = {
-        "time",
-        "icao24",
-        "lat",
-        "lon",
-        "baroaltitude",
-    }
-
-    missing = (
-        required_columns
-        - set(dataframe.columns)
-    )
-
-    if missing:
-        raise ValueError(
-            "Input CSV is missing required columns: "
-            + ", ".join(sorted(missing))
-        )
-
-    dataframe["time"] = to_epoch_seconds(
-        dataframe["time"]
-    )
-
-    dataframe["lat"] = pd.to_numeric(
-        dataframe["lat"],
-        errors="coerce",
-    )
-
-    dataframe["lon"] = pd.to_numeric(
-        dataframe["lon"],
-        errors="coerce",
-    )
-
-    dataframe["baroaltitude"] = pd.to_numeric(
-        dataframe["baroaltitude"],
-        errors="coerce",
-    )
-
-    valid = (
-        dataframe["time"].notna()
-        & np.isfinite(dataframe["time"])
-        & dataframe["lat"].notna()
-        & np.isfinite(dataframe["lat"])
-        & dataframe["lon"].notna()
-        & np.isfinite(dataframe["lon"])
-    )
-
-    dataframe = dataframe.loc[
-        valid
-    ].copy()
-
-    if analysis_area is not None:
-        dataframe = filter_dataframe_to_area(
-            dataframe,
-            analysis_area,
-            latitude_column="lat",
-            longitude_column="lon",
-        )
-
-    if FILTER_CRUISE_FL_BAND:
-
-        lower_m = (
-            CRUISE_FL_MIN
-            * 100.0
-            * 0.3048
-        )
-
-        upper_m = (
-            CRUISE_FL_MAX
-            * 100.0
-            * 0.3048
-        )
-
-        dataframe = dataframe.loc[
-            dataframe["baroaltitude"].between(
-                lower_m,
-                upper_m,
-                inclusive="both",
-            )
-        ].copy()
-
-    if (
-        not CHECK_GROUND_AIRCRAFT
-        and "onground" in dataframe.columns
-    ):
-        onground = (
-            dataframe["onground"]
-            .astype(str)
-            .str.strip()
-            .str.lower()
-            .isin(
-                {
-                    "true",
-                    "1",
-                    "1.0",
-                    "yes",
-                }
-            )
-        )
-
-        dataframe = dataframe.loc[
-            ~onground
-        ].copy()
-
-    dataframe.sort_values(
-        ["time", "icao24"],
-        inplace=True,
-        kind="mergesort",
-    )
-
-    return dataframe
+# =============================================================================
+# FAST PAIR SCREENING / DETAILED LOOK-AHEAD
+# =============================================================================
 
 
-def prepare_snapshot(
-    snapshot: pd.DataFrame,
-) -> pd.DataFrame:
-    """
-    Ensure one state-vector record per aircraft at a timestamp.
 
-    If duplicates exist for one icao24/time combination, keep the record with
-    the newest last-contact value when available.
-    """
+def continuous_tcpa_seconds_local(
+    aircraft_a: pd.Series,
+    aircraft_b: pd.Series,
+    max_seconds: float,
+) -> float | None:
+    lat_a = row_numeric(aircraft_a, "lat", "latitude")
+    lon_a = row_numeric(aircraft_a, "lon", "longitude")
+    lat_b = row_numeric(aircraft_b, "lat", "latitude")
+    lon_b = row_numeric(aircraft_b, "lon", "longitude")
+    speed_a = ground_speed_ms(aircraft_a)
+    speed_b = ground_speed_ms(aircraft_b)
+    track_a = track_deg(aircraft_a)
+    track_b = track_deg(aircraft_b)
+
+    if None in (lat_a, lon_a, lat_b, lon_b, speed_a, speed_b, track_a, track_b):
+        return None
+
+    azimuth_ab, _, distance_m = GEOD.inv(lon_a, lat_a, lon_b, lat_b)
+    az = math.radians(azimuth_ab)
+    rx = distance_m * math.sin(az)
+    ry = distance_m * math.cos(az)
+
+    ta = math.radians(track_a)
+    tb = math.radians(track_b)
+    vax = speed_a * math.sin(ta)
+    vay = speed_a * math.cos(ta)
+    vbx = speed_b * math.sin(tb)
+    vby = speed_b * math.cos(tb)
+    rvx = vbx - vax
+    rvy = vby - vay
+
+    denom = rvx * rvx + rvy * rvy
+    if denom <= 1e-9:
+        return 0.0
+
+    tcpa = -((rx * rvx) + (ry * rvy)) / denom
+    return float(min(max(tcpa, 0.0), float(max_seconds)))
+
+
+def snapshot_unique(snapshot: pd.DataFrame) -> pd.DataFrame:
     snapshot = snapshot.copy()
-
-    if snapshot.empty:
-        return snapshot
-
     if "lastcontact" in snapshot.columns:
         snapshot["_lastcontact_numeric"] = pd.to_numeric(
-            snapshot["lastcontact"],
-            errors="coerce",
+            snapshot["lastcontact"], errors="coerce"
         )
-
         snapshot.sort_values(
-            [
-                "icao24",
-                "_lastcontact_numeric",
-            ],
+            ["icao24", "_lastcontact_numeric"],
             inplace=True,
             kind="mergesort",
         )
-
-    snapshot.drop_duplicates(
-        subset=["icao24"],
-        keep="last",
-        inplace=True,
-    )
-
-    snapshot.drop(
-        columns=["_lastcontact_numeric"],
-        errors="ignore",
-        inplace=True,
-    )
-
-    snapshot.reset_index(
-        drop=True,
-        inplace=True,
-    )
-
+    snapshot.drop_duplicates(subset=["icao24"], keep="last", inplace=True)
+    snapshot.drop(columns=["_lastcontact_numeric"], errors="ignore", inplace=True)
+    snapshot.reset_index(drop=True, inplace=True)
     return snapshot
 
 
-def iter_snapshots_from_month(
-    csv_file: Path,
-    chunksize: int,
-    analysis_area: dict | None = None,
-) -> Iterator[tuple[float, pd.DataFrame]]:
-    """
-    Stream a large monthly CSV while preserving complete OpenSky hour partitions.
-
-    The archive downloader appends Trino windows chronologically, but rows inside
-    an individual Trino result are not assumed to be timestamp-sorted. Therefore
-    this iterator buffers the final HOUR present in each pandas chunk, combines it
-    with the next chunk, sorts the completed hour by timestamp, and only then
-    emits complete snapshots.
-
-    This is safer than carrying only the final timestamp because it cannot split
-    one timestamp merely because Trino returned rows within an hour out of order.
-    """
-    carry = pd.DataFrame()
-    last_emitted_hour: int | None = None
-
-    for raw_chunk in pd.read_csv(
-        csv_file,
-        chunksize=chunksize,
-        low_memory=False,
-    ):
-
-        chunk = prepare_rows(
-            raw_chunk,
-            analysis_area=analysis_area,
-        )
-
-        if not carry.empty:
-            chunk = pd.concat(
-                [
-                    carry,
-                    chunk,
-                ],
-                ignore_index=True,
-            )
-
-        if chunk.empty:
-            carry = pd.DataFrame()
-            continue
-
-        # Derive the OpenSky partition hour directly from Unix time. This avoids
-        # depending on how pandas serialised the Trino `hour` column.
-        chunk["_hour_key"] = (
-            np.floor(
-                chunk["time"].astype("float64")
-                / 3600.0
-            )
-            .astype("int64")
-        )
-
-        minimum_hour = int(
-            chunk["_hour_key"].min()
-        )
-
-        if (
-            REQUIRE_CHRONOLOGICAL_INPUT
-            and last_emitted_hour is not None
-            and minimum_hour < last_emitted_hour
-        ):
-            raise ValueError(
-                "The monthly archive moved backwards to an already processed "
-                "OpenSky hour partition. Rebuild/sort the monthly archive before "
-                "running the detector."
-            )
-
-        last_hour = int(
-            chunk["_hour_key"].max()
-        )
-
-        complete = chunk.loc[
-            chunk["_hour_key"] < last_hour
-        ].copy()
-
-        carry = chunk.loc[
-            chunk["_hour_key"] == last_hour
-        ].copy()
-
-        if not complete.empty:
-            complete.sort_values(
-                ["time", "icao24"],
-                inplace=True,
-                kind="mergesort",
-            )
-
-            for hour_key, hour_frame in complete.groupby(
-                "_hour_key",
-                sort=True,
-            ):
-                hour_key = int(hour_key)
-
-                if (
-                    REQUIRE_CHRONOLOGICAL_INPUT
-                    and last_emitted_hour is not None
-                    and hour_key < last_emitted_hour
-                ):
-                    raise ValueError(
-                        "OpenSky hour partitions are not chronological."
-                    )
-
-                for timestamp, snapshot in hour_frame.groupby(
-                    "time",
-                    sort=True,
-                ):
-                    snapshot = prepare_snapshot(
-                        snapshot.drop(
-                            columns=["_hour_key"],
-                            errors="ignore",
-                        )
-                    )
-
-                    yield float(timestamp), snapshot
-
-                last_emitted_hour = hour_key
-
-    if not carry.empty:
-        carry.sort_values(
-            ["time", "icao24"],
-            inplace=True,
-            kind="mergesort",
-        )
-
-        for hour_key, hour_frame in carry.groupby(
-            "_hour_key",
-            sort=True,
-        ):
-            hour_key = int(hour_key)
-
-            if (
-                REQUIRE_CHRONOLOGICAL_INPUT
-                and last_emitted_hour is not None
-                and hour_key < last_emitted_hour
-            ):
-                raise ValueError(
-                    "OpenSky hour partitions are not chronological."
-                )
-
-            for timestamp, snapshot in hour_frame.groupby(
-                "time",
-                sort=True,
-            ):
-                snapshot = prepare_snapshot(
-                    snapshot.drop(
-                        columns=["_hour_key"],
-                        errors="ignore",
-                    )
-                )
-
-                yield float(timestamp), snapshot
-
-            last_emitted_hour = hour_key
-
-
-
-def count_snapshots_in_month(
-    csv_file: Path,
-    chunksize: int,
-    analysis_area: dict | None = None,
-) -> int:
-    """
-    Count the exact number of snapshots that will be analysed.
-
-    This performs a lightweight first pass through the monthly CSV using the
-    same input normalisation, FL filter and exact polygon filter as the main
-    analysis. The pairwise conflict calculations are NOT executed during this
-    pass.
-
-    The extra pass makes it possible to report progress as:
-
-        snapshots=8,000/123,456 (6.5%)
-
-    instead of only showing the number already processed.
-    """
-    total = 0
-
-    for _timestamp, _snapshot in iter_snapshots_from_month(
-        csv_file,
-        chunksize,
-        analysis_area=analysis_area,
-    ):
-        total += 1
-
-    return total
-
-
-# =============================================================================
-# PAIR KINEMATICS / LOOK-AHEAD METRICS
-# =============================================================================
-
-MPS_TO_KT = 1.9438444924406
-MPS_TO_FPM = 196.8503937008
-
-
-def row_numeric(
-    row: pd.Series,
-    *names: str,
-) -> float | None:
-
-    for name in names:
-        value = row.get(
-            name,
-            np.nan,
-        )
-
-        try:
-            value = float(
-                value
-            )
-        except (
-            TypeError,
-            ValueError,
-        ):
-            continue
-
-        if np.isfinite(
-            value
-        ):
-            return value
-
-    return None
-
-
-def ground_speed_ms(
-    row: pd.Series,
-) -> float | None:
-
-    value = row_numeric(
-        row,
-        "velocity",
-    )
-
-    if value is not None:
-        return value
-
-    value_kt = row_numeric(
-        row,
-        "velocity_kts",
-    )
-
-    if value_kt is not None:
-        return (
-            value_kt
-            / MPS_TO_KT
-        )
-
-    return None
-
-
-def track_deg(
-    row: pd.Series,
-) -> float | None:
-
-    return row_numeric(
-        row,
-        "true_track",
-        "heading",
-    )
-
-
-def vertical_rate_ms(
-    row: pd.Series,
-) -> float | None:
-
-    value = row_numeric(
-        row,
-        "vertical_rate",
-        "vertrate",
-    )
-
-    if value is not None:
-        return value
-
-    value_fpm = row_numeric(
-        row,
-        "vertical_rate_fpm",
-    )
-
-    if value_fpm is not None:
-        return (
-            value_fpm
-            / MPS_TO_FPM
-        )
-
-    return None
-
-
-def horizontal_relative_metrics(
+def evaluate_candidate_pair(
+    index_a: int,
     aircraft_a: pd.Series,
+    index_b: int,
     aircraft_b: pd.Series,
-) -> tuple[float | None, float | None]:
-    """
-    Return:
-        relative horizontal speed [kt]
-        current horizontal closing rate [kt]
+    current_h_nm: float,
+    current_v_ft: float | None,
+    current_state: str,
+    tcpa_s: float | None,
+    cpa_nm: float,
+    cpa_v_ft: float | None,
+) -> dict | None:
+    intervals = [
+        (0.0, 60.0),
+        (60.0, 120.0),
+        (120.0, 300.0),
+    ]
 
-    Positive closing rate means the current horizontal distance is decreasing.
-    Negative means the pair is opening.
-    """
-    lat_a = row_numeric(
-        aircraft_a,
-        "latitude",
-        "lat",
-    )
-    lon_a = row_numeric(
-        aircraft_a,
-        "longitude",
-        "lon",
-    )
-    lat_b = row_numeric(
-        aircraft_b,
-        "latitude",
-        "lat",
-    )
-    lon_b = row_numeric(
-        aircraft_b,
-        "longitude",
-        "lon",
-    )
+    interval_states = [
+        STATE_NORMAL,
+        STATE_NORMAL,
+        STATE_NORMAL,
+    ]
 
-    speed_a = ground_speed_ms(
-        aircraft_a
-    )
-    speed_b = ground_speed_ms(
-        aircraft_b
-    )
+    min_h = [
+        math.inf,
+        math.inf,
+        math.inf,
+    ]
 
-    track_a = track_deg(
-        aircraft_a
-    )
-    track_b = track_deg(
-        aircraft_b
-    )
+    min_v = [
+        math.inf,
+        math.inf,
+        math.inf,
+    ]
 
-    if None in (
-        lat_a,
-        lon_a,
-        lat_b,
-        lon_b,
-        speed_a,
-        speed_b,
-        track_a,
-        track_b,
-    ):
-        return None, None
+    min_h_time = [
+        None,
+        None,
+        None,
+    ]
 
-    from opensky_safety import GEOD
+    min_v_time = [
+        None,
+        None,
+        None,
+    ]
 
-    azimuth_ab, _, distance_m = (
-        GEOD.inv(
-            lon_a,
-            lat_a,
-            lon_b,
-            lat_b,
-        )
-    )
+    first_state_time = {
+        STATE_PROXIMITY: None,
+        STATE_HIGH_RISK: None,
+        STATE_CONFLICT: None,
+    }
 
-    azimuth_rad = math.radians(
-        azimuth_ab
-    )
-
-    if distance_m <= 1e-9:
-        unit_east = 0.0
-        unit_north = 0.0
-    else:
-        unit_east = math.sin(
-            azimuth_rad
-        )
-        unit_north = math.cos(
-            azimuth_rad
-        )
-
-    track_a_rad = math.radians(
-        track_a
-    )
-    track_b_rad = math.radians(
-        track_b
-    )
-
-    velocity_a_east = (
-        speed_a
-        * math.sin(
-            track_a_rad
-        )
-    )
-    velocity_a_north = (
-        speed_a
-        * math.cos(
-            track_a_rad
-        )
-    )
-
-    velocity_b_east = (
-        speed_b
-        * math.sin(
-            track_b_rad
-        )
-    )
-    velocity_b_north = (
-        speed_b
-        * math.cos(
-            track_b_rad
-        )
-    )
-
-    relative_east = (
-        velocity_b_east
-        - velocity_a_east
-    )
-    relative_north = (
-        velocity_b_north
-        - velocity_a_north
-    )
-
-    relative_speed_ms = math.hypot(
-        relative_east,
-        relative_north,
-    )
-
-    range_rate_ms = (
-        relative_east
-        * unit_east
-        +
-        relative_north
-        * unit_north
-    )
-
-    closing_rate_ms = (
-        -range_rate_ms
-    )
-
-    return (
-        relative_speed_ms
-        * MPS_TO_KT,
-        closing_rate_ms
-        * MPS_TO_KT,
-    )
-
-
-def vertical_closing_rate_fpm(
-    aircraft_a: pd.Series,
-    aircraft_b: pd.Series,
-) -> float | None:
-    """
-    Positive means absolute vertical separation is decreasing.
-    Negative means it is increasing.
-    """
-    altitude_a = row_altitude_ft(
-        aircraft_a
-    )
-    altitude_b = row_altitude_ft(
-        aircraft_b
-    )
-
-    rate_a_ms = vertical_rate_ms(
-        aircraft_a
-    )
-    rate_b_ms = vertical_rate_ms(
-        aircraft_b
-    )
-
-    if None in (
-        altitude_a,
-        altitude_b,
-        rate_a_ms,
-        rate_b_ms,
-    ):
-        return None
-
-    delta_altitude_ft = (
-        altitude_b
-        - altitude_a
-    )
-
-    relative_vertical_fpm = (
-        rate_b_ms
-        - rate_a_ms
-    ) * MPS_TO_FPM
-
-    if abs(
-        delta_altitude_ft
-    ) <= 1e-9:
-        return (
-            -abs(
-                relative_vertical_fpm
-            )
-        )
-
-    derivative_absolute_separation = (
-        math.copysign(
-            1.0,
-            delta_altitude_ft,
-        )
-        * relative_vertical_fpm
-    )
-
-    return (
-        -derivative_absolute_separation
-    )
-
-
-def timestamp_from_offset(
-    timestamp: float,
-    offset_seconds: float | None,
-) -> str:
-
-    if (
-        offset_seconds is None
-        or not np.isfinite(
-            offset_seconds
-        )
-    ):
-        return ""
-
-    return (
-        pd.to_datetime(
-            timestamp
-            + float(
-                offset_seconds
-            ),
-            unit="s",
-            utc=True,
-        )
-        .isoformat()
-    )
-
-
-def prediction_sample_times(
-    start_s: float,
-    end_s: float,
-) -> np.ndarray:
-
-    times = np.arange(
-        float(
-            start_s
-        ),
-        float(
-            end_s
-        )
+    for time_s in np.arange(
+        0.0,
+        LOOKAHEAD_SECONDS
         + PREDICTION_STEP_SECONDS
         * 0.5,
         PREDICTION_STEP_SECONDS,
         dtype=float,
-    )
-
-    if (
-        times.size == 0
-        or times[-1] < end_s
     ):
-        times = np.append(
-            times,
-            float(
-                end_s
-            ),
-        )
+        if time_s == 0.0:
+            h_nm = (
+                current_h_nm
+            )
 
-    return times
+            v_ft = (
+                current_v_ft
+            )
 
+            state = (
+                current_state
+            )
 
-def pair_lookahead_metrics(
-    aircraft_a: pd.Series,
-    aircraft_b: pd.Series,
-    timestamp: float,
-) -> dict:
-    """
-    Compute minimum-separation metrics with the same constant-kinematics
-    projection and the same 5-second sampling used by the safety analysis.
+        else:
+            (
+                h_nm,
+                v_ft,
+            ) = pair_separation_at_time(
+                aircraft_a,
+                aircraft_b,
+                float(
+                    time_s
+                ),
+                vertical_rate_deadband_fpm=(
+                    VERTICAL_RATE_DEADBAND_FPM
+                ),
+            )
 
-    Minimum horizontal and minimum vertical separation are independent:
-    they can occur at different times. Therefore the separation in the other
-    dimension is recorded at each minimum.
-    """
-    intervals = [
-        ("0_1min", 0.0, 60.0),
-        ("1_2min", 60.0, 120.0),
-        ("2_5min", 120.0, 300.0),
-    ]
+            next_time_s = min(
+                float(
+                    time_s
+                )
+                + float(
+                    PREDICTION_STEP_SECONDS
+                ),
+                float(
+                    LOOKAHEAD_SECONDS
+                ),
+            )
 
-    warning_horizontal_nm = (
-        MIN_HORIZONTAL_SEPARATION_NM
-        * WARNING_FACTOR
-    )
+            if next_time_s <= float(
+                time_s
+            ):
+                next_h_nm = (
+                    h_nm
+                )
 
-    warning_vertical_ft = (
-        MIN_VERTICAL_SEPARATION_FT
-        * WARNING_FACTOR
-    )
-
-    output = {}
-    all_samples = []
-
-    for (
-        label,
-        start_s,
-        end_s,
-    ) in intervals:
-
-        samples = []
-
-        for time_s in prediction_sample_times(
-            start_s,
-            end_s,
-        ):
-
-            horizontal_nm, vertical_ft = (
-                pair_separation_at_time(
+                next_v_ft = (
+                    v_ft
+                )
+            else:
+                (
+                    next_h_nm,
+                    next_v_ft,
+                ) = pair_separation_at_time(
                     aircraft_a,
                     aircraft_b,
-                    float(
-                        time_s
+                    next_time_s,
+                    vertical_rate_deadband_fpm=(
+                        VERTICAL_RATE_DEADBAND_FPM
                     ),
                 )
+
+            state = classify_pair_active(
+                h_nm,
+                v_ft,
+                next_horizontal_nm=(
+                    next_h_nm
+                ),
+                next_vertical_ft=(
+                    next_v_ft
+                ),
             )
 
-            state = classify_pair(
-                horizontal_nm,
-                vertical_ft,
-                min_horizontal_nm=
-                    MIN_HORIZONTAL_SEPARATION_NM,
-                min_vertical_ft=
-                    MIN_VERTICAL_SEPARATION_FT,
-                warning_horizontal_nm=
-                    warning_horizontal_nm,
-                warning_vertical_ft=
-                    warning_vertical_ft,
-                state_rules=
-                    SAFETY_STATE_RULES,
-            )
-
-            sample = {
-                "time_s":
-                    float(
-                        time_s
-                    ),
-                "horizontal_nm":
-                    float(
-                        horizontal_nm
-                    ),
-                "vertical_ft":
-                    (
-                        None
-                        if vertical_ft is None
-                        else float(
-                            vertical_ft
-                        )
-                    ),
-                "state":
-                    state,
-            }
-
-            samples.append(
-                sample
-            )
-            all_samples.append(
-                sample
-            )
-
-        horizontal_min_sample = min(
-            samples,
-            key=lambda item:
-                item[
-                    "horizontal_nm"
-                ],
-        )
-
-        valid_vertical_samples = [
-            item
-            for item in samples
-            if (
-                item[
-                    "vertical_ft"
-                ]
-                is not None
-                and np.isfinite(
-                    item[
-                        "vertical_ft"
-                    ]
-                )
-            )
-        ]
-
-        vertical_min_sample = (
-            min(
-                valid_vertical_samples,
-                key=lambda item:
-                    item[
-                        "vertical_ft"
-                    ],
-            )
-            if valid_vertical_samples
-            else None
-        )
-
-        output[
-            f"min_horizontal_{label}_nm"
-        ] = (
-            horizontal_min_sample[
-                "horizontal_nm"
-            ]
-        )
-
-        output[
-            f"time_to_min_horizontal_{label}_s"
-        ] = (
-            horizontal_min_sample[
-                "time_s"
-            ]
-        )
-
-        output[
-            f"vertical_sep_at_min_horizontal_{label}_ft"
-        ] = (
-            horizontal_min_sample[
-                "vertical_ft"
-            ]
-        )
-
-        output[
-            f"min_vertical_{label}_ft"
-        ] = (
-            None
-            if vertical_min_sample is None
-            else vertical_min_sample[
-                "vertical_ft"
-            ]
-        )
-
-        output[
-            f"time_to_min_vertical_{label}_s"
-        ] = (
-            None
-            if vertical_min_sample is None
-            else vertical_min_sample[
-                "time_s"
-            ]
-        )
-
-        output[
-            f"horizontal_sep_at_min_vertical_{label}_nm"
-        ] = (
-            None
-            if vertical_min_sample is None
-            else vertical_min_sample[
-                "horizontal_nm"
-            ]
-        )
-
-    unique_samples = {
-        sample["time_s"]:
-            sample
-        for sample in all_samples
-    }
-
-    ordered_samples = [
-        unique_samples[
-            time_s
-        ]
-        for time_s in sorted(
-            unique_samples
-        )
-    ]
-
-    horizontal_global = min(
-        ordered_samples,
-        key=lambda item:
-            item[
-                "horizontal_nm"
-            ],
-    )
-
-    valid_vertical_global = [
-        item
-        for item in ordered_samples
         if (
-            item[
-                "vertical_ft"
+            state
+            in first_state_time
+            and first_state_time[
+                state
             ]
-            is not None
-            and np.isfinite(
-                item[
-                    "vertical_ft"
-                ]
+            is None
+        ):
+            first_state_time[
+                state
+            ] = float(
+                time_s
             )
-        )
-    ]
 
-    vertical_global = (
-        min(
-            valid_vertical_global,
-            key=lambda item:
-                item[
-                    "vertical_ft"
-                ],
-        )
-        if valid_vertical_global
-        else None
+        for k, (
+            start_s,
+            end_s,
+        ) in enumerate(
+            intervals
+        ):
+            if (
+                start_s
+                <= time_s
+                <= end_s
+            ):
+                interval_states[
+                    k
+                ] = combine_state(
+                    interval_states[
+                        k
+                    ],
+                    state,
+                )
+
+                if h_nm < min_h[k]:
+                    min_h[
+                        k
+                    ] = float(
+                        h_nm
+                    )
+
+                    min_h_time[
+                        k
+                    ] = float(
+                        time_s
+                    )
+
+                if (
+                    v_ft is not None
+                    and np.isfinite(
+                        v_ft
+                    )
+                    and v_ft < min_v[k]
+                ):
+                    min_v[
+                        k
+                    ] = float(
+                        v_ft
+                    )
+
+                    min_v_time[
+                        k
+                    ] = float(
+                        time_s
+                    )
+
+    worst = (
+        current_state
     )
 
-    output[
-        "min_horizontal_0_5min_nm"
-    ] = (
-        horizontal_global[
-            "horizontal_nm"
-        ]
-    )
-
-    output[
-        "time_to_min_horizontal_0_5min_s"
-    ] = (
-        horizontal_global[
-            "time_s"
-        ]
-    )
-
-    output[
-        "timestamp_min_horizontal_0_5min_utc"
-    ] = timestamp_from_offset(
-        timestamp,
-        horizontal_global[
-            "time_s"
-        ],
-    )
-
-    output[
-        "vertical_sep_at_min_horizontal_0_5min_ft"
-    ] = (
-        horizontal_global[
-            "vertical_ft"
-        ]
-    )
-
-    output[
-        "min_vertical_0_5min_ft"
-    ] = (
-        None
-        if vertical_global is None
-        else vertical_global[
-            "vertical_ft"
-        ]
-    )
-
-    output[
-        "time_to_min_vertical_0_5min_s"
-    ] = (
-        None
-        if vertical_global is None
-        else vertical_global[
-            "time_s"
-        ]
-    )
-
-    output[
-        "timestamp_min_vertical_0_5min_utc"
-    ] = timestamp_from_offset(
-        timestamp,
-        (
-            None
-            if vertical_global is None
-            else vertical_global[
-                "time_s"
-            ]
-        ),
-    )
-
-    output[
-        "horizontal_sep_at_min_vertical_0_5min_nm"
-    ] = (
-        None
-        if vertical_global is None
-        else vertical_global[
-            "horizontal_nm"
-        ]
-    )
-
-    for (
-        target_state,
-        field_prefix,
-    ) in (
-        (
-            STATE_PROXIMITY,
-            "first_proximity",
-        ),
-        (
-            STATE_HIGH_RISK,
-            "first_high_risk",
-        ),
-        (
-            STATE_CONFLICT,
-            "first_conflict",
-        ),
-    ):
-
-        first_sample = next(
-            (
-                sample
-                for sample in ordered_samples
-                if sample[
-                    "state"
-                ]
-                == target_state
-            ),
-            None,
+    for state in interval_states:
+        worst = combine_state(
+            worst,
+            state,
         )
 
-        first_time = (
-            None
-            if first_sample is None
-            else first_sample[
-                "time_s"
-            ]
-        )
-
-        output[
-            f"{field_prefix}_s"
-        ] = first_time
-
-        output[
-            f"{field_prefix}_timestamp_utc"
-        ] = timestamp_from_offset(
-            timestamp,
-            first_time,
-        )
-
-    return output
-
-
-# =============================================================================
-# EVENT HELPERS
-# =============================================================================
-
-def row_altitude_ft(
-    row: pd.Series,
-) -> float | None:
-
-    value = row.get(
-        "baroaltitude",
-        np.nan,
-    )
-
-    try:
-        value = float(value)
-    except (TypeError, ValueError):
+    if worst == STATE_NORMAL:
         return None
 
-    if not np.isfinite(value):
-        return None
-
-    return (
-        value
-        * 3.2808398950131
-    )
-
-
-def safe_float(
-    value,
-) -> float | None:
-    try:
-        value = float(value)
-    except (TypeError, ValueError):
-        return None
-
-    if not np.isfinite(value):
-        return None
-
-    return value
-
-
-def pair_worst_state(
-    pair: dict,
-) -> str:
-
-    states = [
-        pair.get(
-            "state_current",
-            STATE_NORMAL,
-        ),
-        pair.get(
-            "worst_status_0_1min",
-            STATE_NORMAL,
-        ),
-        pair.get(
-            "worst_status_1_2min",
-            STATE_NORMAL,
-        ),
-        pair.get(
-            "worst_status_2_5min",
-            STATE_NORMAL,
-        ),
-    ]
-
-    return max(
-        states,
-        key=lambda state:
-            STATE_PRIORITY.get(
-                state,
-                -1,
+    vertical_rule_ft = (
+        vertical_separation_for_rule(
+            current_v_ft,
+            red_vertical_ft=(
+                MIN_VERTICAL_SEPARATION_FT
             ),
-    )
-
-
-def non_normal_windows(
-    pair: dict,
-) -> list[tuple[str, str]]:
-
-    ordered = [
-        (
-            "CURRENT",
-            pair.get(
-                "state_current",
-                STATE_NORMAL,
+            tolerance_ft=(
+                VERTICAL_SEPARATION_TOLERANCE_FT
             ),
-        ),
-        (
-            "0-1min",
-            pair.get(
-                "worst_status_0_1min",
-                STATE_NORMAL,
-            ),
-        ),
-        (
-            "1-2min",
-            pair.get(
-                "worst_status_1_2min",
-                STATE_NORMAL,
-            ),
-        ),
-        (
-            "2-5min",
-            pair.get(
-                "worst_status_2_5min",
-                STATE_NORMAL,
-            ),
-        ),
-    ]
-
-    return [
-        (window, state)
-        for window, state in ordered
-        if state != STATE_NORMAL
-    ]
-
-
-def first_worst_window(
-    pair: dict,
-    worst_state: str,
-) -> str:
-
-    ordered = [
-        (
-            "CURRENT",
-            pair.get(
-                "state_current",
-                STATE_NORMAL,
-            ),
-        ),
-        (
-            "0-1min",
-            pair.get(
-                "worst_status_0_1min",
-                STATE_NORMAL,
-            ),
-        ),
-        (
-            "1-2min",
-            pair.get(
-                "worst_status_1_2min",
-                STATE_NORMAL,
-            ),
-        ),
-        (
-            "2-5min",
-            pair.get(
-                "worst_status_2_5min",
-                STATE_NORMAL,
-            ),
-        ),
-    ]
-
-    for window, state in ordered:
-        if state == worst_state:
-            return window
-
-    return ""
-
-
-def problem_description(
-    state: str,
-) -> str:
-
-    if state == STATE_PROXIMITY:
-        return (
-            "Inside the warning envelope; regulatory minimum separation "
-            "is not simultaneously infringed."
         )
-
-    if state == STATE_HIGH_RISK:
-        return (
-            "High-risk separation state: one minimum is infringed while "
-            "the other dimension is also inside the warning envelope."
-        )
-
-    if state == STATE_CONFLICT:
-        return (
-            f"Loss of separation: horizontal < "
-            f"{MIN_HORIZONTAL_SEPARATION_NM:g} NM AND vertical < "
-            f"{MIN_VERTICAL_SEPARATION_FT:g} ft."
-        )
-
-    return "Normal separation."
-
-
-def callsign_of(
-    row: pd.Series,
-) -> str:
-
-    callsign = str(
-        row.get(
-            "callsign",
-            "",
-        )
-        or ""
-    ).strip()
-
-    if callsign:
-        return callsign
-
-    return str(
-        row.get(
-            "icao24",
-            "",
-        )
-        or ""
-    ).upper()
-
-
-def build_event_row(
-    sector: str,
-    timestamp: float,
-    snapshot: pd.DataFrame,
-    pair: dict,
-    event_state: str,
-) -> dict:
-
-    aircraft_a = snapshot.loc[
-        pair["index_a"]
-    ]
-
-    aircraft_b = snapshot.loc[
-        pair["index_b"]
-    ]
-
-    speed_a_ms = ground_speed_ms(
-        aircraft_a
-    )
-
-    speed_b_ms = ground_speed_ms(
-        aircraft_b
-    )
-
-    vertical_a_ms = vertical_rate_ms(
-        aircraft_a
-    )
-
-    vertical_b_ms = vertical_rate_ms(
-        aircraft_b
-    )
-
-    (
-        relative_horizontal_speed_kt,
-        horizontal_closing_rate_kt,
-    ) = horizontal_relative_metrics(
-        aircraft_a,
-        aircraft_b,
-    )
-
-    pair_vertical_closing_rate_fpm = (
-        vertical_closing_rate_fpm(
-            aircraft_a,
-            aircraft_b,
-        )
-    )
-
-    lookahead_metrics = (
-        pair_lookahead_metrics(
-            aircraft_a,
-            aircraft_b,
-            timestamp,
-        )
-    )
-
-    windows = non_normal_windows(
-        pair
-    )
-
-    timeline = ";".join(
-        f"{window}={state}"
-        for window, state in windows
-    )
-
-    first_alert = (
-        windows[0][0]
-        if windows
-        else ""
-    )
-
-    timestamp_utc = (
-        pd.to_datetime(
-            timestamp,
-            unit="s",
-            utc=True,
-        )
-        .isoformat()
     )
 
     return {
-        "sector":
-            sector,
-
-        "timestamp":
-            timestamp,
-
-        "timestamp_utc":
-            timestamp_utc,
-
-        "event_state":
-            event_state,
-
-        "event_colour":
-            STATE_COLOURS[
-                event_state
-            ],
-
-        "problem_description":
-            problem_description(
-                event_state
-            ),
-
-        "event_timeline":
-            timeline,
-
-        "first_alert_window":
-            first_alert,
-
-        "first_worst_state_window":
-            first_worst_window(
-                pair,
-                event_state,
-            ),
-
-        "alert_current":
-            pair.get(
-                "state_current",
-                STATE_NORMAL,
+        "index_a": index_a,
+        "index_b": index_b,
+        "event_state": worst,
+        "state_current": current_state,
+        "worst_status_0_1min": (
+            interval_states[0]
+        ),
+        "worst_status_1_2min": (
+            interval_states[1]
+        ),
+        "worst_status_2_5min": (
+            interval_states[2]
+        ),
+        "horizontal_sep_nm": (
+            current_h_nm
+        ),
+        "vertical_sep_ft": (
+            current_v_ft
+        ),
+        "vertical_sep_rule_ft": (
+            vertical_rule_ft
+        ),
+        "cpa_nm": cpa_nm,
+        "tcpa_s": (
+            0.0
+            if tcpa_s is None
+            else tcpa_s
+        ),
+        "vertical_sep_at_cpa_ft": (
+            cpa_v_ft
+        ),
+        "min_horizontal_0_1min_nm": (
+            None
+            if math.isinf(
+                min_h[0]
             )
-            != STATE_NORMAL,
-
-        "alert_0_1min":
-            pair.get(
-                "worst_status_0_1min",
-                STATE_NORMAL,
+            else min_h[0]
+        ),
+        "time_to_min_horizontal_0_1min_s": (
+            min_h_time[0]
+        ),
+        "min_vertical_0_1min_ft": (
+            None
+            if math.isinf(
+                min_v[0]
             )
-            != STATE_NORMAL,
-
-        "alert_1_2min":
-            pair.get(
-                "worst_status_1_2min",
-                STATE_NORMAL,
+            else min_v[0]
+        ),
+        "time_to_min_vertical_0_1min_s": (
+            min_v_time[0]
+        ),
+        "min_horizontal_1_2min_nm": (
+            None
+            if math.isinf(
+                min_h[1]
             )
-            != STATE_NORMAL,
-
-        "alert_2_5min":
-            pair.get(
-                "worst_status_2_5min",
-                STATE_NORMAL,
+            else min_h[1]
+        ),
+        "time_to_min_horizontal_1_2min_s": (
+            min_h_time[1]
+        ),
+        "min_vertical_1_2min_ft": (
+            None
+            if math.isinf(
+                min_v[1]
             )
-            != STATE_NORMAL,
-
-        "state_current":
-            pair.get(
-                "state_current",
-                STATE_NORMAL,
-            ),
-
-        "worst_status_0_1min":
-            pair.get(
-                "worst_status_0_1min",
-                STATE_NORMAL,
-            ),
-
-        "worst_status_1_2min":
-            pair.get(
-                "worst_status_1_2min",
-                STATE_NORMAL,
-            ),
-
-        "worst_status_2_5min":
-            pair.get(
-                "worst_status_2_5min",
-                STATE_NORMAL,
-            ),
-
-        "icao24_a":
-            str(
-                aircraft_a.get(
-                    "icao24",
-                    "",
-                )
-                or ""
-            ),
-
-        "callsign_a":
-            callsign_of(
-                aircraft_a
-            ),
-
-        "lat_a":
-            safe_float(
-                aircraft_a.get(
-                    "lat",
-                    np.nan,
-                )
-            ),
-
-        "lon_a":
-            safe_float(
-                aircraft_a.get(
-                    "lon",
-                    np.nan,
-                )
-            ),
-
-        "baro_altitude_ft_a":
-            row_altitude_ft(
-                aircraft_a
-            ),
-
-        "ground_speed_ms_a":
-            speed_a_ms,
-
-        "ground_speed_kt_a":
-            (
-                None
-                if speed_a_ms is None
-                else speed_a_ms
-                * MPS_TO_KT
-            ),
-
-        "true_track_deg_a":
-            track_deg(
-                aircraft_a
-            ),
-
-        "vertical_rate_ms_a":
-            vertical_a_ms,
-
-        "vertical_rate_fpm_a":
-            (
-                None
-                if vertical_a_ms is None
-                else vertical_a_ms
-                * MPS_TO_FPM
-            ),
-
-        "icao24_b":
-            str(
-                aircraft_b.get(
-                    "icao24",
-                    "",
-                )
-                or ""
-            ),
-
-        "callsign_b":
-            callsign_of(
-                aircraft_b
-            ),
-
-        "lat_b":
-            safe_float(
-                aircraft_b.get(
-                    "lat",
-                    np.nan,
-                )
-            ),
-
-        "lon_b":
-            safe_float(
-                aircraft_b.get(
-                    "lon",
-                    np.nan,
-                )
-            ),
-
-        "baro_altitude_ft_b":
-            row_altitude_ft(
-                aircraft_b
-            ),
-
-        "ground_speed_ms_b":
-            speed_b_ms,
-
-        "ground_speed_kt_b":
-            (
-                None
-                if speed_b_ms is None
-                else speed_b_ms
-                * MPS_TO_KT
-            ),
-
-        "true_track_deg_b":
-            track_deg(
-                aircraft_b
-            ),
-
-        "vertical_rate_ms_b":
-            vertical_b_ms,
-
-        "vertical_rate_fpm_b":
-            (
-                None
-                if vertical_b_ms is None
-                else vertical_b_ms
-                * MPS_TO_FPM
-            ),
-
-        "relative_horizontal_speed_kt":
-            relative_horizontal_speed_kt,
-
-        "horizontal_closing_rate_kt":
-            horizontal_closing_rate_kt,
-
-        "vertical_closing_rate_fpm":
-            pair_vertical_closing_rate_fpm,
-
-        "horizontal_sep_nm":
-            safe_float(
-                pair.get(
-                    "horizontal_sep_nm"
-                )
-            ),
-
-        "vertical_sep_ft":
-            safe_float(
-                pair.get(
-                    "vertical_sep_ft"
-                )
-            ),
-
-        "cpa_nm":
-            safe_float(
-                pair.get(
-                    "cpa_nm"
-                )
-            ),
-
-        "tcpa_s":
-            safe_float(
-                pair.get(
-                    "tcpa_s"
-                )
-            ),
-
-        "vertical_sep_at_cpa_ft":
-            safe_float(
-                pair.get(
-                    "vertical_sep_at_cpa_ft"
-                )
-            ),
-
-        **lookahead_metrics,
-
-        "predicted_conflict":
-            bool(
-                pair.get(
-                    "predicted_conflict",
-                    False,
-                )
-            ),
+            else min_v[1]
+        ),
+        "time_to_min_vertical_1_2min_s": (
+            min_v_time[1]
+        ),
+        "min_horizontal_2_5min_nm": (
+            None
+            if math.isinf(
+                min_h[2]
+            )
+            else min_h[2]
+        ),
+        "time_to_min_horizontal_2_5min_s": (
+            min_h_time[2]
+        ),
+        "min_vertical_2_5min_ft": (
+            None
+            if math.isinf(
+                min_v[2]
+            )
+            else min_v[2]
+        ),
+        "time_to_min_vertical_2_5min_s": (
+            min_v_time[2]
+        ),
+        "first_proximity_s": (
+            first_state_time[
+                STATE_PROXIMITY
+            ]
+        ),
+        "first_high_risk_s": (
+            first_state_time[
+                STATE_HIGH_RISK
+            ]
+        ),
+        "first_conflict_s": (
+            first_state_time[
+                STATE_CONFLICT
+            ]
+        ),
+        "predicted_conflict": any(
+            state == STATE_CONFLICT
+            for state
+            in interval_states
+        ),
     }
 
 
-# =============================================================================
-# CSV WRITERS
-# =============================================================================
+def analyse_snapshot_fast(snapshot: pd.DataFrame) -> tuple[list[dict], dict]:
+    snapshot = snapshot_unique(snapshot)
+    rows = list(snapshot.iterrows())
+    warning_h = active_warning_horizontal_nm()
 
-def open_event_writers(
-    paths: dict[str, Path],
-):
-
-    paths["directory"].mkdir(
-        parents=True,
-        exist_ok=True,
-    )
-
-    handles = {}
-    writers = {}
-
-    for state in ACTIVE_EVENT_STATES:
-
-        path = paths[state]
-
-        handle = path.open(
-            "w",
-            encoding="utf-8",
-            newline="",
-        )
-
-        writer = csv.DictWriter(
-            handle,
-            fieldnames=OUTPUT_COLUMNS,
-            extrasaction="ignore",
-        )
-
-        writer.writeheader()
-
-        handles[state] = handle
-        writers[state] = writer
-
-    return handles, writers
-
-
-def close_handles(
-    handles: dict,
-) -> None:
-
-    for handle in handles.values():
-        try:
-            handle.close()
-        except Exception:
-            pass
-
-
-# =============================================================================
-# MONTH ANALYSIS
-# =============================================================================
-
-def month_outputs_complete(
-    paths: dict[str, Path],
-) -> bool:
-
-    return all(
-        paths[state].exists()
-        for state in ACTIVE_EVENT_STATES
-    )
-
-
-def analyse_month(
-    source_sector: str,
-    analysis_area_key: str,
-    analysis_area: dict | None,
-    input_csv: Path,
-    year: int,
-    month: int,
-    chunksize: int,
-    overwrite: bool,
-) -> dict:
-
-    paths = build_output_paths(
-        analysis_area_key,
-        year,
-        month,
-    )
-
-    if (
-        month_outputs_complete(
-            paths
-        )
-        and not overwrite
-    ):
-        print(
-            "SKIP completed outputs:",
-            input_csv,
-        )
-
-        return {
-            "snapshots": 0,
-            STATE_PROXIMITY: 0,
-            STATE_HIGH_RISK: 0,
-            STATE_CONFLICT: 0,
-            "skipped": True,
-        }
-
-    print(
-        "  Counting snapshots before analysis..."
-    )
-
-    total_snapshots = count_snapshots_in_month(
-        input_csv,
-        chunksize,
-        analysis_area=analysis_area,
-    )
-
-    print(
-        f"  snapshots to analyse: {total_snapshots:,}"
-    )
-
-    handles = {}
-    writers = {}
-
-    counts = {
-        "snapshots": 0,
-        "pairs_evaluated": 0,
+    stats = {
+        "pairs_total": 0,
+        "pairs_distance_pruned": 0,
+        "pairs_cpa_pruned": 0,
+        "pairs_detailed": 0,
         "pairs_missing_vertical": 0,
-        STATE_PROXIMITY: 0,
-        STATE_HIGH_RISK: 0,
-        STATE_CONFLICT: 0,
-        "skipped": False,
     }
+    events = []
 
-    try:
-        handles, writers = (
-            open_event_writers(
-                paths
-            )
-        )
+    for i in range(len(rows)):
+        index_a, aircraft_a = rows[i]
+        for j in range(i + 1, len(rows)):
+            index_b, aircraft_b = rows[j]
+            stats["pairs_total"] += 1
 
-        for timestamp, snapshot in iter_snapshots_from_month(
-            input_csv,
-            chunksize,
-            analysis_area=analysis_area,
-        ):
-
-            counts["snapshots"] += 1
-
-            if len(snapshot) < 2:
-                continue
-
-            (
-                pair_results,
-                _aircraft_states,
-                _interval_states,
-                skipped_pairs,
-            ) = analyse_aircraft_snapshot(
-                snapshot,
-                min_horizontal_nm=
-                    MIN_HORIZONTAL_SEPARATION_NM,
-                min_vertical_ft=
-                    MIN_VERTICAL_SEPARATION_FT,
-                warning_factor=
-                    WARNING_FACTOR,
-                state_rules=
-                    SAFETY_STATE_RULES,
-                lookahead_minutes=
-                    LOOKAHEAD_MINUTES,
-                prediction_step_seconds=
-                    PREDICTION_STEP_SECONDS,
-                check_ground_aircraft=
-                    CHECK_GROUND_AIRCRAFT,
-            )
-
-            counts[
-                "pairs_evaluated"
-            ] += len(
-                pair_results
-            )
-
-            counts[
-                "pairs_missing_vertical"
-            ] += skipped_pairs
-
-            for pair in pair_results:
-
-                event_state = (
-                    pair_worst_state(
-                        pair
-                    )
-                )
-
-                if (
-                    event_state
-                    == STATE_NORMAL
-                ):
-                    continue
-
-                row = build_event_row(
-                    analysis_area_key,
-                    timestamp,
-                    snapshot,
-                    pair,
-                    event_state,
-                )
-
-                writers[
-                    event_state
-                ].writerow(
-                    row
-                )
-
-                counts[
-                    event_state
-                ] += 1
-
-            if (
-                counts["snapshots"]
-                % 1000
-                == 0
-            ):
-                progress_pct = (
-                    100.0
-                    * counts["snapshots"]
-                    / total_snapshots
-                    if total_snapshots > 0
-                    else 100.0
-                )
-
-                print(
-                    f"  snapshots={counts['snapshots']:,}"
-                    f"/{total_snapshots:,} "
-                    f"({progress_pct:5.1f}%) | "
-                    f"yellow={counts[STATE_PROXIMITY]:,} | "
-                    f"orange={counts[STATE_HIGH_RISK]:,} | "
-                    f"red={counts[STATE_CONFLICT]:,}"
-                )
-
-    except Exception:
-
-        close_handles(
-            handles
-        )
-
-        # Remove partially written final CSVs so a failed month is never
-        # mistaken for a completed analysis on the next run.
-        for state in (
-            STATE_PROXIMITY,
-            STATE_HIGH_RISK,
-            STATE_CONFLICT,
-        ):
-            paths[state].unlink(
-                missing_ok=True
-            )
-
-        raise
-
-    finally:
-        close_handles(
-            handles
-        )
-
-    print()
-    print(
-        f"MONTH COMPLETE: "
-        f"{year:04d}-{month:02d}"
-    )
-
-    print(
-        f"  snapshots analysed : "
-        f"{counts['snapshots']:,}/{total_snapshots:,}"
-    )
-
-    print(
-        f"  pair evaluations   : "
-        f"{counts['pairs_evaluated']:,}"
-    )
-
-    monthly_labels = {
-        STATE_PROXIMITY: "proximity warning",
-        STATE_HIGH_RISK: "high-risk separation",
-        STATE_CONFLICT: "loss of separation",
-    }
-
-    for state in ACTIVE_EVENT_STATES:
-        print(
-            f"  {monthly_labels[state]:<21}: "
-            f"{counts[state]:,}"
-        )
-
-    print(
-        f"  output directory   : "
-        f"{paths['directory']}"
-    )
-
-    return counts
-
-
-# =============================================================================
-# CLI
-# =============================================================================
-
-def parse_arguments():
-
-    parser = argparse.ArgumentParser(
-        description=(
-            "Detect current and predicted pairwise separation events in "
-            "monthly OpenSky sector archive CSV files."
-        )
-    )
-
-    parser.add_argument(
-        "--sector",
-        default=DEFAULT_SECTOR,
-        help=(
-            "BBOX preset / sector folder name under "
-            "data/raw/opensky_sectors/"
-        ),
-    )
-
-    parser.add_argument(
-        "--analysis-area",
-        default=DEFAULT_ANALYSIS_AREA,
-        help=(
-            "Exact area/polygon key from bbox_presets.json used for local "
-            "filtering before pairwise analysis. Use an empty string to disable "
-            f"local area clipping (default: {DEFAULT_ANALYSIS_AREA})."
-        ),
-    )
-
-    parser.add_argument(
-        "--start-month",
-        help=(
-            "First month to process, YYYY-MM. "
-            "Default: first available month."
-        ),
-    )
-
-    parser.add_argument(
-        "--end-month",
-        help=(
-            "Last month to process, YYYY-MM, inclusive. "
-            "Default: last available month."
-        ),
-    )
-
-    parser.add_argument(
-        "--chunksize",
-        type=int,
-        default=READ_CHUNK_ROWS,
-        help=(
-            f"Rows per pandas read chunk "
-            f"(default: {READ_CHUNK_ROWS:,})."
-        ),
-    )
-
-    parser.add_argument(
-        "--overwrite",
-        action="store_true",
-        help=(
-            "Regenerate monthly output CSVs even if all three already exist."
-        ),
-    )
-
-    return parser.parse_args()
-
-
-# =============================================================================
-# MAIN
-# =============================================================================
-
-def main():
-
-    arguments = (
-        parse_arguments()
-    )
-
-    if arguments.chunksize <= 0:
-        raise ValueError(
-            "--chunksize must be positive"
-        )
-
-    sector = (
-        arguments.sector
-    )
-
-    analysis_area_key = (
-        arguments.analysis_area.strip()
-        if arguments.analysis_area
-        else ""
-    )
-
-    analysis_area = load_analysis_area(
-        analysis_area_key
-        if analysis_area_key
-        else None
-    )
-
-    output_area_key = (
-        analysis_area_key
-        if analysis_area_key
-        else sector
-    )
-
-    start_month = (
-        parse_month_key(
-            arguments.start_month
-        )
-    )
-
-    end_month = (
-        parse_month_key(
-            arguments.end_month
-        )
-    )
-
-    if (
-        start_month is not None
-        and end_month is not None
-        and month_tuple_to_int(
-            end_month
-        )
-        <
-        month_tuple_to_int(
-            start_month
-        )
-    ):
-        raise ValueError(
-            "--end-month must be >= --start-month"
-        )
-
-    monthly_files = (
-        discover_monthly_csvs(
-            sector,
-            start_month,
-            end_month,
-        )
-    )
-
-    if not monthly_files:
-        raise FileNotFoundError(
-            "No monthly sector CSV files matched the requested selection."
-        )
-
-    print()
-    print("=" * 78)
-    print(
-        "OpenSky separation-event detector"
-    )
-    print("=" * 78)
-    print(
-        f"Source archive: {sector}"
-    )
-    print(
-        f"Exact analysis area: "
-        f"{analysis_area_key if analysis_area_key else 'disabled'}"
-    )
-    print(
-        f"Input root: {INPUT_ROOT / sector}"
-    )
-    print(
-        f"Output root: {OUTPUT_ROOT / output_area_key}"
-    )
-    print(
-        f"Monthly files: {len(monthly_files)}"
-    )
-    print(
-        f"Separation profile: {SEPARATION_PROFILE}"
-    )
-    print(
-        f"Minimum separation: "
-        f"{MIN_HORIZONTAL_SEPARATION_NM:g} NM / "
-        f"{MIN_VERTICAL_SEPARATION_FT:g} ft"
-    )
-    print(
-        "Enabled safety states: "
-        + ", ".join(
-            sorted(
-                ENABLED_SAFETY_STATES,
-                key=lambda state:
-                    STATE_PRIORITY[state],
-            )
-        )
-    )
-    print(
-        f"Warning envelope: "
-        f"{MIN_HORIZONTAL_SEPARATION_NM * WARNING_FACTOR:g} NM / "
-        f"{MIN_VERTICAL_SEPARATION_FT * WARNING_FACTOR:g} ft"
-    )
-    print(
-        f"Look-ahead intervals: "
-        f"0-1, 1-2, 2-5 min"
-    )
-    print(
-        f"Prediction step: "
-        f"{PREDICTION_STEP_SECONDS} s"
-    )
-    print(
-        f"Cruise filter: "
-        + (
-            f"FL{CRUISE_FL_MIN}-FL{CRUISE_FL_MAX}"
-            if FILTER_CRUISE_FL_BAND
-            else "disabled"
-        )
-    )
-    print("=" * 78)
-
-    total = {
-        "snapshots": 0,
-        "pairs_evaluated": 0,
-        STATE_PROXIMITY: 0,
-        STATE_HIGH_RISK: 0,
-        STATE_CONFLICT: 0,
-        "months_skipped": 0,
-    }
-
-    for (
-        input_csv,
-        year,
-        month,
-    ) in monthly_files:
-
-        print()
-        print("=" * 78)
-        print(
-            f"INPUT: {input_csv}"
-        )
-        print("=" * 78)
-
-        counts = (
-            analyse_month(
-                source_sector=sector,
-                analysis_area_key=output_area_key,
-                analysis_area=analysis_area,
-                input_csv=input_csv,
-                year=year,
-                month=month,
-                chunksize=
-                    arguments.chunksize,
-                overwrite=(
-                    arguments.overwrite
-                    or OVERWRITE_EXISTING
+            h_nm, v_ft = pair_separation_at_time(
+                aircraft_a,
+                aircraft_b,
+                0.0,
+                vertical_rate_deadband_fpm=(
+                    VERTICAL_RATE_DEADBAND_FPM
                 ),
             )
-        )
 
-        if counts.get(
-            "skipped",
-            False,
-        ):
-            total[
-                "months_skipped"
-            ] += 1
+            if v_ft is None:
+                stats["pairs_missing_vertical"] += 1
 
-            continue
-
-        total[
-            "snapshots"
-        ] += counts[
-            "snapshots"
-        ]
-
-        total[
-            "pairs_evaluated"
-        ] += counts[
-            "pairs_evaluated"
-        ]
-
-        for state in (
-            STATE_PROXIMITY,
-            STATE_HIGH_RISK,
-            STATE_CONFLICT,
-        ):
-            total[state] += (
-                counts[state]
+            (
+                next_h_nm,
+                next_v_ft,
+            ) = pair_separation_at_time(
+                aircraft_a,
+                aircraft_b,
+                float(
+                    PREDICTION_STEP_SECONDS
+                ),
+                vertical_rate_deadband_fpm=(
+                    VERTICAL_RATE_DEADBAND_FPM
+                ),
             )
 
-    print()
-    print("=" * 78)
-    print(
-        "DETECTION FINISHED"
-    )
-    print("=" * 78)
-    print(
-        f"Snapshots analysed: "
-        f"{total['snapshots']:,}"
-    )
-    print(
-        f"Pair evaluations: "
-        f"{total['pairs_evaluated']:,}"
-    )
-    final_labels = {
-        STATE_PROXIMITY: "Proximity-warning events",
-        STATE_HIGH_RISK: "High-risk events",
-        STATE_CONFLICT: "Loss-of-separation events",
-    }
+            current_state = classify_pair_active(
+                h_nm,
+                v_ft,
+                next_horizontal_nm=(
+                    next_h_nm
+                ),
+                next_vertical_ft=(
+                    next_v_ft
+                ),
+            )
 
-    for state in ACTIVE_EVENT_STATES:
-        print(
-            f"{final_labels[state]}: "
-            f"{total[state]:,}"
+            speed_a_ms = ground_speed_ms(aircraft_a)
+            speed_b_ms = ground_speed_ms(aircraft_b)
+
+            # Conservative bound: if even two aircraft turning directly toward
+            # one another could not enter the outer warning radius within five
+            # minutes, no detailed prediction is required.
+            if (
+                ENABLE_DISTANCE_PREFILTER
+                and current_state == STATE_NORMAL
+                and speed_a_ms is not None
+                and speed_b_ms is not None
+            ):
+                max_closure_nm = (
+                    (speed_a_ms + speed_b_ms)
+                    * MPS_TO_KT
+                    * (LOOKAHEAD_SECONDS / 3600.0)
+                )
+                if h_nm > warning_h + max_closure_nm:
+                    stats["pairs_distance_pruned"] += 1
+                    continue
+
+            tcpa = continuous_tcpa_seconds_local(
+                aircraft_a,
+                aircraft_b,
+                LOOKAHEAD_SECONDS,
+            )
+            cpa_nm = h_nm
+            cpa_v_ft = v_ft
+            if tcpa is not None:
+                cpa_nm, cpa_v_ft = pair_separation_at_time(
+                    aircraft_a,
+                    aircraft_b,
+                    tcpa,
+                    vertical_rate_deadband_fpm=(
+                        VERTICAL_RATE_DEADBAND_FPM
+                    ),
+                )
+
+            # CPA is based on a local tangent-plane model. The extra 1 NM
+            # margin prevents borderline pairs from being discarded cheaply.
+            if (
+                ENABLE_CPA_PREFILTER
+                and current_state == STATE_NORMAL
+                and h_nm > warning_h
+                and tcpa is not None
+                and cpa_nm > warning_h + CPA_PREFILTER_MARGIN_NM
+            ):
+                stats["pairs_cpa_pruned"] += 1
+                continue
+
+            stats["pairs_detailed"] += 1
+            event = evaluate_candidate_pair(
+                index_a,
+                aircraft_a,
+                index_b,
+                aircraft_b,
+                h_nm,
+                v_ft,
+                current_state,
+                tcpa,
+                cpa_nm,
+                cpa_v_ft,
+            )
+            if event is not None:
+                events.append(event)
+
+    return events, stats
+
+
+# =============================================================================
+# OUTPUTS
+# =============================================================================
+
+EVENT_COLUMNS = [
+    "sector",
+    "timestamp",
+    "timestamp_utc",
+    "event_state",
+    "event_colour",
+    "state_current",
+    "worst_status_0_1min",
+    "worst_status_1_2min",
+    "worst_status_2_5min",
+    "icao24_a",
+    "callsign_a",
+    "lat_a",
+    "lon_a",
+    "baro_altitude_ft_a",
+    "ground_speed_kt_a",
+    "true_track_deg_a",
+    "vertical_rate_fpm_a",
+    "state_source_a",
+    "exact_grid_row_a",
+    "state_age_s_a",
+    "position_age_s_a",
+    "icao24_b",
+    "callsign_b",
+    "lat_b",
+    "lon_b",
+    "baro_altitude_ft_b",
+    "ground_speed_kt_b",
+    "true_track_deg_b",
+    "vertical_rate_fpm_b",
+    "state_source_b",
+    "exact_grid_row_b",
+    "state_age_s_b",
+    "position_age_s_b",
+    "horizontal_sep_nm",
+    "vertical_sep_ft",
+    "vertical_sep_rule_ft",
+    "cpa_nm",
+    "tcpa_s",
+    "vertical_sep_at_cpa_ft",
+    "min_horizontal_0_1min_nm",
+    "time_to_min_horizontal_0_1min_s",
+    "min_vertical_0_1min_ft",
+    "time_to_min_vertical_0_1min_s",
+    "min_horizontal_1_2min_nm",
+    "time_to_min_horizontal_1_2min_s",
+    "min_vertical_1_2min_ft",
+    "time_to_min_vertical_1_2min_s",
+    "min_horizontal_2_5min_nm",
+    "time_to_min_horizontal_2_5min_s",
+    "min_vertical_2_5min_ft",
+    "time_to_min_vertical_2_5min_s",
+    "first_proximity_s",
+    "first_high_risk_s",
+    "first_conflict_s",
+    "predicted_conflict",
+]
+
+
+def build_event_row(
+    area_key: str,
+    timestamp: float,
+    snapshot: pd.DataFrame,
+    event: dict,
+) -> dict:
+    a = snapshot.loc[event["index_a"]]
+    b = snapshot.loc[event["index_b"]]
+
+    speed_a = ground_speed_ms(a)
+    speed_b = ground_speed_ms(b)
+    vr_a = vertical_rate_ms(a)
+    vr_b = vertical_rate_ms(b)
+
+    row = {
+        "sector": area_key,
+        "timestamp": timestamp,
+        "timestamp_utc": pd.to_datetime(timestamp, unit="s", utc=True).isoformat(),
+        "event_state": event["event_state"],
+        "event_colour": STATE_COLOURS[event["event_state"]],
+        "icao24_a": str(a.get("icao24", "") or ""),
+        "callsign_a": callsign_of(a),
+        "lat_a": row_numeric(a, "lat"),
+        "lon_a": row_numeric(a, "lon"),
+        "baro_altitude_ft_a": altitude_ft(a),
+        "ground_speed_kt_a": None if speed_a is None else speed_a * MPS_TO_KT,
+        "true_track_deg_a": track_deg(a),
+        "vertical_rate_fpm_a": None if vr_a is None else vr_a * MPS_TO_FPM,
+        "state_source_a": a.get("state_source", ""),
+        "exact_grid_row_a": a.get("exact_grid_row", ""),
+        "state_age_s_a": row_numeric(a, "state_age_s"),
+        "position_age_s_a": row_numeric(a, "position_age_s"),
+        "icao24_b": str(b.get("icao24", "") or ""),
+        "callsign_b": callsign_of(b),
+        "lat_b": row_numeric(b, "lat"),
+        "lon_b": row_numeric(b, "lon"),
+        "baro_altitude_ft_b": altitude_ft(b),
+        "ground_speed_kt_b": None if speed_b is None else speed_b * MPS_TO_KT,
+        "true_track_deg_b": track_deg(b),
+        "vertical_rate_fpm_b": None if vr_b is None else vr_b * MPS_TO_FPM,
+        "state_source_b": b.get("state_source", ""),
+        "exact_grid_row_b": b.get("exact_grid_row", ""),
+        "state_age_s_b": row_numeric(b, "state_age_s"),
+        "position_age_s_b": row_numeric(b, "position_age_s"),
+    }
+    row.update({key: value for key, value in event.items() if not key.startswith("index_")})
+    return row
+
+
+
+# =============================================================================
+# PROCESSED DATASET INPUT
+# =============================================================================
+
+PROCESSED_FILE_RE = re.compile(r"^.+_(\d{4})-(\d{2})_10s\.csv$")
+
+
+def parse_utc(value: str) -> pd.Timestamp:
+    timestamp = pd.Timestamp(value)
+    return timestamp.tz_localize("UTC") if timestamp.tzinfo is None else timestamp.tz_convert("UTC")
+
+
+def months_between(start: pd.Timestamp, end: pd.Timestamp) -> set[tuple[int, int]]:
+    months = set()
+    current = pd.Timestamp(year=start.year, month=start.month, day=1, tz="UTC")
+    end_month = pd.Timestamp(year=end.year, month=end.month, day=1, tz="UTC")
+    while current <= end_month:
+        months.add((current.year, current.month))
+        current = current + pd.DateOffset(months=1)
+    return months
+
+
+def input_files(area: str, start: pd.Timestamp, end: pd.Timestamp) -> list[Path]:
+    directory = INPUT_ROOT / area
+    if not directory.exists():
+        raise FileNotFoundError(f"Missing processed data directory: {directory}")
+    requested = months_between(start, end)
+    files = []
+    for path in directory.rglob("*_10s.csv"):
+        if "_daily_cache" in path.parts:
+            continue
+        match = PROCESSED_FILE_RE.match(path.name)
+        if match and (int(match[1]), int(match[2])) in requested:
+            files.append(path)
+    files.sort()
+    missing = requested - {
+        (int(PROCESSED_FILE_RE.match(path.name)[1]),
+         int(PROCESSED_FILE_RE.match(path.name)[2]))
+        for path in files
+    }
+    if missing:
+        raise FileNotFoundError(
+            "Missing processed monthly CSVs for: " +
+            ", ".join(f"{y:04d}-{m:02d}" for y, m in sorted(missing))
         )
-    print(
-        f"Months already complete/skipped: "
-        f"{total['months_skipped']:,}"
-    )
+    return files
+
+
+def iter_10s_snapshots(files: list[Path], start: float, end: float,
+                       chunksize: int) -> Iterator[tuple[float, pd.DataFrame]]:
+    """Stream chronological monthly CSVs, carrying the last timestamp between chunks."""
+    previous_timestamp = float('-inf')
+    for path in files:
+        carry = pd.DataFrame()
+        for raw in pd.read_csv(path, chunksize=chunksize, low_memory=False):
+            if "time" not in raw.columns or "icao24" not in raw.columns:
+                raise ValueError(f"Missing time/icao24 fields in {path}")
+            raw = raw.copy()
+            raw["time"] = to_epoch_seconds(raw["time"])
+            # Read all rows within one hour in roughly chronological order;
+            # the preprocessor always serialises each day by time.
+            raw = raw.loc[raw["time"].notna() & np.isfinite(raw["time"])].copy()
+            if not carry.empty:
+                raw = pd.concat([carry, raw], ignore_index=True)
+            if raw.empty:
+                carry = pd.DataFrame()
+                continue
+            raw.sort_values(["time", "icao24"], inplace=True, kind="mergesort")
+            end_of_chunk = float(raw["time"].max())
+            complete = raw.loc[raw["time"] < end_of_chunk]
+            carry = raw.loc[raw["time"] == end_of_chunk].copy()
+            if not complete.empty:
+                for stamp, snapshot in complete.groupby("time", sort=True):
+                    stamp = float(stamp)
+                    if stamp < previous_timestamp:
+                        raise ValueError(f"Processed input is not chronological: {path}")
+                    previous_timestamp = stamp
+                    if start <= stamp <= end:
+                        yield stamp, snapshot_unique(snapshot)
+        if not carry.empty:
+            for stamp, snapshot in carry.groupby("time", sort=True):
+                stamp = float(stamp)
+                if stamp < previous_timestamp:
+                    raise ValueError(f"Processed input is not chronological: {path}")
+                previous_timestamp = stamp
+                if start <= stamp <= end:
+                    yield stamp, snapshot_unique(snapshot)
+
+
+def run_output_paths(area: str, start: pd.Timestamp, end: pd.Timestamp) -> dict:
+    directory = (EVENT_OUTPUT_ROOT / area / "runs" /
+                 f"{start.strftime('%Y%m%dT%H%M%S')}_{end.strftime('%Y%m%dT%H%M%S')}")
+    files = {
+        STATE_PROXIMITY: directory / "yellow_proximity_events.csv",
+        STATE_HIGH_RISK: directory / "orange_high_risk_events.csv",
+        STATE_CONFLICT: directory / "red_loss_of_separation_events.csv",
+    }
+    return {"directory": directory, **files}
+
+
+def main() -> None:
+    parser = argparse.ArgumentParser(description="OpenSky separation detector on reusable 10-second CSVs")
+    parser.add_argument("--area", default="LECMSAN")
+    parser.add_argument("--start", required=True, help="UTC inclusive, e.g. '2019-01-01 00:00:00'")
+    parser.add_argument("--end", required=True, help="UTC inclusive, e.g. '2019-01-15 23:59:50'")
+    parser.add_argument("--chunksize", type=int, default=READ_CHUNK_ROWS)
+    args = parser.parse_args()
+    start, end = parse_utc(args.start), parse_utc(args.end)
+    if start > end or args.chunksize <= 0:
+        parser.error("End must follow start, and chunksize must be positive")
+    files = input_files(args.area, start, end)
+    paths = run_output_paths(args.area, start, end)
+    paths["directory"].mkdir(parents=True, exist_ok=True)
+
+    total = dict(snapshots=0, pairs_total=0, pairs_distance_pruned=0,
+                 pairs_cpa_pruned=0, pairs_detailed=0,
+                 **{STATE_PROXIMITY: 0, STATE_HIGH_RISK: 0, STATE_CONFLICT: 0})
+    day = None
+    today = {state: 0 for state in ACTIVE_EVENT_STATES}
+    daily_log = []
+    handles, writers = {}, {}
+    began = time.monotonic()
     print("=" * 78)
+    print("OpenSky separation detector - processed 10-second dataset")
+    print(f"Area: {args.area} | Start UTC: {start} | End UTC: {end} (inclusive)")
+    print(f"Input files: {len(files)} | Output: {paths['directory']}")
+    print(f"Prediction horizons: 1, 2, 5 min | Step: {PREDICTION_STEP_SECONDS}s")
+    print(
+        f"Safety: H < {MIN_HORIZONTAL_SEPARATION_NM} NM AND "
+        f"V < {MIN_VERTICAL_SEPARATION_FT} ft "
+        f"(vertical tolerance +/-{VERTICAL_SEPARATION_TOLERANCE_FT} ft)"
+    )
+    print(
+        f"Vertical-rate deadband: +/-{VERTICAL_RATE_DEADBAND_FPM} fpm"
+    )
+    print("=" * 78, flush=True)
+    try:
+        for state in ACTIVE_EVENT_STATES:
+            handle = paths[state].open("w", encoding="utf-8", newline="")
+            handles[state] = handle
+            writers[state] = csv.DictWriter(handle, fieldnames=EVENT_COLUMNS,
+                                            extrasaction="ignore")
+            writers[state].writeheader()
+        for timestamp, snapshot in iter_10s_snapshots(
+            files, start.timestamp(), end.timestamp(), args.chunksize
+        ):
+            dt = pd.to_datetime(timestamp, unit="s", utc=True)
+            today_label = dt.strftime("%Y-%m-%d")
+            if day != today_label:
+                if day is not None:
+                    print(f"DAY COMPLETE: {day} | " + " | ".join(
+                        f"{STATE_COLOURS[s].lower()}={today.get(s, 0):,}"
+                        for s in ACTIVE_EVENT_STATES), flush=True)
+                    daily_log.append({"day": day, **{STATE_COLOURS[s].lower(): today.get(s,0)
+                                                      for s in ACTIVE_EVENT_STATES}})
+                day = today_label
+                today = {state: 0 for state in ACTIVE_EVENT_STATES}
+                print(f"DAY START: {day} UTC", flush=True)
+
+            total["snapshots"] += 1
+            if len(snapshot) >= 2:
+                events, stats = analyse_snapshot_fast(snapshot)
+                for key in ("pairs_total", "pairs_distance_pruned",
+                            "pairs_cpa_pruned", "pairs_detailed"):
+                    total[key] += stats[key]
+                for event in events:
+                    state = event["event_state"]
+                    if state in writers:
+                        writers[state].writerow(build_event_row(args.area, timestamp,
+                                                                  snapshot, event))
+                        total[state] += 1
+                        today[state] += 1
+            if dt.minute == 0 and dt.second == 0:
+                print(
+                    f"[{dt.strftime('%Y-%m-%d %H:%M:%S')} UTC] "
+                    f"snapshots={total['snapshots']:,} | pairs={total['pairs_total']:,} | "
+                    f"screened={total['pairs_distance_pruned'] + total['pairs_cpa_pruned']:,} | "
+                    f"detailed={total['pairs_detailed']:,} | "
+                    f"day yellow={today.get(STATE_PROXIMITY, 0):,} "
+                    f"orange={today.get(STATE_HIGH_RISK, 0):,} "
+                    f"red={today.get(STATE_CONFLICT, 0):,} | "
+                    f"total yellow={total[STATE_PROXIMITY]:,} "
+                    f"orange={total[STATE_HIGH_RISK]:,} "
+                    f"red={total[STATE_CONFLICT]:,}",
+                    flush=True,
+                )
+        if day is not None:
+            print(f"DAY COMPLETE: {day}", flush=True)
+            daily_log.append({"day": day, **{STATE_COLOURS[s].lower(): today.get(s,0)
+                                              for s in ACTIVE_EVENT_STATES}})
+    finally:
+        for handle in handles.values():
+            handle.close()
+    elapsed = time.monotonic() - began
+    summary = {
+        "area": args.area, "start_utc": start.isoformat(),
+        "end_utc_inclusive": end.isoformat(), "elapsed_s": elapsed, **total
+    }
+    pd.DataFrame([summary]).to_csv(paths["directory"] / "run_summary.csv", index=False)
+    pd.DataFrame(daily_log).to_csv(paths["directory"] / "daily_summary.csv", index=False)
+    print("=" * 78)
+    print(f"RUN COMPLETE | elapsed={elapsed:.1f}s | snapshots={total['snapshots']:,}")
+    print(f"Yellow: {total[STATE_PROXIMITY]:,} | Orange: {total[STATE_HIGH_RISK]:,} "
+          f"| Red: {total[STATE_CONFLICT]:,}")
+    print(f"Output: {paths['directory']}", flush=True)
 
 
 if __name__ == "__main__":
