@@ -34,6 +34,21 @@ WAYPOINT_EDGE_COLOR = "black"
 WAYPOINT_EDGE_WIDTH = 0.9
 WAYPOINT_LABEL_COLOR = "white"
 
+# ATS corridor / airway overlay.
+SHOW_CORRIDORS = False
+# False: always draw every loaded corridor.
+# True: draw a corridor only when traffic is nearby.
+CORRIDORS_ONLY_NEAR_TRAFFIC = False
+CORRIDOR_TRAFFIC_DISTANCE_NM = 20.0
+CORRIDOR_TRAFFIC_SAMPLE_STEP_NM = 5.0
+CORRIDOR_COLOR = "#7FDBFF"
+CORRIDOR_LINEWIDTH = 1.15
+CORRIDOR_LINESTYLE = (0, (7, 5))
+CORRIDOR_ALPHA = 0.58
+SHOW_CORRIDOR_LABELS = False
+CORRIDOR_LABEL_COLOR = "#BCEFFF"
+CORRIDOR_LABEL_FONTSIZE = 7.0
+
 # Dynamic safety-state configuration. These defaults are replaced by
 # config=globals() from the acquisition script.
 ENABLED_SAFETY_STATES = {
@@ -1150,6 +1165,245 @@ def draw_trajectory_vector(
         previous_lon = end_lon
         previous_lat = end_lat
 
+
+
+# ============================================================
+# ATS CORRIDORS / AIRWAYS
+# ============================================================
+
+def _normalise_corridor_points(corridor):
+    points = []
+
+    for point in corridor.get("points", []) or []:
+        try:
+            lon = float(point["lon"])
+            lat = float(point["lat"])
+        except (KeyError, TypeError, ValueError):
+            continue
+
+        if np.isfinite(lon) and np.isfinite(lat):
+            points.append((lon, lat))
+
+    return points
+
+
+def _sample_geodesic_segment(
+    lon1,
+    lat1,
+    lon2,
+    lat2,
+    step_nm=None,
+):
+    """Sample a route segment only for the near-traffic visibility test."""
+    if step_nm is None:
+        step_nm = CORRIDOR_TRAFFIC_SAMPLE_STEP_NM
+
+    step_nm = max(0.5, float(step_nm))
+
+    _, _, distance_m = GEOD.inv(
+        float(lon1),
+        float(lat1),
+        float(lon2),
+        float(lat2),
+    )
+
+    intervals = max(
+        1,
+        int(
+            np.ceil(
+                float(distance_m)
+                / (step_nm * 1852.0)
+            )
+        ),
+    )
+
+    output = [(float(lon1), float(lat1))]
+
+    if intervals > 1:
+        output.extend(
+            (float(lon), float(lat))
+            for lon, lat in GEOD.npts(
+                float(lon1),
+                float(lat1),
+                float(lon2),
+                float(lat2),
+                intervals - 1,
+            )
+        )
+
+    output.append((float(lon2), float(lat2)))
+    return output
+
+
+def corridor_has_nearby_traffic(
+    corridor,
+    aircraft,
+    threshold_nm=None,
+):
+    """
+    Return True if at least one aircraft is within threshold_nm of the
+    corridor polyline.
+    """
+    if threshold_nm is None:
+        threshold_nm = CORRIDOR_TRAFFIC_DISTANCE_NM
+
+    if aircraft is None or aircraft.empty:
+        return False
+
+    if (
+        "longitude" not in aircraft.columns
+        or "latitude" not in aircraft.columns
+    ):
+        return False
+
+    traffic_lon = pd.to_numeric(
+        aircraft["longitude"],
+        errors="coerce",
+    ).to_numpy(dtype=float)
+
+    traffic_lat = pd.to_numeric(
+        aircraft["latitude"],
+        errors="coerce",
+    ).to_numpy(dtype=float)
+
+    valid = (
+        np.isfinite(traffic_lon)
+        & np.isfinite(traffic_lat)
+    )
+
+    traffic_lon = traffic_lon[valid]
+    traffic_lat = traffic_lat[valid]
+
+    if traffic_lon.size == 0:
+        return False
+
+    points = _normalise_corridor_points(corridor)
+
+    if len(points) < 2:
+        return False
+
+    threshold_m = float(threshold_nm) * 1852.0
+
+    for (lon1, lat1), (lon2, lat2) in zip(
+        points[:-1],
+        points[1:],
+    ):
+        for sample_lon, sample_lat in _sample_geodesic_segment(
+            lon1,
+            lat1,
+            lon2,
+            lat2,
+        ):
+            sample_lons = np.full(
+                traffic_lon.shape,
+                sample_lon,
+                dtype=float,
+            )
+            sample_lats = np.full(
+                traffic_lat.shape,
+                sample_lat,
+                dtype=float,
+            )
+
+            _, _, distances_m = GEOD.inv(
+                sample_lons,
+                sample_lats,
+                traffic_lon,
+                traffic_lat,
+            )
+
+            if np.nanmin(distances_m) <= threshold_m:
+                return True
+
+    return False
+
+
+def visible_corridors_for_snapshot(
+    corridors,
+    aircraft,
+):
+    if not SHOW_CORRIDORS or not corridors:
+        return []
+
+    if not CORRIDORS_ONLY_NEAR_TRAFFIC:
+        return list(corridors)
+
+    return [
+        corridor
+        for corridor in corridors
+        if corridor_has_nearby_traffic(
+            corridor,
+            aircraft,
+            threshold_nm=CORRIDOR_TRAFFIC_DISTANCE_NM,
+        )
+    ]
+
+
+def draw_corridor_network(
+    ax,
+    corridors,
+    aircraft,
+):
+    """
+    Draw route corridors as a subtle dashed underlay.
+
+    zorder=5.5 keeps them behind cities, waypoints, safety areas,
+    trajectory arrows, aircraft and labels.
+    """
+    visible = visible_corridors_for_snapshot(
+        corridors,
+        aircraft,
+    )
+
+    for corridor in visible:
+        points = _normalise_corridor_points(corridor)
+
+        if len(points) < 2:
+            continue
+
+        lons = [point[0] for point in points]
+        lats = [point[1] for point in points]
+
+        ax.plot(
+            lons,
+            lats,
+            color=CORRIDOR_COLOR,
+            linewidth=CORRIDOR_LINEWIDTH,
+            linestyle=CORRIDOR_LINESTYLE,
+            alpha=CORRIDOR_ALPHA,
+            zorder=5.5,
+            clip_on=True,
+        )
+
+        if SHOW_CORRIDOR_LABELS:
+            mid = len(points) // 2
+            route_name = str(
+                corridor.get(
+                    "route",
+                    corridor.get("name", ""),
+                )
+            )
+
+            if route_name:
+                ax.text(
+                    points[mid][0],
+                    points[mid][1],
+                    route_name,
+                    fontsize=CORRIDOR_LABEL_FONTSIZE,
+                    color=CORRIDOR_LABEL_COLOR,
+                    ha="center",
+                    va="center",
+                    zorder=6.0,
+                    path_effects=[
+                        pe.withStroke(
+                            linewidth=2.5,
+                            foreground="black",
+                        )
+                    ],
+                    clip_on=True,
+                )
+
+    return visible
 
 # ============================================================
 # WAYPOINT LABEL
@@ -2492,6 +2746,7 @@ def render_map(
     aircraft, area, bbox, aircraft_states, warnings, conflicts,
     snapshot_time, map_file, config=None,
     waypoints=None,
+    corridors=None,
     show=True,
     save=True,
 ):
@@ -2526,6 +2781,13 @@ def render_map(
     if SHOW_WAYPOINTS and waypoints:
 
         waypoint_points = list(waypoints)
+
+
+    corridor_lines = []
+
+    if SHOW_CORRIDORS and corridors:
+
+        corridor_lines = list(corridors)
     
     
     # ============================================================
@@ -2709,6 +2971,25 @@ def render_map(
     )
     
     
+    # ============================================================
+    # ATS CORRIDORS / AIRWAYS
+    # ============================================================
+
+    visible_corridors = draw_corridor_network(
+        ax,
+        corridor_lines,
+        aircraft,
+    )
+
+    if SHOW_CORRIDORS:
+
+        print(
+            f"Corridors shown: "
+            f"{len(visible_corridors)}/"
+            f"{len(corridor_lines)}"
+        )
+
+
     # ============================================================
     # CITY POINTS
     # ============================================================

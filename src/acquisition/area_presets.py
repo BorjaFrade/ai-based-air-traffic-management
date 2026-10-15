@@ -348,3 +348,146 @@ def load_waypoints_for_area(
         resolved.values(),
         key=lambda item: item["name"],
     )
+
+# ============================================================
+# CORRIDORS / ATS ROUTES
+# ============================================================
+
+def _corridor_bbox_intersects_area(
+    points: list[dict],
+    area: dict,
+) -> bool:
+    """Conservative fallback intersection test for corridor polylines."""
+    if len(points) < 2:
+        return False
+
+    bbox = area["bbox"]
+    lons = [float(point["lon"]) for point in points]
+    lats = [float(point["lat"]) for point in points]
+
+    return not (
+        max(lons) < bbox["lomin"]
+        or min(lons) > bbox["lomax"]
+        or max(lats) < bbox["lamin"]
+        or min(lats) > bbox["lamax"]
+    )
+
+
+def load_corridors_for_area(
+    path: Path,
+    area_key: str | None = None,
+    area: dict | None = None,
+) -> list[dict]:
+    """
+    Load ATS corridors from corridors.json.
+
+    Preferred lookup:
+      1. Exact top-level area_key.
+      2. Otherwise merge all corridor records and conservatively filter them
+         against the requested area bounding box.
+
+    Returned records use:
+        {
+            "name": str,
+            "route": str,
+            "type": str,
+            "segment_index": int,
+            "points": [
+                {"name": str, "label": str, "lon": float, "lat": float},
+                ...
+            ]
+        }
+    """
+    if not path.exists():
+        print(f"WARNING: corridor file not found: {path}")
+        return []
+
+    with path.open(encoding="utf-8") as f:
+        payload = json.load(f)
+
+    if not isinstance(payload, dict):
+        raise ValueError("corridors.json must contain a JSON object")
+
+    records = []
+
+    if area_key and area_key in payload:
+        entry = payload[area_key]
+        if isinstance(entry, dict):
+            records = entry.get("corridors", []) or []
+
+    if not records:
+        for key, entry in payload.items():
+            if str(key).startswith("_") or not isinstance(entry, dict):
+                continue
+            records.extend(entry.get("corridors", []) or [])
+
+    resolved = []
+    seen = set()
+
+    for corridor in records:
+        if not isinstance(corridor, dict):
+            continue
+
+        route = str(
+            corridor.get("route", corridor.get("name", ""))
+        ).strip()
+
+        if not route:
+            continue
+
+        points = []
+
+        for raw_point in corridor.get("points", []) or []:
+            try:
+                lon = float(raw_point["lon"])
+                lat = float(raw_point["lat"])
+            except (KeyError, TypeError, ValueError):
+                continue
+
+            points.append({
+                "name": str(raw_point.get("name", "")),
+                "label": str(
+                    raw_point.get(
+                        "label",
+                        raw_point.get("name", ""),
+                    )
+                ),
+                "lon": lon,
+                "lat": lat,
+            })
+
+        if len(points) < 2:
+            continue
+
+        if (
+            area is not None
+            and not _corridor_bbox_intersects_area(points, area)
+        ):
+            continue
+
+        segment_index = int(corridor.get("segment_index", 1))
+        dedup_key = (
+            route,
+            segment_index,
+            tuple((p["lon"], p["lat"]) for p in points),
+        )
+
+        if dedup_key in seen:
+            continue
+        seen.add(dedup_key)
+
+        resolved.append({
+            "name": str(corridor.get("name", route)),
+            "route": route,
+            "type": str(corridor.get("type", "ATS")),
+            "segment_index": segment_index,
+            "points": points,
+        })
+
+    return sorted(
+        resolved,
+        key=lambda item: (
+            item["route"],
+            item["segment_index"],
+        ),
+    )
