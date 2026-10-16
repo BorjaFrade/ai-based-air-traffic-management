@@ -1,1021 +1,3589 @@
 {
   "GALICIA": {
-    "name": "Galicia study area",
-    "description": "Rectangular study area defined by the supplied BBOX; it is not an administrative Galicia boundary and includes parts of Portugal, Asturias, Leon, Zamora, the Cantabrian Sea and the Atlantic Ocean.",
+    "name": "Galicia",
+    "type": "vertices",
     "bbox": {
       "lamin": 41.75,
       "lamax": 43.85,
       "lomin": -9.4,
-      "lomax": -6.65
+      "lomax": -6.65,
+      "extended": 1
+    },
+    "polygon": null,
+    "center": {
+      "lat": 42.8,
+      "lon": -8.025
     },
     "source": {
-      "name": "euvl/aviation-waypoints",
-      "url": "https://github.com/euvl/aviation-waypoints",
-      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
-      "license": "MIT"
+      "name": "ENAIRE AIP ENR 4.4",
+      "section": "ENR 4.4 - Name-code designators for significant points",
+      "origin": "web",
+      "url": "https://aip.enaire.es/AIP/contenido_AIP/ENR/LE_ENR_4_4_en.html",
+      "authority": "ENAIRE / AIS-ESPAÑA",
+      "aip_section": "ENR 4.4",
+      "aixm_class": "DesignatedPoint",
+      "aixm_type": "ICAO",
+      "effective_date": "2074-10-10",
+      "downloaded_utc": "2026-10-16T13:33:38+00:00"
     },
     "filter": {
-      "type": "WYP",
+      "types": [
+        "ICAO"
+      ],
       "coordinates": "longitude, latitude",
-      "description": "Only WYP records whose coordinates fall inside the BBOX"
+      "description": "Official ENAIRE AIP ENR 4.4 ICAO significant points inside the resolved study area; polygon presets are clipped exactly using area_presets.point_is_inside_area."
     },
-    "count": 17,
+    "count": 37,
     "waypoints": [
       {
-        "name": "AGADO",
-        "type": "WYP",
-        "lon": -8.926686,
-        "lat": 41.872879
+        "name": "ABUPI",
+        "type": "ICAO",
+        "lon": -7.23611111,
+        "lat": 41.75111111,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Obligatorio para el cruce del BDRY //Compulsory for BDRY crossing : ODD FL FM LECM TO LPPC FL245-FL660\nBDRY UIR MADRID / FIR LISBOA / ATS DELEGATION (LPPCDLGMAD)"
       },
       {
-        "name": "ASTUR",
-        "type": "WYP",
-        "lon": -7.360097,
-        "lat": 43.218437
+        "name": "AGADO",
+        "type": "ICAO",
+        "lon": -8.92666667,
+        "lat": 41.87277778,
+        "fra_relevance": "(IA)",
+        "ats_routes": [],
+        "remarks": "(A): LECO, LEVX, LEST\nObligatorio para el cruce del BDRY // Compulsory for BDRY crossing:EVEN FL FM LPPC TO LECM FL245-FL660,ODD FL FM LECM TO LPPC FL245-FL660\nBDRY UIR MADRID / FIR LISBOA / ATS DELEGATION (LPPCDLGMAD)"
+      },
+      {
+        "name": "ASDEB",
+        "type": "ICAO",
+        "lon": -8.49194444,
+        "lat": 42.51583333,
+        "fra_relevance": "(D)",
+        "ats_routes": [
+          "P600"
+        ],
+        "remarks": "(D): LPPR"
+      },
+      {
+        "name": "ASPOR",
+        "type": "ICAO",
+        "lon": -8.08111111,
+        "lat": 41.815,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "T3",
+          "T326",
+          "T328"
+        ],
+        "remarks": "Obligatorio para el cruce del BDRY // Compulsory for BDRY crossing:ODD FL FM LECM TO LPPC FL245-FL660\nBDRY UIR MADRID / FIR LISBOA / ATS DELEGATION (LPPCDLGMAD)"
       },
       {
         "name": "BARKO",
-        "type": "WYP",
-        "lon": -6.944603,
-        "lat": 42.200607
+        "type": "ICAO",
+        "lon": -6.94472222,
+        "lat": 42.20055556,
+        "fra_relevance": "(A)",
+        "ats_routes": [
+          "N733",
+          "N872",
+          "T5"
+        ],
+        "remarks": "(A): LEVX"
+      },
+      {
+        "name": "BEDAL",
+        "type": "ICAO",
+        "lon": -7.75388889,
+        "lat": 42.10472222,
+        "fra_relevance": "(D)",
+        "ats_routes": [
+          "T3",
+          "Z406"
+        ],
+        "remarks": "(D): LEVX\nTMA GALICIA"
+      },
+      {
+        "name": "BEKIN",
+        "type": "ICAO",
+        "lon": -8.69444444,
+        "lat": 42.45833333,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LEVX"
       },
       {
         "name": "BERAX",
-        "type": "WYP",
-        "lon": -8.176666,
-        "lat": 43.252052
+        "type": "ICAO",
+        "lon": -8.17666667,
+        "lat": 43.25194444,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LECO"
       },
       {
-        "name": "D101R",
-        "type": "WYP",
-        "lon": -8.200148,
-        "lat": 42.294655
+        "name": "BIRMI",
+        "type": "ICAO",
+        "lon": -8.19888889,
+        "lat": 42.29444444,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LEVX"
       },
       {
         "name": "DEMOS",
-        "type": "WYP",
-        "lon": -9.361998,
-        "lat": 41.925705
+        "type": "ICAO",
+        "lon": -9.36194444,
+        "lat": 41.92583333,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "N728"
+        ],
+        "remarks": "(D): LECO, LEST, LEVX\nObligatorio para el cruce del BDRY // Compulsory for BDRY crossing:EVEN FL FM LPPC TO LECM FL245-FL660, ODD FL FM LECM TO LPPC FL245-FL660\nBDRY FIR/UIR MADRID / FIR LISBOA\nTMA GALICIA"
+      },
+      {
+        "name": "ELTEP",
+        "type": "ICAO",
+        "lon": -7.78361111,
+        "lat": 42.61638889,
+        "fra_relevance": "(A)",
+        "ats_routes": [
+          "N733",
+          "T328"
+        ],
+        "remarks": "(A): LPPR"
+      },
+      {
+        "name": "ENONU",
+        "type": "ICAO",
+        "lon": -8.20694444,
+        "lat": 43.50861111,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LECO"
+      },
+      {
+        "name": "ETAKA",
+        "type": "ICAO",
+        "lon": -7.73,
+        "lat": 41.78916667,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "BDRY UIR MADRID / FIR LISBOA, SÃ³lo para uso tÃ¡ctico // For tactical use only"
+      },
+      {
+        "name": "FINAM",
+        "type": "ICAO",
+        "lon": -7.38861111,
+        "lat": 42.42222222,
+        "fra_relevance": "",
+        "ats_routes": [
+          "N733",
+          "T3"
+        ],
+        "remarks": "SÃ³lo para uso tÃ¡ctico // For tactical use only"
       },
       {
         "name": "FORNO",
-        "type": "WYP",
-        "lon": -7.481464,
-        "lat": 42.468109
+        "type": "ICAO",
+        "lon": -7.48138889,
+        "lat": 42.46805556,
+        "fra_relevance": "(AD)",
+        "ats_routes": [
+          "N733"
+        ],
+        "remarks": "(AD): LEST\n(D): LECO\nTMA GALICIA"
+      },
+      {
+        "name": "GALZO",
+        "type": "ICAO",
+        "lon": -8.12194444,
+        "lat": 43.29805556,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LECO"
+      },
+      {
+        "name": "GESPU",
+        "type": "ICAO",
+        "lon": -8.81166667,
+        "lat": 42.04611111,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LEVX"
+      },
+      {
+        "name": "IDOTU",
+        "type": "ICAO",
+        "lon": -8.67416667,
+        "lat": 43.33416667,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LECO"
+      },
+      {
+        "name": "INSID",
+        "type": "ICAO",
+        "lon": -7.09416667,
+        "lat": 42.27555556,
+        "fra_relevance": "(A)",
+        "ats_routes": [
+          "N733",
+          "T326"
+        ],
+        "remarks": "(A): LPPR"
       },
       {
         "name": "KORAV",
-        "type": "WYP",
-        "lon": -7.865586,
-        "lat": 43.653103
+        "type": "ICAO",
+        "lon": -7.86555556,
+        "lat": 43.65305556,
+        "fra_relevance": "(AD)",
+        "ats_routes": [
+          "N728"
+        ],
+        "remarks": "(AD): LECO, LEST, LEVX\nTMA GALICIA"
       },
       {
         "name": "LOMDA",
-        "type": "WYP",
-        "lon": -7.296025,
-        "lat": 42.852798
+        "type": "ICAO",
+        "lon": -7.29611111,
+        "lat": 42.85277778,
+        "fra_relevance": "(AD)",
+        "ats_routes": [
+          "N725"
+        ],
+        "remarks": "(AD): LEVX, LECO, LEST\nTMA GALICIA"
       },
       {
         "name": "MALIS",
-        "type": "WYP",
-        "lon": -7.604781,
-        "lat": 41.855568
+        "type": "ICAO",
+        "lon": -7.60472222,
+        "lat": 41.85555556,
+        "fra_relevance": "",
+        "ats_routes": [
+          "T5"
+        ],
+        "remarks": "BDRY FIR MADRID / LISBOA"
+      },
+      {
+        "name": "MASIP",
+        "type": "ICAO",
+        "lon": -6.65555556,
+        "lat": 43.39222222,
+        "fra_relevance": "",
+        "ats_routes": [
+          "M190"
+        ],
+        "remarks": "TMA ASTURIAS"
       },
       {
         "name": "MEGAT",
-        "type": "WYP",
-        "lon": -7.596469,
-        "lat": 43.498871
+        "type": "ICAO",
+        "lon": -7.59638889,
+        "lat": 43.49888889,
+        "fra_relevance": "(AD)",
+        "ats_routes": [
+          "P600"
+        ],
+        "remarks": "(AD): LECO, LEST, LEVX\nTMA GALICIA"
       },
       {
         "name": "MISTE",
-        "type": "WYP",
-        "lon": -8.085203,
-        "lat": 43.35535
+        "type": "ICAO",
+        "lon": -8.08527778,
+        "lat": 43.35527778,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LECO"
       },
       {
         "name": "NARBO",
-        "type": "WYP",
-        "lon": -8.228289,
-        "lat": 42.139812
+        "type": "ICAO",
+        "lon": -8.22833333,
+        "lat": 42.13972222,
+        "fra_relevance": "(D)",
+        "ats_routes": [
+          "N726"
+        ],
+        "remarks": "(D): LECO\nBDRY UIR MADRID / FIR LISBOA\nTMA GALICIA"
       },
       {
-        "name": "RELVA",
-        "type": "WYP",
-        "lon": -8.597417,
-        "lat": 41.852657
+        "name": "NOLMU",
+        "type": "ICAO",
+        "lon": -8.33388889,
+        "lat": 42.63416667,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LEST"
+      },
+      {
+        "name": "OBOTI",
+        "type": "ICAO",
+        "lon": -8.48722222,
+        "lat": 42.11861111,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LEVX"
+      },
+      {
+        "name": "PINEK",
+        "type": "ICAO",
+        "lon": -8.59777778,
+        "lat": 41.85111111,
+        "fra_relevance": "(IA)",
+        "ats_routes": [],
+        "remarks": "(A): LECO, LEST, LEVX\nObligatorio para el cruce del BDRY // Compulsory for BDRY crossing:EVEN FL FM LPPC TO LECM FL245-FL660,ODD FL FM LECM TO LPPC FL245-FL660\nBDRY UIR MADRID / FIR LISBOA / ATS DELEGATION (LPPCDLGMAD)"
+      },
+      {
+        "name": "PIVON",
+        "type": "ICAO",
+        "lon": -8.5525,
+        "lat": 42.50388889,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LEVX"
+      },
+      {
+        "name": "RALUS",
+        "type": "ICAO",
+        "lon": -7.11638889,
+        "lat": 41.93666667,
+        "fra_relevance": "",
+        "ats_routes": [
+          "N872",
+          "Z406"
+        ],
+        "remarks": "BDRY FIR/UIR MADRID / FIR LISBOA"
+      },
+      {
+        "name": "RIMTU",
+        "type": "ICAO",
+        "lon": -8.36694444,
+        "lat": 43.3225,
+        "fra_relevance": "(I)",
+        "ats_routes": []
+      },
+      {
+        "name": "RITUS",
+        "type": "ICAO",
+        "lon": -8.19944444,
+        "lat": 41.82361111,
+        "fra_relevance": "(ID)",
+        "ats_routes": [],
+        "remarks": "(D): LECO, LEST, LEVX\nObligatorio para el cruce del BDRY // Compulsory for BDRY crossing:ODD FL FM LECM TO LPPC FL245-FL660\nBDRY UIR MADRID / FIR LISBOA / ATS DELEGATION (LPPCDLGMAD)"
+      },
+      {
+        "name": "RIVEM",
+        "type": "ICAO",
+        "lon": -8.64722222,
+        "lat": 43.74444444,
+        "fra_relevance": "(AD)",
+        "ats_routes": [],
+        "remarks": "(AD): LEST, LEVX, LECO\nTMA GALICIA"
+      },
+      {
+        "name": "ROXER",
+        "type": "ICAO",
+        "lon": -7.3575,
+        "lat": 43.21305556,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "M190"
+        ],
+        "remarks": "(AD): LECO, LEST, LEVX, LEAS\nTMA GALICIA"
       },
       {
         "name": "TURON",
-        "type": "WYP",
-        "lon": -8.563416,
-        "lat": 42.067924
+        "type": "ICAO",
+        "lon": -8.56333333,
+        "lat": 42.06805556,
+        "fra_relevance": "(A)",
+        "ats_routes": [
+          "P600"
+        ],
+        "remarks": "(A): LECO\nBDRY FIR/UIR MADRID / FIR LISBOA\nTMA GALICIA"
       },
       {
-        "name": "VGO38",
-        "type": "WYP",
-        "lon": -7.751872,
-        "lat": 42.26321
-      },
-      {
-        "name": "VIS83",
-        "type": "WYP",
-        "lon": -7.093333,
-        "lat": 41.976665
+        "name": "XEBIK",
+        "type": "ICAO",
+        "lon": -8.06472222,
+        "lat": 42.75361111,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LEST"
       }
     ]
   },
-  "BCN": {
-    "name": "Barcelona-El Prat",
+  "LECMSAN_ENVELOPE": {
+    "name": "LECMSAN maximum bounding box",
+    "type": "vertices",
+    "bbox": {
+      "lamin": 41.793611,
+      "lamax": 45.0,
+      "lomin": -13.0,
+      "lomax": -5.625,
+      "extended": 1
+    },
+    "polygon": null,
+    "center": {
+      "lat": 43.3968055,
+      "lon": -9.3125
+    },
+    "source": {
+      "name": "ENAIRE AIP ENR 4.4",
+      "section": "ENR 4.4 - Name-code designators for significant points",
+      "origin": "web",
+      "url": "https://aip.enaire.es/AIP/contenido_AIP/ENR/LE_ENR_4_4_en.html",
+      "authority": "ENAIRE / AIS-ESPAÑA",
+      "aip_section": "ENR 4.4",
+      "aixm_class": "DesignatedPoint",
+      "aixm_type": "ICAO",
+      "effective_date": "2074-10-10",
+      "downloaded_utc": "2026-10-16T13:33:38+00:00"
+    },
+    "filter": {
+      "types": [
+        "ICAO"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Official ENAIRE AIP ENR 4.4 ICAO significant points inside the resolved study area; polygon presets are clipped exactly using area_presets.point_is_inside_area."
+    },
+    "count": 75,
+    "waypoints": [
+      {
+        "name": "ADROX",
+        "type": "ICAO",
+        "lon": -8.81444444,
+        "lat": 44.34666667,
+        "fra_relevance": "(I)",
+        "ats_routes": []
+      },
+      {
+        "name": "ADVAT",
+        "type": "ICAO",
+        "lon": -9.46972222,
+        "lat": 45.0,
+        "fra_relevance": "(X)",
+        "ats_routes": [],
+        "remarks": "(X): ODD FL\nBDRY FIR/UIR MADRID / SHANWICK OCA/FIR SHANWICK"
+      },
+      {
+        "name": "AGADO",
+        "type": "ICAO",
+        "lon": -8.92666667,
+        "lat": 41.87277778,
+        "fra_relevance": "(IA)",
+        "ats_routes": [],
+        "remarks": "(A): LECO, LEVX, LEST\nObligatorio para el cruce del BDRY // Compulsory for BDRY crossing:EVEN FL FM LPPC TO LECM FL245-FL660,ODD FL FM LECM TO LPPC FL245-FL660\nBDRY UIR MADRID / FIR LISBOA / ATS DELEGATION (LPPCDLGMAD)"
+      },
+      {
+        "name": "AMHOM",
+        "type": "ICAO",
+        "lon": -5.72361111,
+        "lat": 43.33305556,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA ASTURIAS"
+      },
+      {
+        "name": "ASDEB",
+        "type": "ICAO",
+        "lon": -8.49194444,
+        "lat": 42.51583333,
+        "fra_relevance": "(D)",
+        "ats_routes": [
+          "P600"
+        ],
+        "remarks": "(D): LPPR"
+      },
+      {
+        "name": "ASPOR",
+        "type": "ICAO",
+        "lon": -8.08111111,
+        "lat": 41.815,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "T3",
+          "T326",
+          "T328"
+        ],
+        "remarks": "Obligatorio para el cruce del BDRY // Compulsory for BDRY crossing:ODD FL FM LECM TO LPPC FL245-FL660\nBDRY UIR MADRID / FIR LISBOA / ATS DELEGATION (LPPCDLGMAD)"
+      },
+      {
+        "name": "BARKO",
+        "type": "ICAO",
+        "lon": -6.94472222,
+        "lat": 42.20055556,
+        "fra_relevance": "(A)",
+        "ats_routes": [
+          "N733",
+          "N872",
+          "T5"
+        ],
+        "remarks": "(A): LEVX"
+      },
+      {
+        "name": "BASUK",
+        "type": "ICAO",
+        "lon": -6.17305556,
+        "lat": 43.31916667,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA ASTURIAS"
+      },
+      {
+        "name": "BEDAL",
+        "type": "ICAO",
+        "lon": -7.75388889,
+        "lat": 42.10472222,
+        "fra_relevance": "(D)",
+        "ats_routes": [
+          "T3",
+          "Z406"
+        ],
+        "remarks": "(D): LEVX\nTMA GALICIA"
+      },
+      {
+        "name": "BEGAS",
+        "type": "ICAO",
+        "lon": -9.0,
+        "lat": 45.0,
+        "fra_relevance": "(E)",
+        "ats_routes": [],
+        "remarks": "(E): Even FL\nBDRY FIR/UIR MADRID / SHANWICK OCA/FIR SHANWICK, Entrada-Salida // Entry-Exit RVSM"
+      },
+      {
+        "name": "BEKIN",
+        "type": "ICAO",
+        "lon": -8.69444444,
+        "lat": 42.45833333,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LEVX"
+      },
+      {
+        "name": "BERAX",
+        "type": "ICAO",
+        "lon": -8.17666667,
+        "lat": 43.25194444,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LECO"
+      },
+      {
+        "name": "BERUX",
+        "type": "ICAO",
+        "lon": -11.0,
+        "lat": 45.0,
+        "fra_relevance": "(EX)",
+        "ats_routes": [],
+        "remarks": "(E): EVEN FL\n(X): ODD FL\nBDRY UIR MADRID / SHANWICK OCA, Entrada-Salida // Entry-Exit RVSM"
+      },
+      {
+        "name": "BIRMI",
+        "type": "ICAO",
+        "lon": -8.19888889,
+        "lat": 42.29444444,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LEVX"
+      },
+      {
+        "name": "BISMU",
+        "type": "ICAO",
+        "lon": -6.53861111,
+        "lat": 42.79666667,
+        "fra_relevance": "",
+        "ats_routes": [
+          "N725",
+          "N872"
+        ]
+      },
+      {
+        "name": "COJOZ",
+        "type": "ICAO",
+        "lon": -6.16805556,
+        "lat": 43.29555556,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA ASTURIAS"
+      },
+      {
+        "name": "DEMOS",
+        "type": "ICAO",
+        "lon": -9.36194444,
+        "lat": 41.92583333,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "N728"
+        ],
+        "remarks": "(D): LECO, LEST, LEVX\nObligatorio para el cruce del BDRY // Compulsory for BDRY crossing:EVEN FL FM LPPC TO LECM FL245-FL660, ODD FL FM LECM TO LPPC FL245-FL660\nBDRY FIR/UIR MADRID / FIR LISBOA\nTMA GALICIA"
+      },
+      {
+        "name": "DESAT",
+        "type": "ICAO",
+        "lon": -6.21666667,
+        "lat": 41.83027778,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N733"
+        ]
+      },
+      {
+        "name": "DIXIS",
+        "type": "ICAO",
+        "lon": -10.0,
+        "lat": 45.0,
+        "fra_relevance": "(EX)",
+        "ats_routes": [],
+        "remarks": "(E): ODD FL\n(X): EVEN FL\nBDRY UIR MADRID / SHANWICK OCA, Entrada-Salida // Entry-Exit RVSM"
+      },
+      {
+        "name": "DORAR",
+        "type": "ICAO",
+        "lon": -5.95638889,
+        "lat": 43.29305556,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA ASTURIAS\nIAF LEAS"
+      },
+      {
+        "name": "ELTEP",
+        "type": "ICAO",
+        "lon": -7.78361111,
+        "lat": 42.61638889,
+        "fra_relevance": "(A)",
+        "ats_routes": [
+          "N733",
+          "T328"
+        ],
+        "remarks": "(A): LPPR"
+      },
+      {
+        "name": "ENONU",
+        "type": "ICAO",
+        "lon": -8.20694444,
+        "lat": 43.50861111,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LECO"
+      },
+      {
+        "name": "FINAM",
+        "type": "ICAO",
+        "lon": -7.38861111,
+        "lat": 42.42222222,
+        "fra_relevance": "",
+        "ats_routes": [
+          "N733",
+          "T3"
+        ],
+        "remarks": "SÃ³lo para uso tÃ¡ctico // For tactical use only"
+      },
+      {
+        "name": "FORNO",
+        "type": "ICAO",
+        "lon": -7.48138889,
+        "lat": 42.46805556,
+        "fra_relevance": "(AD)",
+        "ats_routes": [
+          "N733"
+        ],
+        "remarks": "(AD): LEST\n(D): LECO\nTMA GALICIA"
+      },
+      {
+        "name": "GALZO",
+        "type": "ICAO",
+        "lon": -8.12194444,
+        "lat": 43.29805556,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LECO"
+      },
+      {
+        "name": "GESPU",
+        "type": "ICAO",
+        "lon": -8.81166667,
+        "lat": 42.04611111,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LEVX"
+      },
+      {
+        "name": "GOTOX",
+        "type": "ICAO",
+        "lon": -5.87861111,
+        "lat": 42.86305556,
+        "fra_relevance": "",
+        "ats_routes": [
+          "M30"
+        ]
+      },
+      {
+        "name": "HIDRA",
+        "type": "ICAO",
+        "lon": -13.0,
+        "lat": 44.5,
+        "fra_relevance": "(EX)",
+        "ats_routes": [],
+        "remarks": "(E): EVEN AND ODD FL\n(X): EVEN AND ODD FL\nBDRY UIR MADRID / FIR SANTA MARIA OCEANIC, Entrada-Salida // Entry-Exit RVSM"
+      },
+      {
+        "name": "IDOTU",
+        "type": "ICAO",
+        "lon": -8.67416667,
+        "lat": 43.33416667,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LECO"
+      },
+      {
+        "name": "INSID",
+        "type": "ICAO",
+        "lon": -7.09416667,
+        "lat": 42.27555556,
+        "fra_relevance": "(A)",
+        "ats_routes": [
+          "N733",
+          "T326"
+        ],
+        "remarks": "(A): LPPR"
+      },
+      {
+        "name": "KOPAS",
+        "type": "ICAO",
+        "lon": -13.0,
+        "lat": 44.0,
+        "fra_relevance": "(EX)",
+        "ats_routes": [],
+        "remarks": "(E): EVEN AND ODD FL\n(X): EVEN AND ODD FL\nBDRY UIR MADRID / FIR SANTA MARIA OCEANIC, Entrada-Salida // Entry-Exit RVSM"
+      },
+      {
+        "name": "KORAV",
+        "type": "ICAO",
+        "lon": -7.86555556,
+        "lat": 43.65305556,
+        "fra_relevance": "(AD)",
+        "ats_routes": [
+          "N728"
+        ],
+        "remarks": "(AD): LECO, LEST, LEVX\nTMA GALICIA"
+      },
+      {
+        "name": "KORUL",
+        "type": "ICAO",
+        "lon": -6.91972222,
+        "lat": 44.83527778,
+        "fra_relevance": "(EX)",
+        "ats_routes": [
+          "N728"
+        ],
+        "remarks": "(E): ODD FL\n(X): EVEN FL\nBDRY UIR MADRID / FRANCE"
+      },
+      {
+        "name": "KUTIX",
+        "type": "ICAO",
+        "lon": -5.96861111,
+        "lat": 43.82222222,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA ASTURIAS\nIAF LEAS"
+      },
+      {
+        "name": "KUVAN",
+        "type": "ICAO",
+        "lon": -6.31694444,
+        "lat": 43.11111111,
+        "fra_relevance": "(D)",
+        "ats_routes": [
+          "N872",
+          "Y27"
+        ],
+        "remarks": "(D): LEAS\nTMA ASTURIAS"
+      },
+      {
+        "name": "LARVO",
+        "type": "ICAO",
+        "lon": -6.16444444,
+        "lat": 42.76722222,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N725",
+          "Y27"
+        ]
+      },
+      {
+        "name": "LASIT",
+        "type": "ICAO",
+        "lon": -5.77555556,
+        "lat": 43.76388889,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA ASTURIAS\nIAF LEAS"
+      },
+      {
+        "name": "LOMDA",
+        "type": "ICAO",
+        "lon": -7.29611111,
+        "lat": 42.85277778,
+        "fra_relevance": "(AD)",
+        "ats_routes": [
+          "N725"
+        ],
+        "remarks": "(AD): LEVX, LECO, LEST\nTMA GALICIA"
+      },
+      {
+        "name": "LOTEE",
+        "type": "ICAO",
+        "lon": -5.83666667,
+        "lat": 44.65888889,
+        "fra_relevance": "(EX)",
+        "ats_routes": [
+          "M30",
+          "P600"
+        ],
+        "remarks": "(E): ODD FL\n(X): EVEN FL\nBDRY FIR/UIR MADRID / FIR BREST/UIR FRANCE"
+      },
+      {
+        "name": "MALIS",
+        "type": "ICAO",
+        "lon": -7.60472222,
+        "lat": 41.85555556,
+        "fra_relevance": "",
+        "ats_routes": [
+          "T5"
+        ],
+        "remarks": "BDRY FIR MADRID / LISBOA"
+      },
+      {
+        "name": "MASIP",
+        "type": "ICAO",
+        "lon": -6.65555556,
+        "lat": 43.39222222,
+        "fra_relevance": "",
+        "ats_routes": [
+          "M190"
+        ],
+        "remarks": "TMA ASTURIAS"
+      },
+      {
+        "name": "MAVOS",
+        "type": "ICAO",
+        "lon": -5.93472222,
+        "lat": 44.05444444,
+        "fra_relevance": "(D)",
+        "ats_routes": [
+          "M30",
+          "N480"
+        ],
+        "remarks": "(D): LEAS\nTMA ASTURIAS"
+      },
+      {
+        "name": "MEGAT",
+        "type": "ICAO",
+        "lon": -7.59638889,
+        "lat": 43.49888889,
+        "fra_relevance": "(AD)",
+        "ats_routes": [
+          "P600"
+        ],
+        "remarks": "(AD): LECO, LEST, LEVX\nTMA GALICIA"
+      },
+      {
+        "name": "MISTE",
+        "type": "ICAO",
+        "lon": -8.08527778,
+        "lat": 43.35527778,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LECO"
+      },
+      {
+        "name": "MUDOS",
+        "type": "ICAO",
+        "lon": -13.0,
+        "lat": 43.5,
+        "fra_relevance": "(EX)",
+        "ats_routes": [],
+        "remarks": "(E): EVEN AND ODD FL\n(X): ODD FL\nBDRY UIR MADRID / FIR SANTA MARIA OCEANIC, Entrada-Salida // Entry-Exit RVSM"
+      },
+      {
+        "name": "NARBO",
+        "type": "ICAO",
+        "lon": -8.22833333,
+        "lat": 42.13972222,
+        "fra_relevance": "(D)",
+        "ats_routes": [
+          "N726"
+        ],
+        "remarks": "(D): LECO\nBDRY UIR MADRID / FIR LISBOA\nTMA GALICIA"
+      },
+      {
+        "name": "NEXEP",
+        "type": "ICAO",
+        "lon": -9.49972222,
+        "lat": 43.19888889,
+        "fra_relevance": "(AD)",
+        "ats_routes": [],
+        "remarks": "(AD): LEST, LECO, LEVX\nTMA GALICIA"
+      },
+      {
+        "name": "NOLMU",
+        "type": "ICAO",
+        "lon": -8.33388889,
+        "lat": 42.63416667,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LEST"
+      },
+      {
+        "name": "OBOTI",
+        "type": "ICAO",
+        "lon": -8.48722222,
+        "lat": 42.11861111,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LEVX"
+      },
+      {
+        "name": "OMESI",
+        "type": "ICAO",
+        "lon": -5.77222222,
+        "lat": 42.27638889,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "M30"
+        ]
+      },
+      {
+        "name": "PASAS",
+        "type": "ICAO",
+        "lon": -13.0,
+        "lat": 45.0,
+        "fra_relevance": "(EX)",
+        "ats_routes": [],
+        "remarks": "(E): EVEN AND ODD FL\n(X): EVEN AND ODD FL\nBDRY UIR MADRID / SHANWICK OCA / FIR SANTA MARIA OCEANIC, Entrada-Salida // Entry-Exit RVSM"
+      },
+      {
+        "name": "PETEK",
+        "type": "ICAO",
+        "lon": -12.0,
+        "lat": 42.67888889,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Obligatorio para el cruce del BDRY // Compulsory for BDRY crossing:EVEN FL FM LPPC TO LECM FL245-FL660,ODD FL FM LECM TO LPPC FL245-FL660\nBDRY UIR MADRID / FIR LISBOA"
+      },
+      {
+        "name": "PINEK",
+        "type": "ICAO",
+        "lon": -8.59777778,
+        "lat": 41.85111111,
+        "fra_relevance": "(IA)",
+        "ats_routes": [],
+        "remarks": "(A): LECO, LEST, LEVX\nObligatorio para el cruce del BDRY // Compulsory for BDRY crossing:EVEN FL FM LPPC TO LECM FL245-FL660,ODD FL FM LECM TO LPPC FL245-FL660\nBDRY UIR MADRID / FIR LISBOA / ATS DELEGATION (LPPCDLGMAD)"
+      },
+      {
+        "name": "PITAX",
+        "type": "ICAO",
+        "lon": -12.0,
+        "lat": 45.0,
+        "fra_relevance": "(EX)",
+        "ats_routes": [],
+        "remarks": "(E): EVEN AND ODD FL\n(X): EVEN AND ODD FL\nBDRY UIR MADRID / SHANWICK OCA, Entrada-Salida // Entry-Exit RVSM"
+      },
+      {
+        "name": "PIVON",
+        "type": "ICAO",
+        "lon": -8.5525,
+        "lat": 42.50388889,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LEVX"
+      },
+      {
+        "name": "PIZQA",
+        "type": "ICAO",
+        "lon": -5.73388889,
+        "lat": 43.62861111,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA ASTURIAS"
+      },
+      {
+        "name": "RALUS",
+        "type": "ICAO",
+        "lon": -7.11638889,
+        "lat": 41.93666667,
+        "fra_relevance": "",
+        "ats_routes": [
+          "N872",
+          "Z406"
+        ],
+        "remarks": "BDRY FIR/UIR MADRID / FIR LISBOA"
+      },
+      {
+        "name": "REPSO",
+        "type": "ICAO",
+        "lon": -6.35361111,
+        "lat": 43.46972222,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA ASTURIAS"
+      },
+      {
+        "name": "RETEN",
+        "type": "ICAO",
+        "lon": -13.0,
+        "lat": 43.0,
+        "fra_relevance": "(EX)",
+        "ats_routes": [],
+        "remarks": "(X): EVEN AND ODD FL\n(E): EVEN AND ODD FL\nBDRY UIR MADRID / FIR SANTA MARÃA OCEANIC / FIR LISBOA, Entrada-Salida // Entry-Exit RVSM"
+      },
+      {
+        "name": "RIMTU",
+        "type": "ICAO",
+        "lon": -8.36694444,
+        "lat": 43.3225,
+        "fra_relevance": "(I)",
+        "ats_routes": []
+      },
+      {
+        "name": "RIPEL",
+        "type": "ICAO",
+        "lon": -10.81611111,
+        "lat": 42.28305556,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Obligatorio para el cruce del BDRY // Compulsory for BDRY crossing:EVEN FL FM LPPC TO LECM FL245-FL660,ODD FL FM LECM TO LPPC FL245-FL660\nBDRY UIR MADRID / FIR LISBOA"
+      },
+      {
+        "name": "RITUS",
+        "type": "ICAO",
+        "lon": -8.19944444,
+        "lat": 41.82361111,
+        "fra_relevance": "(ID)",
+        "ats_routes": [],
+        "remarks": "(D): LECO, LEST, LEVX\nObligatorio para el cruce del BDRY // Compulsory for BDRY crossing:ODD FL FM LECM TO LPPC FL245-FL660\nBDRY UIR MADRID / FIR LISBOA / ATS DELEGATION (LPPCDLGMAD)"
+      },
+      {
+        "name": "RIVEM",
+        "type": "ICAO",
+        "lon": -8.64722222,
+        "lat": 43.74444444,
+        "fra_relevance": "(AD)",
+        "ats_routes": [],
+        "remarks": "(AD): LEST, LEVX, LECO\nTMA GALICIA"
+      },
+      {
+        "name": "ROMIL",
+        "type": "ICAO",
+        "lon": -5.65888889,
+        "lat": 43.47416667,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA ASTURIAS\nIAF LEAS"
+      },
+      {
+        "name": "ROVAK",
+        "type": "ICAO",
+        "lon": -5.85638889,
+        "lat": 42.74194444,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "M30",
+          "N725"
+        ],
+        "remarks": "(AD): LELN, LEAS\nCTA LEÃN"
+      },
+      {
+        "name": "ROXER",
+        "type": "ICAO",
+        "lon": -7.3575,
+        "lat": 43.21305556,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "M190"
+        ],
+        "remarks": "(AD): LECO, LEST, LEVX, LEAS\nTMA GALICIA"
+      },
+      {
+        "name": "SIKHE",
+        "type": "ICAO",
+        "lon": -5.70083333,
+        "lat": 43.38305556,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA ASTURIAS"
+      },
+      {
+        "name": "SOSOV",
+        "type": "ICAO",
+        "lon": -7.885,
+        "lat": 44.98305556,
+        "fra_relevance": "(EX)",
+        "ats_routes": [],
+        "remarks": "(X): EVEN FL\n(E): ODD FL\nBDRY UIR MADRID / FRANCE"
+      },
+      {
+        "name": "TURON",
+        "type": "ICAO",
+        "lon": -8.56333333,
+        "lat": 42.06805556,
+        "fra_relevance": "(A)",
+        "ats_routes": [
+          "P600"
+        ],
+        "remarks": "(A): LECO\nBDRY FIR/UIR MADRID / FIR LISBOA\nTMA GALICIA"
+      },
+      {
+        "name": "TUXAL",
+        "type": "ICAO",
+        "lon": -6.35666667,
+        "lat": 43.63888889,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA ASTURIAS\nIAF LEAS"
+      },
+      {
+        "name": "VETAN",
+        "type": "ICAO",
+        "lon": -5.71583333,
+        "lat": 41.96194444,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "M30"
+        ]
+      },
+      {
+        "name": "XEBIK",
+        "type": "ICAO",
+        "lon": -8.06472222,
+        "lat": 42.75361111,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LEST"
+      },
+      {
+        "name": "XERES",
+        "type": "ICAO",
+        "lon": -10.06805556,
+        "lat": 42.02388889,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Obligatorio para el cruce del BDRY // Compulsory for BDRY crossing:EVEN FL FM LPPC TO LECM FL245-FL660,ODD FL FM LECM TO LPPC FL245-FL660\nBDRY UIR MADRID / FIR LISBOA"
+      },
+      {
+        "name": "XIDRA",
+        "type": "ICAO",
+        "lon": -5.64111111,
+        "lat": 43.5425,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA ASTURIAS"
+      },
+      {
+        "name": "XONDA",
+        "type": "ICAO",
+        "lon": -5.91222222,
+        "lat": 43.06194444,
+        "fra_relevance": "",
+        "ats_routes": [
+          "M30"
+        ],
+        "remarks": "TMA ASTURIAS"
+      }
+    ]
+  },
+  "LECMSAN": {
+    "name": "LECMSAN Santiago ATC sector",
+    "type": "polygon",
+    "bbox": {
+      "lamin": 41.793611,
+      "lamax": 45.0,
+      "lomin": -13.0,
+      "lomax": -5.625,
+      "extended": 1
+    },
+    "polygon": [
+      [
+        -7.481389,
+        42.468056
+      ],
+      [
+        -7.6425,
+        42.253611
+      ],
+      [
+        -7.753889,
+        42.104722
+      ],
+      [
+        -7.775833,
+        41.908611
+      ],
+      [
+        -7.7775,
+        41.894722
+      ],
+      [
+        -7.788611,
+        41.793611
+      ],
+      [
+        -8.081111,
+        41.815
+      ],
+      [
+        -8.199444,
+        41.823611
+      ],
+      [
+        -8.597778,
+        41.851111
+      ],
+      [
+        -8.843611,
+        41.8675
+      ],
+      [
+        -8.926667,
+        41.872778
+      ],
+      [
+        -9.010278,
+        41.883056
+      ],
+      [
+        -9.036667,
+        41.886111
+      ],
+      [
+        -9.361944,
+        41.925556
+      ],
+      [
+        -9.4,
+        41.933333
+      ],
+      [
+        -10.0,
+        42.0
+      ],
+      [
+        -10.068056,
+        42.023889
+      ],
+      [
+        -10.396111,
+        42.138333
+      ],
+      [
+        -10.816111,
+        42.283056
+      ],
+      [
+        -11.848611,
+        42.629167
+      ],
+      [
+        -12.0,
+        42.678889
+      ],
+      [
+        -12.381389,
+        42.796667
+      ],
+      [
+        -12.5,
+        42.833333
+      ],
+      [
+        -13.0,
+        43.0
+      ],
+      [
+        -13.0,
+        43.277222
+      ],
+      [
+        -13.0,
+        43.5
+      ],
+      [
+        -13.0,
+        44.0
+      ],
+      [
+        -13.0,
+        44.304722
+      ],
+      [
+        -13.0,
+        44.5
+      ],
+      [
+        -13.0,
+        44.636667
+      ],
+      [
+        -13.0,
+        44.833333
+      ],
+      [
+        -13.0,
+        44.916667
+      ],
+      [
+        -13.0,
+        45.0
+      ],
+      [
+        -12.916667,
+        45.0
+      ],
+      [
+        -12.583333,
+        45.0
+      ],
+      [
+        -12.5,
+        45.0
+      ],
+      [
+        -12.283333,
+        45.0
+      ],
+      [
+        -12.0,
+        45.0
+      ],
+      [
+        -11.921667,
+        45.0
+      ],
+      [
+        -11.565278,
+        45.0
+      ],
+      [
+        -11.5,
+        45.0
+      ],
+      [
+        -11.336944,
+        45.0
+      ],
+      [
+        -11.0,
+        45.0
+      ],
+      [
+        -10.5,
+        45.0
+      ],
+      [
+        -10.0,
+        45.0
+      ],
+      [
+        -9.836667,
+        45.0
+      ],
+      [
+        -9.685278,
+        45.0
+      ],
+      [
+        -9.5,
+        45.0
+      ],
+      [
+        -9.13,
+        45.0
+      ],
+      [
+        -9.0,
+        45.0
+      ],
+      [
+        -8.75,
+        45.0
+      ],
+      [
+        -8.0,
+        45.0
+      ],
+      [
+        -7.885,
+        44.983056
+      ],
+      [
+        -7.405278,
+        44.910556
+      ],
+      [
+        -7.045,
+        44.852778
+      ],
+      [
+        -6.919722,
+        44.835278
+      ],
+      [
+        -6.916667,
+        44.834722
+      ],
+      [
+        -5.836667,
+        44.658889
+      ],
+      [
+        -5.625,
+        44.622222
+      ],
+      [
+        -6.148056,
+        44.032778
+      ],
+      [
+        -6.671111,
+        43.430278
+      ],
+      [
+        -7.35,
+        42.566667
+      ],
+      [
+        -7.481389,
+        42.468056
+      ]
+    ],
+    "center": {
+      "lat": 43.3968055,
+      "lon": -9.3125
+    },
+    "source": {
+      "name": "ENAIRE AIP ENR 4.4",
+      "section": "ENR 4.4 - Name-code designators for significant points",
+      "origin": "web",
+      "url": "https://aip.enaire.es/AIP/contenido_AIP/ENR/LE_ENR_4_4_en.html",
+      "authority": "ENAIRE / AIS-ESPAÑA",
+      "aip_section": "ENR 4.4",
+      "aixm_class": "DesignatedPoint",
+      "aixm_type": "ICAO",
+      "effective_date": "2074-10-10",
+      "downloaded_utc": "2026-10-16T13:33:38+00:00"
+    },
+    "filter": {
+      "types": [
+        "ICAO"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Official ENAIRE AIP ENR 4.4 ICAO significant points inside the resolved study area; polygon presets are clipped exactly using area_presets.point_is_inside_area."
+    },
+    "count": 47,
+    "waypoints": [
+      {
+        "name": "ADROX",
+        "type": "ICAO",
+        "lon": -8.81444444,
+        "lat": 44.34666667,
+        "fra_relevance": "(I)",
+        "ats_routes": []
+      },
+      {
+        "name": "ADVAT",
+        "type": "ICAO",
+        "lon": -9.46972222,
+        "lat": 45.0,
+        "fra_relevance": "(X)",
+        "ats_routes": [],
+        "remarks": "(X): ODD FL\nBDRY FIR/UIR MADRID / SHANWICK OCA/FIR SHANWICK"
+      },
+      {
+        "name": "AGADO",
+        "type": "ICAO",
+        "lon": -8.92666667,
+        "lat": 41.87277778,
+        "fra_relevance": "(IA)",
+        "ats_routes": [],
+        "remarks": "(A): LECO, LEVX, LEST\nObligatorio para el cruce del BDRY // Compulsory for BDRY crossing:EVEN FL FM LPPC TO LECM FL245-FL660,ODD FL FM LECM TO LPPC FL245-FL660\nBDRY UIR MADRID / FIR LISBOA / ATS DELEGATION (LPPCDLGMAD)"
+      },
+      {
+        "name": "ASDEB",
+        "type": "ICAO",
+        "lon": -8.49194444,
+        "lat": 42.51583333,
+        "fra_relevance": "(D)",
+        "ats_routes": [
+          "P600"
+        ],
+        "remarks": "(D): LPPR"
+      },
+      {
+        "name": "ASPOR",
+        "type": "ICAO",
+        "lon": -8.08111111,
+        "lat": 41.815,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "T3",
+          "T326",
+          "T328"
+        ],
+        "remarks": "Obligatorio para el cruce del BDRY // Compulsory for BDRY crossing:ODD FL FM LECM TO LPPC FL245-FL660\nBDRY UIR MADRID / FIR LISBOA / ATS DELEGATION (LPPCDLGMAD)"
+      },
+      {
+        "name": "BEDAL",
+        "type": "ICAO",
+        "lon": -7.75388889,
+        "lat": 42.10472222,
+        "fra_relevance": "(D)",
+        "ats_routes": [
+          "T3",
+          "Z406"
+        ],
+        "remarks": "(D): LEVX\nTMA GALICIA"
+      },
+      {
+        "name": "BEGAS",
+        "type": "ICAO",
+        "lon": -9.0,
+        "lat": 45.0,
+        "fra_relevance": "(E)",
+        "ats_routes": [],
+        "remarks": "(E): Even FL\nBDRY FIR/UIR MADRID / SHANWICK OCA/FIR SHANWICK, Entrada-Salida // Entry-Exit RVSM"
+      },
+      {
+        "name": "BEKIN",
+        "type": "ICAO",
+        "lon": -8.69444444,
+        "lat": 42.45833333,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LEVX"
+      },
+      {
+        "name": "BERAX",
+        "type": "ICAO",
+        "lon": -8.17666667,
+        "lat": 43.25194444,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LECO"
+      },
+      {
+        "name": "BERUX",
+        "type": "ICAO",
+        "lon": -11.0,
+        "lat": 45.0,
+        "fra_relevance": "(EX)",
+        "ats_routes": [],
+        "remarks": "(E): EVEN FL\n(X): ODD FL\nBDRY UIR MADRID / SHANWICK OCA, Entrada-Salida // Entry-Exit RVSM"
+      },
+      {
+        "name": "BIRMI",
+        "type": "ICAO",
+        "lon": -8.19888889,
+        "lat": 42.29444444,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LEVX"
+      },
+      {
+        "name": "DEMOS",
+        "type": "ICAO",
+        "lon": -9.36194444,
+        "lat": 41.92583333,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "N728"
+        ],
+        "remarks": "(D): LECO, LEST, LEVX\nObligatorio para el cruce del BDRY // Compulsory for BDRY crossing:EVEN FL FM LPPC TO LECM FL245-FL660, ODD FL FM LECM TO LPPC FL245-FL660\nBDRY FIR/UIR MADRID / FIR LISBOA\nTMA GALICIA"
+      },
+      {
+        "name": "DIXIS",
+        "type": "ICAO",
+        "lon": -10.0,
+        "lat": 45.0,
+        "fra_relevance": "(EX)",
+        "ats_routes": [],
+        "remarks": "(E): ODD FL\n(X): EVEN FL\nBDRY UIR MADRID / SHANWICK OCA, Entrada-Salida // Entry-Exit RVSM"
+      },
+      {
+        "name": "ELTEP",
+        "type": "ICAO",
+        "lon": -7.78361111,
+        "lat": 42.61638889,
+        "fra_relevance": "(A)",
+        "ats_routes": [
+          "N733",
+          "T328"
+        ],
+        "remarks": "(A): LPPR"
+      },
+      {
+        "name": "ENONU",
+        "type": "ICAO",
+        "lon": -8.20694444,
+        "lat": 43.50861111,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LECO"
+      },
+      {
+        "name": "FORNO",
+        "type": "ICAO",
+        "lon": -7.48138889,
+        "lat": 42.46805556,
+        "fra_relevance": "(AD)",
+        "ats_routes": [
+          "N733"
+        ],
+        "remarks": "(AD): LEST\n(D): LECO\nTMA GALICIA"
+      },
+      {
+        "name": "GALZO",
+        "type": "ICAO",
+        "lon": -8.12194444,
+        "lat": 43.29805556,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LECO"
+      },
+      {
+        "name": "GESPU",
+        "type": "ICAO",
+        "lon": -8.81166667,
+        "lat": 42.04611111,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LEVX"
+      },
+      {
+        "name": "HIDRA",
+        "type": "ICAO",
+        "lon": -13.0,
+        "lat": 44.5,
+        "fra_relevance": "(EX)",
+        "ats_routes": [],
+        "remarks": "(E): EVEN AND ODD FL\n(X): EVEN AND ODD FL\nBDRY UIR MADRID / FIR SANTA MARIA OCEANIC, Entrada-Salida // Entry-Exit RVSM"
+      },
+      {
+        "name": "IDOTU",
+        "type": "ICAO",
+        "lon": -8.67416667,
+        "lat": 43.33416667,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LECO"
+      },
+      {
+        "name": "KOPAS",
+        "type": "ICAO",
+        "lon": -13.0,
+        "lat": 44.0,
+        "fra_relevance": "(EX)",
+        "ats_routes": [],
+        "remarks": "(E): EVEN AND ODD FL\n(X): EVEN AND ODD FL\nBDRY UIR MADRID / FIR SANTA MARIA OCEANIC, Entrada-Salida // Entry-Exit RVSM"
+      },
+      {
+        "name": "KORAV",
+        "type": "ICAO",
+        "lon": -7.86555556,
+        "lat": 43.65305556,
+        "fra_relevance": "(AD)",
+        "ats_routes": [
+          "N728"
+        ],
+        "remarks": "(AD): LECO, LEST, LEVX\nTMA GALICIA"
+      },
+      {
+        "name": "KORUL",
+        "type": "ICAO",
+        "lon": -6.91972222,
+        "lat": 44.83527778,
+        "fra_relevance": "(EX)",
+        "ats_routes": [
+          "N728"
+        ],
+        "remarks": "(E): ODD FL\n(X): EVEN FL\nBDRY UIR MADRID / FRANCE"
+      },
+      {
+        "name": "LOMDA",
+        "type": "ICAO",
+        "lon": -7.29611111,
+        "lat": 42.85277778,
+        "fra_relevance": "(AD)",
+        "ats_routes": [
+          "N725"
+        ],
+        "remarks": "(AD): LEVX, LECO, LEST\nTMA GALICIA"
+      },
+      {
+        "name": "LOTEE",
+        "type": "ICAO",
+        "lon": -5.83666667,
+        "lat": 44.65888889,
+        "fra_relevance": "(EX)",
+        "ats_routes": [
+          "M30",
+          "P600"
+        ],
+        "remarks": "(E): ODD FL\n(X): EVEN FL\nBDRY FIR/UIR MADRID / FIR BREST/UIR FRANCE"
+      },
+      {
+        "name": "MEGAT",
+        "type": "ICAO",
+        "lon": -7.59638889,
+        "lat": 43.49888889,
+        "fra_relevance": "(AD)",
+        "ats_routes": [
+          "P600"
+        ],
+        "remarks": "(AD): LECO, LEST, LEVX\nTMA GALICIA"
+      },
+      {
+        "name": "MISTE",
+        "type": "ICAO",
+        "lon": -8.08527778,
+        "lat": 43.35527778,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LECO"
+      },
+      {
+        "name": "MUDOS",
+        "type": "ICAO",
+        "lon": -13.0,
+        "lat": 43.5,
+        "fra_relevance": "(EX)",
+        "ats_routes": [],
+        "remarks": "(E): EVEN AND ODD FL\n(X): ODD FL\nBDRY UIR MADRID / FIR SANTA MARIA OCEANIC, Entrada-Salida // Entry-Exit RVSM"
+      },
+      {
+        "name": "NARBO",
+        "type": "ICAO",
+        "lon": -8.22833333,
+        "lat": 42.13972222,
+        "fra_relevance": "(D)",
+        "ats_routes": [
+          "N726"
+        ],
+        "remarks": "(D): LECO\nBDRY UIR MADRID / FIR LISBOA\nTMA GALICIA"
+      },
+      {
+        "name": "NEXEP",
+        "type": "ICAO",
+        "lon": -9.49972222,
+        "lat": 43.19888889,
+        "fra_relevance": "(AD)",
+        "ats_routes": [],
+        "remarks": "(AD): LEST, LECO, LEVX\nTMA GALICIA"
+      },
+      {
+        "name": "NOLMU",
+        "type": "ICAO",
+        "lon": -8.33388889,
+        "lat": 42.63416667,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LEST"
+      },
+      {
+        "name": "OBOTI",
+        "type": "ICAO",
+        "lon": -8.48722222,
+        "lat": 42.11861111,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LEVX"
+      },
+      {
+        "name": "PASAS",
+        "type": "ICAO",
+        "lon": -13.0,
+        "lat": 45.0,
+        "fra_relevance": "(EX)",
+        "ats_routes": [],
+        "remarks": "(E): EVEN AND ODD FL\n(X): EVEN AND ODD FL\nBDRY UIR MADRID / SHANWICK OCA / FIR SANTA MARIA OCEANIC, Entrada-Salida // Entry-Exit RVSM"
+      },
+      {
+        "name": "PETEK",
+        "type": "ICAO",
+        "lon": -12.0,
+        "lat": 42.67888889,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Obligatorio para el cruce del BDRY // Compulsory for BDRY crossing:EVEN FL FM LPPC TO LECM FL245-FL660,ODD FL FM LECM TO LPPC FL245-FL660\nBDRY UIR MADRID / FIR LISBOA"
+      },
+      {
+        "name": "PINEK",
+        "type": "ICAO",
+        "lon": -8.59777778,
+        "lat": 41.85111111,
+        "fra_relevance": "(IA)",
+        "ats_routes": [],
+        "remarks": "(A): LECO, LEST, LEVX\nObligatorio para el cruce del BDRY // Compulsory for BDRY crossing:EVEN FL FM LPPC TO LECM FL245-FL660,ODD FL FM LECM TO LPPC FL245-FL660\nBDRY UIR MADRID / FIR LISBOA / ATS DELEGATION (LPPCDLGMAD)"
+      },
+      {
+        "name": "PITAX",
+        "type": "ICAO",
+        "lon": -12.0,
+        "lat": 45.0,
+        "fra_relevance": "(EX)",
+        "ats_routes": [],
+        "remarks": "(E): EVEN AND ODD FL\n(X): EVEN AND ODD FL\nBDRY UIR MADRID / SHANWICK OCA, Entrada-Salida // Entry-Exit RVSM"
+      },
+      {
+        "name": "PIVON",
+        "type": "ICAO",
+        "lon": -8.5525,
+        "lat": 42.50388889,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LEVX"
+      },
+      {
+        "name": "RETEN",
+        "type": "ICAO",
+        "lon": -13.0,
+        "lat": 43.0,
+        "fra_relevance": "(EX)",
+        "ats_routes": [],
+        "remarks": "(X): EVEN AND ODD FL\n(E): EVEN AND ODD FL\nBDRY UIR MADRID / FIR SANTA MARÃA OCEANIC / FIR LISBOA, Entrada-Salida // Entry-Exit RVSM"
+      },
+      {
+        "name": "RIMTU",
+        "type": "ICAO",
+        "lon": -8.36694444,
+        "lat": 43.3225,
+        "fra_relevance": "(I)",
+        "ats_routes": []
+      },
+      {
+        "name": "RIPEL",
+        "type": "ICAO",
+        "lon": -10.81611111,
+        "lat": 42.28305556,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Obligatorio para el cruce del BDRY // Compulsory for BDRY crossing:EVEN FL FM LPPC TO LECM FL245-FL660,ODD FL FM LECM TO LPPC FL245-FL660\nBDRY UIR MADRID / FIR LISBOA"
+      },
+      {
+        "name": "RITUS",
+        "type": "ICAO",
+        "lon": -8.19944444,
+        "lat": 41.82361111,
+        "fra_relevance": "(ID)",
+        "ats_routes": [],
+        "remarks": "(D): LECO, LEST, LEVX\nObligatorio para el cruce del BDRY // Compulsory for BDRY crossing:ODD FL FM LECM TO LPPC FL245-FL660\nBDRY UIR MADRID / FIR LISBOA / ATS DELEGATION (LPPCDLGMAD)"
+      },
+      {
+        "name": "RIVEM",
+        "type": "ICAO",
+        "lon": -8.64722222,
+        "lat": 43.74444444,
+        "fra_relevance": "(AD)",
+        "ats_routes": [],
+        "remarks": "(AD): LEST, LEVX, LECO\nTMA GALICIA"
+      },
+      {
+        "name": "ROXER",
+        "type": "ICAO",
+        "lon": -7.3575,
+        "lat": 43.21305556,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "M190"
+        ],
+        "remarks": "(AD): LECO, LEST, LEVX, LEAS\nTMA GALICIA"
+      },
+      {
+        "name": "SOSOV",
+        "type": "ICAO",
+        "lon": -7.885,
+        "lat": 44.98305556,
+        "fra_relevance": "(EX)",
+        "ats_routes": [],
+        "remarks": "(X): EVEN FL\n(E): ODD FL\nBDRY UIR MADRID / FRANCE"
+      },
+      {
+        "name": "TURON",
+        "type": "ICAO",
+        "lon": -8.56333333,
+        "lat": 42.06805556,
+        "fra_relevance": "(A)",
+        "ats_routes": [
+          "P600"
+        ],
+        "remarks": "(A): LECO\nBDRY FIR/UIR MADRID / FIR LISBOA\nTMA GALICIA"
+      },
+      {
+        "name": "XEBIK",
+        "type": "ICAO",
+        "lon": -8.06472222,
+        "lat": 42.75361111,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA GALICIA\nIAF LEST"
+      },
+      {
+        "name": "XERES",
+        "type": "ICAO",
+        "lon": -10.06805556,
+        "lat": 42.02388889,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Obligatorio para el cruce del BDRY // Compulsory for BDRY crossing:EVEN FL FM LPPC TO LECM FL245-FL660,ODD FL FM LECM TO LPPC FL245-FL660\nBDRY UIR MADRID / FIR LISBOA"
+      }
+    ]
+  },
+  "NORTHERN_SPAIN": {
+    "name": "Northern Spain",
+    "type": "vertices",
+    "bbox": {
+      "lamin": 41.5,
+      "lamax": 44.0,
+      "lomin": -3.5,
+      "lomax": 1.5,
+      "extended": 1
+    },
+    "polygon": null,
+    "center": {
+      "lat": 42.75,
+      "lon": -1.0
+    },
+    "source": {
+      "name": "ENAIRE AIP ENR 4.4",
+      "section": "ENR 4.4 - Name-code designators for significant points",
+      "origin": "web",
+      "url": "https://aip.enaire.es/AIP/contenido_AIP/ENR/LE_ENR_4_4_en.html",
+      "authority": "ENAIRE / AIS-ESPAÑA",
+      "aip_section": "ENR 4.4",
+      "aixm_class": "DesignatedPoint",
+      "aixm_type": "ICAO",
+      "effective_date": "2074-10-10",
+      "downloaded_utc": "2026-10-16T13:33:38+00:00"
+    },
+    "filter": {
+      "types": [
+        "ICAO"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Official ENAIRE AIP ENR 4.4 ICAO significant points inside the resolved study area; polygon presets are clipped exactly using area_presets.point_is_inside_area."
+    },
+    "count": 119,
+    "waypoints": [
+      {
+        "name": "ABRIX",
+        "type": "ICAO",
+        "lon": -1.9625,
+        "lat": 43.64638889,
+        "fra_relevance": "(X)",
+        "ats_routes": [
+          "N858"
+        ],
+        "remarks": "(X): EVEN FL\nBDRY UIR MADRID / FRANCE"
+      },
+      {
+        "name": "AFEMI",
+        "type": "ICAO",
+        "lon": -1.77,
+        "lat": 42.5425,
+        "fra_relevance": "",
+        "ats_routes": []
+      },
+      {
+        "name": "ALBIZ",
+        "type": "ICAO",
+        "lon": -2.63166667,
+        "lat": 43.2125,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BILBAO\nIAF LEBB"
+      },
+      {
+        "name": "ALEPO",
+        "type": "ICAO",
+        "lon": -1.96333333,
+        "lat": 42.34361111,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "N10",
+          "N857"
+        ],
+        "remarks": "(D): LEZG\nTMA ZARAGOZA"
+      },
+      {
+        "name": "ALOSU",
+        "type": "ICAO",
+        "lon": 0.49861111,
+        "lat": 41.93305556,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "M601"
+        ],
+        "remarks": "TMA BARCELONA"
+      },
+      {
+        "name": "AMBEL",
+        "type": "ICAO",
+        "lon": -1.71444444,
+        "lat": 41.77083333,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "USO EXCLUSIVO MILITAR // EXCLUSIVE MILITARY USE\nIAF LEZG"
+      },
+      {
+        "name": "AMGAR",
+        "type": "ICAO",
+        "lon": -3.25333333,
+        "lat": 42.555,
+        "fra_relevance": "",
+        "ats_routes": [
+          "M299"
+        ],
+        "remarks": "CTA VITORIA"
+      },
+      {
+        "name": "AMPUR",
+        "type": "ICAO",
+        "lon": -3.43027778,
+        "lat": 43.32333333,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA SANTANDER\nIAF LEXJ"
+      },
+      {
+        "name": "AMTOS",
+        "type": "ICAO",
+        "lon": -3.22111111,
+        "lat": 43.0,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "L14"
+        ],
+        "remarks": "(D): LEBB\nTMA BILBAO/CTA VITORIA"
+      },
+      {
+        "name": "ANEKU",
+        "type": "ICAO",
+        "lon": -1.84277778,
+        "lat": 42.52444444,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "IAF LEPP"
+      },
+      {
+        "name": "ANETO",
+        "type": "ICAO",
+        "lon": 0.55833333,
+        "lat": 42.69305556,
+        "fra_relevance": "(EX)",
+        "ats_routes": [
+          "N860"
+        ],
+        "remarks": "(E) ODD FL\n(X) EVEN FL\nBDRY UIR BARCELONA / FRANCE"
+      },
+      {
+        "name": "ARBEK",
+        "type": "ICAO",
+        "lon": 1.12972222,
+        "lat": 41.54388889,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N725",
+          "N863",
+          "T113",
+          "T410"
+        ],
+        "remarks": "TMA BARCELONA"
+      },
+      {
+        "name": "ARBIN",
+        "type": "ICAO",
+        "lon": -2.61388889,
+        "lat": 42.67972222,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "CTA VITORIA\nIAF LEVT"
+      },
+      {
+        "name": "ARVID",
+        "type": "ICAO",
+        "lon": -1.46472222,
+        "lat": 43.07611111,
+        "fra_relevance": "(E)",
+        "ats_routes": [
+          "T424"
+        ],
+        "remarks": "(E): ODD FL\nBDRY UIR MADRID / FRANCE"
+      },
+      {
+        "name": "ASPES",
+        "type": "ICAO",
+        "lon": -3.15833333,
+        "lat": 43.49888889,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BILBAO\nIAF LEBB"
+      },
+      {
+        "name": "BADRU",
+        "type": "ICAO",
+        "lon": -2.79666667,
+        "lat": 43.73638889,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "P152",
+          "P87"
+        ],
+        "remarks": "(A): LERJ"
+      },
+      {
+        "name": "BAGAS",
+        "type": "ICAO",
+        "lon": -2.09472222,
+        "lat": 43.09833333,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "L176",
+          "P152"
+        ],
+        "remarks": "(AD): LEPP\nCTA PAMPLONA"
+      },
+      {
+        "name": "BANEV",
+        "type": "ICAO",
+        "lon": -2.51444444,
+        "lat": 41.5025,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "N10",
+          "N857"
+        ],
+        "remarks": "(A): LEMD\n(D): LERJ"
+      },
+      {
+        "name": "BAPOR",
+        "type": "ICAO",
+        "lon": -2.72444444,
+        "lat": 43.67166667,
+        "fra_relevance": "",
+        "ats_routes": [
+          "P152"
+        ]
+      },
+      {
+        "name": "BARBO",
+        "type": "ICAO",
+        "lon": 0.90277778,
+        "lat": 42.44888889,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N608"
+        ],
+        "remarks": "TMA BARCELONA"
+      },
+      {
+        "name": "BASIM",
+        "type": "ICAO",
+        "lon": -3.26666667,
+        "lat": 41.50444444,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "T430"
+        ],
+        "remarks": "(D): LEMD, LETO"
+      },
+      {
+        "name": "BEGUY",
+        "type": "ICAO",
+        "lon": -1.45083333,
+        "lat": 43.05833333,
+        "fra_relevance": "",
+        "ats_routes": [
+          "M299"
+        ]
+      },
+      {
+        "name": "BELEN",
+        "type": "ICAO",
+        "lon": -2.73861111,
+        "lat": 43.91416667,
+        "fra_relevance": "(X)",
+        "ats_routes": [
+          "P87"
+        ],
+        "remarks": "(X): EVEN FL\nBDRY FIR/UIR MADRID / FIR BREST/UIR FRANCE"
+      },
+      {
+        "name": "BIBEL",
+        "type": "ICAO",
+        "lon": -1.88277778,
+        "lat": 42.73416667,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "CTA PAMPLONA"
+      },
+      {
+        "name": "BISKA",
+        "type": "ICAO",
+        "lon": -2.81388889,
+        "lat": 43.68333333,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "P87"
+        ],
+        "remarks": "TMA BILBAO"
+      },
+      {
+        "name": "BUROV",
+        "type": "ICAO",
+        "lon": -0.87472222,
+        "lat": 41.59722222,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA ZARAGOZA\nIAF/FAF LEZG"
+      },
+      {
+        "name": "CALCE",
+        "type": "ICAO",
+        "lon": -3.31666667,
+        "lat": 43.36277778,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "M190"
+        ],
+        "remarks": "TMA BILBAO/TMA SANTANTER"
+      },
+      {
+        "name": "CEGAM",
+        "type": "ICAO",
+        "lon": -2.23638889,
+        "lat": 42.98361111,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "L176",
+          "M601"
+        ],
+        "remarks": "(AD): LEPP\nTMA BILBAO/CTA SAN SEBASTIÃN/CTA VITORIA"
+      },
+      {
+        "name": "DIRMU",
+        "type": "ICAO",
+        "lon": 0.15944444,
+        "lat": 41.78555556,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "N725",
+          "N862"
+        ],
+        "remarks": "(D): LERS\nTMA BARCELONA"
+      },
+      {
+        "name": "DIRXA",
+        "type": "ICAO",
+        "lon": -2.44361111,
+        "lat": 43.12833333,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BILBAO\nIAF LEBB"
+      },
+      {
+        "name": "DITOP",
+        "type": "ICAO",
+        "lon": -1.76444444,
+        "lat": 43.01555556,
+        "fra_relevance": "",
+        "ats_routes": [
+          "N10",
+          "T430",
+          "Y129"
+        ]
+      },
+      {
+        "name": "DONOS",
+        "type": "ICAO",
+        "lon": -1.49138889,
+        "lat": 43.28388889,
+        "fra_relevance": "",
+        "ats_routes": [
+          "M299"
+        ],
+        "remarks": "BDRY FIR/UIR MADRID / FIR BORDEAUX/UIR FRANCE"
+      },
+      {
+        "name": "DOSUL",
+        "type": "ICAO",
+        "lon": -3.31666667,
+        "lat": 43.68055556,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N75"
+        ],
+        "remarks": "TMA BILBAO"
+      },
+      {
+        "name": "EDIGO",
+        "type": "ICAO",
+        "lon": -3.41166667,
+        "lat": 41.50444444,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "N858"
+        ],
+        "remarks": "(D): LEMD, LETO\n(A): LEVT, LERJ"
+      },
+      {
+        "name": "ELSAP",
+        "type": "ICAO",
+        "lon": -0.84722222,
+        "lat": 42.01722222,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N725",
+          "N869"
+        ]
+      },
+      {
+        "name": "EMBEX",
+        "type": "ICAO",
+        "lon": -1.21944444,
+        "lat": 41.95333333,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA ZARAGOZA"
+      },
+      {
+        "name": "ERAKI",
+        "type": "ICAO",
+        "lon": -1.05027778,
+        "lat": 42.995,
+        "fra_relevance": "(E)",
+        "ats_routes": [
+          "N976"
+        ],
+        "remarks": "(E): ODD FL\nBDRY UIR MADRID / FRANCE"
+      },
+      {
+        "name": "FEBRI",
+        "type": "ICAO",
+        "lon": -2.27388889,
+        "lat": 43.30972222,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BILBAO"
+      },
+      {
+        "name": "GARVU",
+        "type": "ICAO",
+        "lon": -2.07777778,
+        "lat": 42.17111111,
+        "fra_relevance": "",
+        "ats_routes": [
+          "N10",
+          "N857",
+          "Q210"
+        ],
+        "remarks": "CTA LOGROÃO"
+      },
+      {
+        "name": "GASMO",
+        "type": "ICAO",
+        "lon": -3.04888889,
+        "lat": 41.72944444,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "N867",
+          "T430"
+        ],
+        "remarks": "(A): LEVT, LERJ"
+      },
+      {
+        "name": "GEMAS",
+        "type": "ICAO",
+        "lon": 0.73027778,
+        "lat": 41.845,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "M601",
+          "N608"
+        ]
+      },
+      {
+        "name": "GIROM",
+        "type": "ICAO",
+        "lon": 0.99722222,
+        "lat": 42.775,
+        "fra_relevance": "(X)",
+        "ats_routes": [
+          "N608",
+          "N863"
+        ],
+        "remarks": "(X): EVEN FL\nBDRY FIR/UIR BARCELONA / FIR BORDEAUX/UIR FRANCE"
+      },
+      {
+        "name": "GODPI",
+        "type": "ICAO",
+        "lon": -0.59555556,
+        "lat": 41.72527778,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA ZARAGOZA\nIAF LEZG"
+      },
+      {
+        "name": "GOMSO",
+        "type": "ICAO",
+        "lon": -1.5,
+        "lat": 42.995,
+        "fra_relevance": "",
+        "ats_routes": [
+          "M299"
+        ],
+        "remarks": "CTA PAMPLONA"
+      },
+      {
+        "name": "GOSVI",
+        "type": "ICAO",
+        "lon": -1.36944444,
+        "lat": 42.61666667,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "M601",
+          "P152",
+          "T429"
+        ]
+      },
+      {
+        "name": "GRAUS",
+        "type": "ICAO",
+        "lon": 0.37638889,
+        "lat": 41.97916667,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "M601",
+          "N860"
+        ],
+        "remarks": "(AD): LEBL, LEZG\n(D): LEDA\nTMA BARCELONA/TMA ZARAGOZA"
+      },
+      {
+        "name": "IDOBO",
+        "type": "ICAO",
+        "lon": -1.77333333,
+        "lat": 42.94361111,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "IF LEPP"
+      },
+      {
+        "name": "IFASA",
+        "type": "ICAO",
+        "lon": -2.56611111,
+        "lat": 43.17416667,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BILBAO\nIAF LEBB"
+      },
+      {
+        "name": "INDEL",
+        "type": "ICAO",
+        "lon": -2.705,
+        "lat": 42.45583333,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "CTA LOGROÃO"
+      },
+      {
+        "name": "KEKAG",
+        "type": "ICAO",
+        "lon": -0.65083333,
+        "lat": 41.50194444,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA ZARAGOZA\nIAF LEZG"
+      },
+      {
+        "name": "KOHDE",
+        "type": "ICAO",
+        "lon": -3.23972222,
+        "lat": 42.4925,
+        "fra_relevance": "",
+        "ats_routes": [
+          "N725"
+        ],
+        "remarks": "CTA VITORIA"
+      },
+      {
+        "name": "KUDEX",
+        "type": "ICAO",
+        "lon": -2.19305556,
+        "lat": 42.73444444,
+        "fra_relevance": "",
+        "ats_routes": [
+          "M299"
+        ],
+        "remarks": "CTA PAMPLONA"
+      },
+      {
+        "name": "KUTEL",
+        "type": "ICAO",
+        "lon": -3.3575,
+        "lat": 43.48083333,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA SANTANDER"
+      },
+      {
+        "name": "KUXUN",
+        "type": "ICAO",
+        "lon": -3.32,
+        "lat": 43.48527778,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BILBAO\nIAF LEBB"
+      },
+      {
+        "name": "LATEK",
+        "type": "ICAO",
+        "lon": -0.65694444,
+        "lat": 42.875,
+        "fra_relevance": "(EX)",
+        "ats_routes": [
+          "N995"
+        ],
+        "remarks": "(E): ODD FL\n(X): EVEN FL\nBDRY UIR MADRID / FRANCE"
+      },
+      {
+        "name": "LEQIM",
+        "type": "ICAO",
+        "lon": -1.83,
+        "lat": 42.7975,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "CTA PAMPLONA"
+      },
+      {
+        "name": "LOBAR",
+        "type": "ICAO",
+        "lon": 0.31833333,
+        "lat": 41.74805556,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "N725",
+          "N860"
+        ],
+        "remarks": "(A): LEZG\n(AD): LEBL\nTMA BARCELONA/TMA ZARAGOZA"
+      },
+      {
+        "name": "LOPNA",
+        "type": "ICAO",
+        "lon": -2.96083333,
+        "lat": 42.63861111,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "CTA VITORIA\nIAF LEVT"
+      },
+      {
+        "name": "LUKEP",
+        "type": "ICAO",
+        "lon": -2.76972222,
+        "lat": 43.24916667,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BILBAO"
+      },
+      {
+        "name": "LUSEM",
+        "type": "ICAO",
+        "lon": -1.78055556,
+        "lat": 43.37472222,
+        "fra_relevance": "(X)",
+        "ats_routes": [
+          "L176"
+        ],
+        "remarks": "(X): EVEN FL\nBDRY UIR MADRID / FRANCE"
+      },
+      {
+        "name": "MALOB",
+        "type": "ICAO",
+        "lon": -1.93861111,
+        "lat": 42.845,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "M601",
+          "T430"
+        ],
+        "remarks": "TMA BILBAO/CTA PAMPLONA"
+      },
+      {
+        "name": "MAPAX",
+        "type": "ICAO",
+        "lon": -3.04416667,
+        "lat": 43.68388889,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N867"
+        ],
+        "remarks": "TMA BILBAO"
+      },
+      {
+        "name": "MARIO",
+        "type": "ICAO",
+        "lon": -0.24416667,
+        "lat": 42.21027778,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "M601"
+        ],
+        "remarks": "(AD): LEZG\nBDRY FIR BARCELONA/MADRID\nTMA ZARAGOZA"
+      },
+      {
+        "name": "MECKI",
+        "type": "ICAO",
+        "lon": 0.67861111,
+        "lat": 41.66194444,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N608",
+          "N725"
+        ]
+      },
+      {
+        "name": "MIRPO",
+        "type": "ICAO",
+        "lon": -2.15527778,
+        "lat": 42.63111111,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "N976",
+          "T430"
+        ],
+        "remarks": "(D): LESO\nCTA LOGROÃO"
+      },
+      {
+        "name": "MOPAS",
+        "type": "ICAO",
+        "lon": 1.03444444,
+        "lat": 42.43527778,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "N863"
+        ],
+        "remarks": "(D): LEBL\nTMA BARCELONA"
+      },
+      {
+        "name": "NATPI",
+        "type": "ICAO",
+        "lon": 1.23583333,
+        "lat": 42.72388889,
+        "fra_relevance": "(X)",
+        "ats_routes": [],
+        "remarks": "(X): EVEN FL\nBDRY FIR/UIR BARCELONA / FIR BORDEAUX/UIR FRANCE"
+      },
+      {
+        "name": "NETUK",
+        "type": "ICAO",
+        "lon": -1.61555556,
+        "lat": 43.25833333,
+        "fra_relevance": "(E)",
+        "ats_routes": [
+          "N857"
+        ],
+        "remarks": "(E): ODD FL\nBDRY UIR MADRID / FRANCE"
+      },
+      {
+        "name": "NOLSA",
+        "type": "ICAO",
+        "lon": -1.9075,
+        "lat": 42.4275,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "N10",
+          "N857"
+        ],
+        "remarks": "(D): LESO\n(A): LEZG\nCTA PAMPLONA"
+      },
+      {
+        "name": "NURVI",
+        "type": "ICAO",
+        "lon": -3.31694444,
+        "lat": 43.2925,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA SANTANDER"
+      },
+      {
+        "name": "OKABI",
+        "type": "ICAO",
+        "lon": 1.48361111,
+        "lat": 42.61611111,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "BDRY FIR BARCELONA / BORDEAUX\nTMA BARCELONA"
+      },
+      {
+        "name": "OLMET",
+        "type": "ICAO",
+        "lon": -3.27583333,
+        "lat": 43.33972222,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BILBAO"
+      },
+      {
+        "name": "OLUMI",
+        "type": "ICAO",
+        "lon": -3.08361111,
+        "lat": 43.37083333,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BILBAO"
+      },
+      {
+        "name": "OSGOT",
+        "type": "ICAO",
+        "lon": -1.5825,
+        "lat": 43.625,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "IAF LESO"
+      },
+      {
+        "name": "OSTIX",
+        "type": "ICAO",
+        "lon": -3.1,
+        "lat": 41.50444444,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N867"
+        ]
+      },
+      {
+        "name": "OXERA",
+        "type": "ICAO",
+        "lon": -2.75305556,
+        "lat": 43.23611111,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BILBAO"
+      },
+      {
+        "name": "PEKIS",
+        "type": "ICAO",
+        "lon": 1.12527778,
+        "lat": 41.64888889,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA"
+      },
+      {
+        "name": "PERDU",
+        "type": "ICAO",
+        "lon": 0.15111111,
+        "lat": 42.73194444,
+        "fra_relevance": "(E)",
+        "ats_routes": [
+          "N862"
+        ],
+        "remarks": "(E): ODD FL\nBDRY UIR BARCELONA / FRANCE"
+      },
+      {
+        "name": "PIPOR",
+        "type": "ICAO",
+        "lon": -1.10805556,
+        "lat": 43.00916667,
+        "fra_relevance": "(E)",
+        "ats_routes": [
+          "L866"
+        ],
+        "remarks": "(E): ODD FL\nBDRY UIR MADRID / FRANCE"
+      },
+      {
+        "name": "PITUL",
+        "type": "ICAO",
+        "lon": -2.19333333,
+        "lat": 42.70083333,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "CTA VITORIA"
+      },
+      {
+        "name": "PODUX",
+        "type": "ICAO",
+        "lon": -1.88138889,
+        "lat": 42.90111111,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "P152",
+          "T430"
+        ],
+        "remarks": "CTA PAMPLONA"
+      },
+      {
+        "name": "POPUL",
+        "type": "ICAO",
+        "lon": -2.84027778,
+        "lat": 43.94861111,
+        "fra_relevance": "(X)",
+        "ats_routes": [
+          "L14"
+        ],
+        "remarks": "(X): EVEN FL\nBDRY FIR/UIR MADRID / FIR BREST/UIR FRANCE"
+      },
+      {
+        "name": "POSSY",
+        "type": "ICAO",
+        "lon": 0.15722222,
+        "lat": 42.06138889,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "M601",
+          "N862",
+          "P152"
+        ],
+        "remarks": "(AD): LERS\nTMA BARCELONA"
+      },
+      {
+        "name": "PUFUZ",
+        "type": "ICAO",
+        "lon": -3.34305556,
+        "lat": 42.50555556,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "CTA VITORIA\nIAF LEBG"
+      },
+      {
+        "name": "REBUL",
+        "type": "ICAO",
+        "lon": 1.11361111,
+        "lat": 41.69777778,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "L110",
+          "M601",
+          "N863"
+        ],
+        "remarks": "(AD): LESU\nTMA BARCELONA"
+      },
+      {
+        "name": "RESVA",
+        "type": "ICAO",
+        "lon": -3.44305556,
+        "lat": 43.42166667,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA SANTANDER\nIAF LEXJ"
+      },
+      {
+        "name": "ROCME",
+        "type": "ICAO",
+        "lon": 0.18388889,
+        "lat": 41.75361111,
+        "fra_relevance": "(I)",
+        "ats_routes": []
+      },
+      {
+        "name": "ROLES",
+        "type": "ICAO",
+        "lon": -3.39111111,
+        "lat": 43.09916667,
+        "fra_relevance": "",
+        "ats_routes": [
+          "Q210"
+        ],
+        "remarks": "TMA SANTANDER"
+      },
+      {
+        "name": "RONKO",
+        "type": "ICAO",
+        "lon": -1.03055556,
+        "lat": 42.49583333,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "M601",
+          "P152"
+        ],
+        "remarks": "(AD): LESO, LERJ\n(D): LEPP"
+      },
+      {
+        "name": "RONNY",
+        "type": "ICAO",
+        "lon": -0.84472222,
+        "lat": 42.42916667,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "M601",
+          "N871"
+        ]
+      },
+      {
+        "name": "ROVAP",
+        "type": "ICAO",
+        "lon": 0.81611111,
+        "lat": 41.60444444,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA\nIAF LEDA"
+      },
+      {
+        "name": "RUTIP",
+        "type": "ICAO",
+        "lon": 1.43722222,
+        "lat": 42.4775,
+        "fra_relevance": "(X)",
+        "ats_routes": [
+          "T113"
+        ],
+        "remarks": "(X): EVEN FL\nBDRY FIR/UIR BARCELONA / FIR BORDEAUX/UIR FRANCE"
+      },
+      {
+        "name": "SANTU",
+        "type": "ICAO",
+        "lon": -3.11666667,
+        "lat": 43.32277778,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BILBAO\nIAF LEBB"
+      },
+      {
+        "name": "SINDO",
+        "type": "ICAO",
+        "lon": 1.32361111,
+        "lat": 42.13611111,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "T113"
+        ],
+        "remarks": "(D): LERS"
+      },
+      {
+        "name": "SUNIR",
+        "type": "ICAO",
+        "lon": -3.12555556,
+        "lat": 43.38444444,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BILBAO\nIAF LEBB"
+      },
+      {
+        "name": "SUPOS",
+        "type": "ICAO",
+        "lon": -1.72055556,
+        "lat": 42.87138889,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "CTA PAMPLONA"
+      },
+      {
+        "name": "SURCO",
+        "type": "ICAO",
+        "lon": -0.56805556,
+        "lat": 42.32888889,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "M601"
+        ],
+        "remarks": "(AD): LEZG\n(A): LEPP\nTMA ZARAGOZA"
+      },
+      {
+        "name": "TECXI",
+        "type": "ICAO",
+        "lon": 1.34972222,
+        "lat": 42.21472222,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA"
+      },
+      {
+        "name": "TIRGO",
+        "type": "ICAO",
+        "lon": 1.12611111,
+        "lat": 41.78444444,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA"
+      },
+      {
+        "name": "TIVLI",
+        "type": "ICAO",
+        "lon": -0.43666667,
+        "lat": 42.805,
+        "fra_relevance": "(E)",
+        "ats_routes": [
+          "N869"
+        ],
+        "remarks": "(E): ODD FL\nBDRY UIR MADRID / FRANCE"
+      },
+      {
+        "name": "TOPTU",
+        "type": "ICAO",
+        "lon": -0.19361111,
+        "lat": 42.79666667,
+        "fra_relevance": "(X)",
+        "ats_routes": [
+          "N871",
+          "T429"
+        ],
+        "remarks": "(X): EVEN FL\nBDRY UIR MADRID / FRANCE"
+      },
+      {
+        "name": "TURPU",
+        "type": "ICAO",
+        "lon": -1.5425,
+        "lat": 42.67777778,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "M601",
+          "P152"
+        ],
+        "remarks": "(AD): LEVT\nCTA PAMPLONA"
+      },
+      {
+        "name": "TURUV",
+        "type": "ICAO",
+        "lon": 0.475,
+        "lat": 42.3675,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "N860"
+        ],
+        "remarks": "(A): LEDA"
+      },
+      {
+        "name": "UDALA",
+        "type": "ICAO",
+        "lon": -2.51055556,
+        "lat": 43.11027778,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "CTA VITORIA"
+      },
+      {
+        "name": "ULOFI",
+        "type": "ICAO",
+        "lon": -3.2325,
+        "lat": 43.43305556,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BILBAO"
+      },
+      {
+        "name": "UPISA",
+        "type": "ICAO",
+        "lon": 1.23583333,
+        "lat": 41.935,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA\nIAF LESU"
+      },
+      {
+        "name": "URUNA",
+        "type": "ICAO",
+        "lon": -1.74027778,
+        "lat": 43.355,
+        "fra_relevance": "(EX)",
+        "ats_routes": [
+          "P181",
+          "Y129"
+        ],
+        "remarks": "(E): ODD FL\n(X): EVEN FL\nBDRY FIR/UIR MADRID / FIR BORDEAUX/UIR FRANCE"
+      },
+      {
+        "name": "USKAR",
+        "type": "ICAO",
+        "lon": 1.06583333,
+        "lat": 42.14361111,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "N863",
+          "Y90"
+        ],
+        "remarks": "(D): LERS"
+      },
+      {
+        "name": "UVAKE",
+        "type": "ICAO",
+        "lon": -2.52694444,
+        "lat": 43.17972222,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BILBAO"
+      },
+      {
+        "name": "VABAR",
+        "type": "ICAO",
+        "lon": -2.61527778,
+        "lat": 42.17111111,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "T430"
+        ],
+        "remarks": "(A): LESO, LEPP\nCTA LOGROÃO\nIAF LERJ"
+      },
+      {
+        "name": "VABUS",
+        "type": "ICAO",
+        "lon": -2.64,
+        "lat": 42.4975,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "CTA LOGROÃO\nIAF LERJ"
+      },
+      {
+        "name": "VAKIN",
+        "type": "ICAO",
+        "lon": -0.35333333,
+        "lat": 41.90472222,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N725"
+        ]
+      },
+      {
+        "name": "VASUM",
+        "type": "ICAO",
+        "lon": -2.01111111,
+        "lat": 42.27194444,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "N10",
+          "N725",
+          "N857"
+        ],
+        "remarks": "(D): LEPP, LEVT"
+      },
+      {
+        "name": "VEGEL",
+        "type": "ICAO",
+        "lon": -2.02583333,
+        "lat": 42.59277778,
+        "fra_relevance": "",
+        "ats_routes": [
+          "L866"
+        ],
+        "remarks": "CTA LOGROÃO\nIAF LERJ"
+      },
+      {
+        "name": "VETAR",
+        "type": "ICAO",
+        "lon": -0.49333333,
+        "lat": 42.17805556,
+        "fra_relevance": "",
+        "ats_routes": [
+          "P152"
+        ]
+      },
+      {
+        "name": "XORNA",
+        "type": "ICAO",
+        "lon": -3.45166667,
+        "lat": 43.8125,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N75",
+          "Q42"
+        ],
+        "remarks": "TMA SANTANDER"
+      },
+      {
+        "name": "YAKXU",
+        "type": "ICAO",
+        "lon": -1.21277778,
+        "lat": 42.09861111,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L27",
+          "N725",
+          "N871"
+        ]
+      },
+      {
+        "name": "YESYO",
+        "type": "ICAO",
+        "lon": -1.99222222,
+        "lat": 43.45166667,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "CTA SAN SEBASTIÃN"
+      },
+      {
+        "name": "ZURIA",
+        "type": "ICAO",
+        "lon": -2.44972222,
+        "lat": 42.8175,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "CTA VITORIA"
+      }
+    ]
+  },
+  "BARCELONA_50KM": {
+    "name": "Barcelona-El Prat 50 km",
+    "type": "center",
     "bbox": {
       "lamin": 40.847173876669636,
       "lamax": 41.747590794597066,
       "lomin": 1.4863363314377316,
-      "lomax": 2.6802636685622683
+      "lomax": 2.6802636685622683,
+      "extended": 1
     },
+    "polygon": null,
     "center": {
       "lat": 41.29738233563335,
       "lon": 2.0833
     },
     "source": {
-      "name": "euvl/aviation-waypoints",
-      "repository": "https://github.com/euvl/aviation-waypoints",
-      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
-      "license": "MIT"
+      "name": "ENAIRE AIP ENR 4.4",
+      "section": "ENR 4.4 - Name-code designators for significant points",
+      "origin": "web",
+      "url": "https://aip.enaire.es/AIP/contenido_AIP/ENR/LE_ENR_4_4_en.html",
+      "authority": "ENAIRE / AIS-ESPAÑA",
+      "aip_section": "ENR 4.4",
+      "aixm_class": "DesignatedPoint",
+      "aixm_type": "ICAO",
+      "effective_date": "2074-10-10",
+      "downloaded_utc": "2026-10-16T13:33:38+00:00"
     },
     "filter": {
       "types": [
-        "WYP"
+        "ICAO"
       ],
       "coordinates": "longitude, latitude",
-      "description": "Points whose coordinates fall inside the resolved BBOX"
+      "description": "Official ENAIRE AIP ENR 4.4 ICAO significant points inside the resolved study area; polygon presets are clipped exactly using area_presets.point_is_inside_area."
     },
-    "count": 8,
+    "count": 35,
     "waypoints": [
       {
-        "name": "BANEX",
-        "type": "WYP",
-        "lon": 2.598928,
-        "lat": 41.45031
+        "name": "AKOPA",
+        "type": "ICAO",
+        "lon": 1.79166667,
+        "lat": 41.68111111,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA"
       },
       {
-        "name": "BARUS",
-        "type": "WYP",
-        "lon": 1.729992,
-        "lat": 41.054127
+        "name": "ANTON",
+        "type": "ICAO",
+        "lon": 1.69833333,
+        "lat": 41.25972222,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N861",
+          "N975"
+        ]
+      },
+      {
+        "name": "ASTEK",
+        "type": "ICAO",
+        "lon": 1.82194444,
+        "lat": 41.20888889,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "IF LEBL"
+      },
+      {
+        "name": "BANBU",
+        "type": "ICAO",
+        "lon": 1.52166667,
+        "lat": 41.01666667,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA"
       },
       {
         "name": "BISES",
-        "type": "WYP",
-        "lon": 1.697508,
-        "lat": 41.264484
+        "type": "ICAO",
+        "lon": 1.68916667,
+        "lat": 41.31861111,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N861",
+          "N870"
+        ]
+      },
+      {
+        "name": "BOLQE",
+        "type": "ICAO",
+        "lon": 1.54944444,
+        "lat": 41.73361111,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA"
       },
       {
         "name": "CAVES",
-        "type": "WYP",
-        "lon": 1.666542,
-        "lat": 41.463749
+        "type": "ICAO",
+        "lon": 1.66361111,
+        "lat": 41.48333333,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "M601",
+          "N861"
+        ],
+        "remarks": "(A): LEDA"
       },
       {
-        "name": "MATIS",
-        "type": "WYP",
-        "lon": 1.618475,
-        "lat": 40.977821
+        "name": "CORVA",
+        "type": "ICAO",
+        "lon": 2.27472222,
+        "lat": 41.20972222,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA"
       },
       {
-        "name": "MONEV",
-        "type": "WYP",
-        "lon": 1.684728,
-        "lat": 41.34687
+        "name": "DILUM",
+        "type": "ICAO",
+        "lon": 2.16805556,
+        "lat": 41.32777778,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA"
+      },
+      {
+        "name": "DOTIS",
+        "type": "ICAO",
+        "lon": 2.02472222,
+        "lat": 41.20194444,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA"
+      },
+      {
+        "name": "DUQQI",
+        "type": "ICAO",
+        "lon": 1.70583333,
+        "lat": 41.21055556,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA"
+      },
+      {
+        "name": "GAVMA",
+        "type": "ICAO",
+        "lon": 1.98722222,
+        "lat": 41.26583333,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA"
+      },
+      {
+        "name": "ISWIQ",
+        "type": "ICAO",
+        "lon": 2.35583333,
+        "lat": 41.01444444,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA"
+      },
+      {
+        "name": "LESBA",
+        "type": "ICAO",
+        "lon": 2.66277778,
+        "lat": 41.255,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA\nIAF LEBL"
+      },
+      {
+        "name": "NITBA",
+        "type": "ICAO",
+        "lon": 1.98555556,
+        "lat": 41.07166667,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA"
+      },
+      {
+        "name": "PERAL",
+        "type": "ICAO",
+        "lon": 2.03861111,
+        "lat": 41.18833333,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA"
+      },
+      {
+        "name": "PERUK",
+        "type": "ICAO",
+        "lon": 1.83305556,
+        "lat": 41.19916667,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "IF LEBL"
+      },
+      {
+        "name": "RAVAX",
+        "type": "ICAO",
+        "lon": 2.08805556,
+        "lat": 40.92055556,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA"
+      },
+      {
+        "name": "RODRA",
+        "type": "ICAO",
+        "lon": 1.73027778,
+        "lat": 41.05138889,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "M985",
+          "N861"
+        ]
+      },
+      {
+        "name": "RUBOT",
+        "type": "ICAO",
+        "lon": 1.70583333,
+        "lat": 40.97388889,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA\nIAF LEBL"
+      },
+      {
+        "name": "RULOS",
+        "type": "ICAO",
+        "lon": 2.28138889,
+        "lat": 41.17722222,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA\nIAF LEBL"
+      },
+      {
+        "name": "SADUR",
+        "type": "ICAO",
+        "lon": 1.67388889,
+        "lat": 41.41722222,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N725",
+          "N861"
+        ]
+      },
+      {
+        "name": "SANIS",
+        "type": "ICAO",
+        "lon": 2.00361111,
+        "lat": 41.10916667,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "IF LEBL"
+      },
+      {
+        "name": "SOTIL",
+        "type": "ICAO",
+        "lon": 2.29861111,
+        "lat": 41.35888889,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "IF LEBL"
+      },
+      {
+        "name": "SUKOS",
+        "type": "ICAO",
+        "lon": 2.23638889,
+        "lat": 41.28444444,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA"
+      },
+      {
+        "name": "TAQOH",
+        "type": "ICAO",
+        "lon": 1.63138889,
+        "lat": 40.87194444,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA"
       },
       {
         "name": "TASOS",
-        "type": "WYP",
-        "lon": 2.630906,
-        "lat": 40.938393
+        "type": "ICAO",
+        "lon": 2.64972222,
+        "lat": 40.94583333,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA"
+      },
+      {
+        "name": "TEBLA",
+        "type": "ICAO",
+        "lon": 2.325,
+        "lat": 41.38111111,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "IF LEBL"
+      },
+      {
+        "name": "TILBY",
+        "type": "ICAO",
+        "lon": 1.56388889,
+        "lat": 41.26,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA"
+      },
+      {
+        "name": "TOTKI",
+        "type": "ICAO",
+        "lon": 1.73111111,
+        "lat": 41.13361111,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA\nIAF LEBL"
+      },
+      {
+        "name": "UCREQ",
+        "type": "ICAO",
+        "lon": 2.08944444,
+        "lat": 41.69194444,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA"
+      },
+      {
+        "name": "ULKAL",
+        "type": "ICAO",
+        "lon": 1.58805556,
+        "lat": 41.13638889,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA"
+      },
+      {
+        "name": "VIBIM",
+        "type": "ICAO",
+        "lon": 2.20638889,
+        "lat": 41.07083333,
+        "fra_relevance": "",
+        "ats_routes": [],
+        "remarks": "TMA BARCELONA\nIAF LEBL"
       },
       {
         "name": "VIBOK",
-        "type": "WYP",
-        "lon": 1.490839,
-        "lat": 41.533722
-      }
-    ]
-  },
-  "MAD": {
-    "name": "Madrid-Barajas",
-    "bbox": {
-      "lamin": 40.048011359016996,
-      "lamax": 40.9485534475337,
-      "lomin": -4.15742319406861,
-      "lomax": -2.9777768059313905
-    },
-    "center": {
-      "lat": 40.49828240327535,
-      "lon": -3.5676
-    },
-    "source": {
-      "name": "euvl/aviation-waypoints",
-      "repository": "https://github.com/euvl/aviation-waypoints",
-      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
-      "license": "MIT"
-    },
-    "filter": {
-      "types": [
-        "WYP"
-      ],
-      "coordinates": "longitude, latitude",
-      "description": "Points whose coordinates fall inside the resolved BBOX"
-    },
-    "count": 12,
-    "waypoints": [
-      {
-        "name": "ARGAS",
-        "type": "WYP",
-        "lon": -3.524836,
-        "lat": 40.29829
-      },
-      {
-        "name": "BOSIO",
-        "type": "WYP",
-        "lon": -3.52057,
-        "lat": 40.340858
-      },
-      {
-        "name": "COTOS",
-        "type": "WYP",
-        "lon": -4.060992,
-        "lat": 40.732296
-      },
-      {
-        "name": "D101V",
-        "type": "WYP",
-        "lon": -3.784497,
-        "lat": 40.323418
-      },
-      {
-        "name": "GOTOR",
-        "type": "WYP",
-        "lon": -3.724503,
-        "lat": 40.110771
-      },
-      {
-        "name": "HORTA",
-        "type": "WYP",
-        "lon": -3.286292,
-        "lat": 40.660442
-      },
-      {
-        "name": "INTEK",
-        "type": "WYP",
-        "lon": -3.792264,
-        "lat": 40.853462
-      },
-      {
-        "name": "MAGIN",
-        "type": "WYP",
-        "lon": -3.564511,
-        "lat": 40.766991
-      },
-      {
-        "name": "MITUM",
-        "type": "WYP",
-        "lon": -3.247797,
-        "lat": 40.64563
-      },
-      {
-        "name": "PALIO",
-        "type": "WYP",
-        "lon": -3.038581,
-        "lat": 40.264385
-      },
-      {
-        "name": "SIE35",
-        "type": "WYP",
-        "lon": -3.759011,
-        "lat": 40.588398
-      },
-      {
-        "name": "VISON",
-        "type": "WYP",
-        "lon": -3.5022,
-        "lat": 40.161079
-      }
-    ]
-  },
-  "SCQ": {
-    "name": "Santiago-Rosalia de Castro",
-    "bbox": {
-      "lamin": 42.446199632878844,
-      "lamax": 43.34636485050161,
-      "lomin": -9.02724944551467,
-      "lomax": -7.8029505544853315
-    },
-    "center": {
-      "lat": 42.89628224169023,
-      "lon": -8.4151
-    },
-    "source": {
-      "name": "euvl/aviation-waypoints",
-      "repository": "https://github.com/euvl/aviation-waypoints",
-      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
-      "license": "MIT"
-    },
-    "filter": {
-      "types": [
-        "WYP"
-      ],
-      "coordinates": "longitude, latitude",
-      "description": "Points whose coordinates fall inside the resolved BBOX"
-    },
-    "count": 1,
-    "waypoints": [
-      {
-        "name": "BERAX",
-        "type": "WYP",
-        "lon": -8.176666,
-        "lat": 43.252052
-      }
-    ]
-  },
-  "LCG": {
-    "name": "A Coruna",
-    "bbox": {
-      "lamin": 42.852031654635425,
-      "lamax": 43.752132798672676,
-      "lomin": -8.993505064689568,
-      "lomax": -7.761094935310432
-    },
-    "center": {
-      "lat": 43.30208222665405,
-      "lon": -8.3773
-    },
-    "source": {
-      "name": "euvl/aviation-waypoints",
-      "repository": "https://github.com/euvl/aviation-waypoints",
-      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
-      "license": "MIT"
-    },
-    "filter": {
-      "types": [
-        "WYP"
-      ],
-      "coordinates": "longitude, latitude",
-      "description": "Points whose coordinates fall inside the resolved BBOX"
-    },
-    "count": 3,
-    "waypoints": [
-      {
-        "name": "BERAX",
-        "type": "WYP",
-        "lon": -8.176666,
-        "lat": 43.252052
-      },
-      {
-        "name": "KORAV",
-        "type": "WYP",
-        "lon": -7.865586,
-        "lat": 43.653103
-      },
-      {
-        "name": "MISTE",
-        "type": "WYP",
-        "lon": -8.085203,
-        "lat": 43.35535
-      }
-    ]
-  },
-  "VGO": {
-    "name": "Vigo-Peinador",
-    "bbox": {
-      "lamin": 41.78164727812608,
-      "lamax": 42.68191726990698,
-      "lomin": -9.232487757362435,
-      "lomax": -8.021112242637564
-    },
-    "center": {
-      "lat": 42.23178227401653,
-      "lon": -8.6268
-    },
-    "source": {
-      "name": "euvl/aviation-waypoints",
-      "repository": "https://github.com/euvl/aviation-waypoints",
-      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
-      "license": "MIT"
-    },
-    "filter": {
-      "types": [
-        "WYP"
-      ],
-      "coordinates": "longitude, latitude",
-      "description": "Points whose coordinates fall inside the resolved BBOX"
-    },
-    "count": 5,
-    "waypoints": [
-      {
-        "name": "AGADO",
-        "type": "WYP",
-        "lon": -8.926686,
-        "lat": 41.872879
-      },
-      {
-        "name": "D101R",
-        "type": "WYP",
-        "lon": -8.200148,
-        "lat": 42.294655
-      },
-      {
-        "name": "NARBO",
-        "type": "WYP",
-        "lon": -8.228289,
-        "lat": 42.139812
-      },
-      {
-        "name": "RELVA",
-        "type": "WYP",
-        "lon": -8.597417,
-        "lat": 41.852657
-      },
-      {
-        "name": "TURON",
-        "type": "WYP",
-        "lon": -8.563416,
-        "lat": 42.067924
-      }
-    ]
-  },
-  "OVD": {
-    "name": "Asturias",
-    "bbox": {
-      "lamin": 43.11355230581709,
-      "lamax": 44.01361213189537,
-      "lomin": -6.653463751062293,
-      "lomax": -5.415736248937708
-    },
-    "center": {
-      "lat": 43.563582218856226,
-      "lon": -6.0346
-    },
-    "source": {
-      "name": "euvl/aviation-waypoints",
-      "repository": "https://github.com/euvl/aviation-waypoints",
-      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
-      "license": "MIT"
-    },
-    "filter": {
-      "types": [
-        "WYP"
-      ],
-      "coordinates": "longitude, latitude",
-      "description": "Points whose coordinates fall inside the resolved BBOX"
-    },
-    "count": 6,
-    "waypoints": [
-      {
-        "name": "ARPOM",
-        "type": "WYP",
-        "lon": -5.984414,
-        "lat": 43.829174
-      },
-      {
-        "name": "KANDA",
-        "type": "WYP",
-        "lon": -5.797403,
-        "lat": 43.770607
-      },
-      {
-        "name": "LURIM",
-        "type": "WYP",
-        "lon": -6.376625,
-        "lat": 43.476379
-      },
-      {
-        "name": "MERCE",
-        "type": "WYP",
-        "lon": -5.949283,
-        "lat": 43.152122
-      },
-      {
-        "name": "MUSIL",
-        "type": "WYP",
-        "lon": -5.563931,
-        "lat": 43.542839
-      },
-      {
-        "name": "RATPO",
-        "type": "WYP",
-        "lon": -5.981703,
-        "lat": 43.317108
-      }
-    ]
-  },
-  "SDR": {
-    "name": "Santander-Seve Ballesteros",
-    "bbox": {
-      "lamin": 42.97704152470174,
-      "lamax": 43.87712292078148,
-      "lomin": -4.437471477580778,
-      "lomax": -3.2025285224192217
-    },
-    "center": {
-      "lat": 43.42708222274161,
-      "lon": -3.82
-    },
-    "source": {
-      "name": "euvl/aviation-waypoints",
-      "repository": "https://github.com/euvl/aviation-waypoints",
-      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
-      "license": "MIT"
-    },
-    "filter": {
-      "types": [
-        "WYP"
-      ],
-      "coordinates": "longitude, latitude",
-      "description": "Points whose coordinates fall inside the resolved BBOX"
-    },
-    "count": 8,
-    "waypoints": [
-      {
-        "name": "AMTOS",
-        "type": "WYP",
-        "lon": -3.218897,
-        "lat": 43.0
-      },
-      {
-        "name": "BEATI",
-        "type": "WYP",
-        "lon": -4.333333,
-        "lat": 43.476265
-      },
-      {
-        "name": "CALCE",
-        "type": "WYP",
-        "lon": -3.316667,
-        "lat": 43.362808
-      },
-      {
-        "name": "COLIN",
-        "type": "WYP",
-        "lon": -3.871294,
-        "lat": 43.683334
-      },
-      {
-        "name": "EMANU",
-        "type": "WYP",
-        "lon": -3.791222,
-        "lat": 43.0
-      },
-      {
-        "name": "FERMO",
-        "type": "WYP",
-        "lon": -4.3727,
-        "lat": 43.435886
-      },
-      {
-        "name": "TACHA",
-        "type": "WYP",
-        "lon": -3.268178,
-        "lat": 43.683334
-      },
-      {
-        "name": "TITAN",
-        "type": "WYP",
-        "lon": -3.968828,
-        "lat": 43.0
-      }
-    ]
-  },
-  "BIO": {
-    "name": "Bilbao",
-    "bbox": {
-      "lamin": 42.851031575686015,
-      "lamax": 43.7511328776874,
-      "lomin": -3.5267949662164737,
-      "lomax": -2.2944050337835264
-    },
-    "center": {
-      "lat": 43.3010822266867,
-      "lon": -2.9106
-    },
-    "source": {
-      "name": "euvl/aviation-waypoints",
-      "repository": "https://github.com/euvl/aviation-waypoints",
-      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
-      "license": "MIT"
-    },
-    "filter": {
-      "types": [
-        "WYP"
-      ],
-      "coordinates": "longitude, latitude",
-      "description": "Points whose coordinates fall inside the resolved BBOX"
-    },
-    "count": 7,
-    "waypoints": [
-      {
-        "name": "AMTOS",
-        "type": "WYP",
-        "lon": -3.218897,
-        "lat": 43.0
-      },
-      {
-        "name": "BISKA",
-        "type": "WYP",
-        "lon": -2.811389,
-        "lat": 43.683334
-      },
-      {
-        "name": "CALCE",
-        "type": "WYP",
-        "lon": -3.316667,
-        "lat": 43.362808
-      },
-      {
-        "name": "SALVA",
-        "type": "WYP",
-        "lon": -2.377222,
-        "lat": 42.868958
-      },
-      {
-        "name": "TACHA",
-        "type": "WYP",
-        "lon": -3.268178,
-        "lat": 43.683334
-      },
-      {
-        "name": "UDALA",
-        "type": "WYP",
-        "lon": -2.508039,
-        "lat": 43.109768
-      },
-      {
-        "name": "URQUI",
-        "type": "WYP",
-        "lon": -2.665083,
-        "lat": 43.074848
-      }
-    ]
-  },
-  "VIT": {
-    "name": "Vitoria",
-    "bbox": {
-      "lamin": 42.43269856817743,
-      "lamax": 43.332865916326156,
-      "lomin": -3.3365159714289274,
-      "lomax": -2.1124840285710724
-    },
-    "center": {
-      "lat": 42.88278224225179,
-      "lon": -2.7245
-    },
-    "source": {
-      "name": "euvl/aviation-waypoints",
-      "repository": "https://github.com/euvl/aviation-waypoints",
-      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
-      "license": "MIT"
-    },
-    "filter": {
-      "types": [
-        "WYP"
-      ],
-      "coordinates": "longitude, latitude",
-      "description": "Points whose coordinates fall inside the resolved BBOX"
-    },
-    "count": 7,
-    "waypoints": [
-      {
-        "name": "AMTOS",
-        "type": "WYP",
-        "lon": -3.218897,
-        "lat": 43.0
-      },
-      {
-        "name": "CEGAM",
-        "type": "WYP",
-        "lon": -2.236061,
-        "lat": 42.983982
-      },
-      {
-        "name": "NAZAR",
-        "type": "WYP",
-        "lon": -2.240889,
-        "lat": 42.607449
-      },
-      {
-        "name": "OLTRE",
-        "type": "WYP",
-        "lon": -2.196558,
-        "lat": 42.965618
-      },
-      {
-        "name": "SALVA",
-        "type": "WYP",
-        "lon": -2.377222,
-        "lat": 42.868958
-      },
-      {
-        "name": "UDALA",
-        "type": "WYP",
-        "lon": -2.508039,
-        "lat": 43.109768
-      },
-      {
-        "name": "URQUI",
-        "type": "WYP",
-        "lon": -2.665083,
-        "lat": 43.074848
-      }
-    ]
-  },
-  "OPO": {
-    "name": "Porto-Francisco Sa Carneiro",
-    "bbox": {
-      "lamin": 40.797870012286474,
-      "lamax": 41.6982946665297,
-      "lomin": -9.27791475471333,
-      "lomax": -8.08488524528667
-    },
-    "center": {
-      "lat": 41.248082339408086,
-      "lon": -8.6814
-    },
-    "source": {
-      "name": "euvl/aviation-waypoints",
-      "repository": "https://github.com/euvl/aviation-waypoints",
-      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
-      "license": "MIT"
-    },
-    "filter": {
-      "types": [
-        "WYP"
-      ],
-      "coordinates": "longitude, latitude",
-      "description": "Points whose coordinates fall inside the resolved BBOX"
-    },
-    "count": 1,
-    "waypoints": [
-      {
-        "name": "PESUL",
-        "type": "WYP",
-        "lon": -8.115103,
-        "lat": 40.882034
-      }
-    ]
-  },
-  "ZRH": {
-    "name": "Zurich",
-    "bbox": {
-      "lamin": 47.0083601761623,
-      "lamax": 47.90780438014331,
-      "lomin": 7.892416804956504,
-      "lomax": 9.218583195043497
-    },
-    "center": {
-      "lat": 47.4580822781528,
-      "lon": 8.5555
-    },
-    "source": {
-      "name": "euvl/aviation-waypoints",
-      "repository": "https://github.com/euvl/aviation-waypoints",
-      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
-      "license": "MIT"
-    },
-    "filter": {
-      "types": [
-        "WYP"
-      ],
-      "coordinates": "longitude, latitude",
-      "description": "Points whose coordinates fall inside the resolved BBOX"
-    },
-    "count": 23,
-    "waypoints": [
-      {
-        "name": "ABKLO",
-        "type": "WYP",
-        "lon": 8.5075,
-        "lat": 47.451946
-      },
-      {
-        "name": "AGERI",
-        "type": "WYP",
-        "lon": 8.605,
-        "lat": 47.117222
-      },
-      {
-        "name": "ALBIX",
-        "type": "WYP",
-        "lon": 8.564445,
-        "lat": 47.249722
-      },
-      {
-        "name": "AMALI",
-        "type": "WYP",
-        "lon": 8.446389,
-        "lat": 47.775555
-      },
-      {
-        "name": "ANELA",
-        "type": "WYP",
-        "lon": 8.761111,
-        "lat": 47.861111
-      },
-      {
-        "name": "BATEK",
-        "type": "WYP",
-        "lon": 8.884444,
-        "lat": 47.088612
-      },
-      {
-        "name": "BERSU",
-        "type": "WYP",
-        "lon": 7.943889,
-        "lat": 47.133888
-      },
-      {
-        "name": "EDUMI",
-        "type": "WYP",
-        "lon": 8.463889,
-        "lat": 47.780277
-      },
-      {
-        "name": "EKRON",
-        "type": "WYP",
-        "lon": 8.096389,
-        "lat": 47.591946
-      },
-      {
-        "name": "ELMUR",
-        "type": "WYP",
-        "lon": 8.871111,
-        "lat": 47.166111
-      },
-      {
-        "name": "GERSA",
-        "type": "WYP",
-        "lon": 8.552778,
-        "lat": 47.042221
-      },
-      {
-        "name": "GOLIT",
-        "type": "WYP",
-        "lon": 8.898889,
-        "lat": 47.784168
-      },
-      {
-        "name": "GOPAN",
-        "type": "WYP",
-        "lon": 8.678889,
-        "lat": 47.837776
-      },
-      {
-        "name": "HOC37",
-        "type": "WYP",
-        "lon": 8.526466,
-        "lat": 47.251518
-      },
-      {
-        "name": "MANOG",
-        "type": "WYP",
-        "lon": 8.7425,
-        "lat": 47.198891
-      },
-      {
-        "name": "MOSIT",
-        "type": "WYP",
-        "lon": 8.743889,
-        "lat": 47.069168
-      },
-      {
-        "name": "RASIK",
-        "type": "WYP",
-        "lon": 8.531667,
-        "lat": 47.798611
-      },
-      {
-        "name": "RIPUS",
-        "type": "WYP",
-        "lon": 8.514722,
-        "lat": 47.256668
-      },
-      {
-        "name": "RUMAS",
-        "type": "WYP",
-        "lon": 9.048889,
-        "lat": 47.787498
-      },
-      {
-        "name": "SAFFA",
-        "type": "WYP",
-        "lon": 8.793889,
-        "lat": 47.702221
-      },
-      {
-        "name": "SARME",
-        "type": "WYP",
-        "lon": 8.284722,
-        "lat": 47.314167
-      },
-      {
-        "name": "SUL49",
-        "type": "WYP",
-        "lon": 8.057777,
-        "lat": 47.671665
-      },
-      {
-        "name": "UIR32",
-        "type": "WYP",
-        "lon": 8.288889,
-        "lat": 47.733334
-      }
-    ]
-  },
-  "FRA": {
-    "name": "Frankfurt",
-    "bbox": {
-      "lamin": 49.58836263498925,
-      "lamax": 50.487402360100596,
-      "lomin": 7.864280079832074,
-      "lomax": 9.260119920167927
-    },
-    "center": {
-      "lat": 50.03788249754493,
-      "lon": 8.5622
-    },
-    "source": {
-      "name": "euvl/aviation-waypoints",
-      "repository": "https://github.com/euvl/aviation-waypoints",
-      "raw_url": "https://raw.githubusercontent.com/euvl/aviation-waypoints/master/waypoints.json",
-      "license": "MIT"
-    },
-    "filter": {
-      "types": [
-        "WYP"
-      ],
-      "coordinates": "longitude, latitude",
-      "description": "Points whose coordinates fall inside the resolved BBOX"
-    },
-    "count": 10,
-    "waypoints": [
-      {
-        "name": "AKONI",
-        "type": "WYP",
-        "lon": 9.166945,
-        "lat": 49.75861
-      },
-      {
-        "name": "DAMOR",
-        "type": "WYP",
-        "lon": 7.944722,
-        "lat": 50.45639
-      },
-      {
-        "name": "ECCHO",
-        "type": "WYP",
-        "lon": 7.9525,
-        "lat": 49.81778
-      },
-      {
-        "name": "GEDSI",
-        "type": "WYP",
-        "lon": 9.125125,
-        "lat": 50.284126
-      },
-      {
-        "name": "LAHNE",
-        "type": "WYP",
-        "lon": 8.501945,
-        "lat": 50.450832
-      },
-      {
-        "name": "LIMBU",
-        "type": "WYP",
-        "lon": 8.375,
-        "lat": 50.453335
-      },
-      {
-        "name": "MODAU",
-        "type": "WYP",
-        "lon": 8.813889,
-        "lat": 49.772499
-      },
-      {
-        "name": "NISTE",
-        "type": "WYP",
-        "lon": 8.625,
-        "lat": 49.788887
-      },
-      {
-        "name": "RUDUS",
-        "type": "WYP",
-        "lon": 7.96,
-        "lat": 50.045834
-      },
-      {
-        "name": "SURIL",
-        "type": "WYP",
-        "lon": 8.030556,
-        "lat": 49.603889
+        "type": "ICAO",
+        "lon": 1.50194444,
+        "lat": 41.54694444,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "M601",
+          "T410"
+        ],
+        "remarks": "(D): LEDA\nTMA BARCELONA"
+      },
+      {
+        "name": "XEPLA",
+        "type": "ICAO",
+        "lon": 2.0725,
+        "lat": 41.68722222,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N859"
+        ]
       }
     ]
   }
