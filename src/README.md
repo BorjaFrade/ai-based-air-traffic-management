@@ -1,40 +1,67 @@
 # Source code
 
-The `src/` directory contains the reusable code of the research pipeline. The
-folders are separated by responsibility so that data collection, analysis and
-modelling can evolve independently:
+The `src/` directory contains the reusable research pipeline. Run the commands
+from the repository root so that the scripts resolve `data/` and `results/`
+relative to the project.
 
-- `acquisition/`: obtains data from external providers and creates initial
-  snapshots or trajectory collections. See [`acquisition/README.md`](acquisition/README.md).
-- `preprocessing/`: cleaning, validation, normalisation and feature preparation.
-- `trajectories/`: trajectory representation, reconstruction and trajectory-based
-  calculations.
-- `conflict_detection/`: separation, CPA/TCPA and conflict-identification logic.
-- `visualization/`: reusable plotting and map-rendering functions. The current
-  OpenSky renderer is available at
-  [`acquisition/opensky_plot.py`](acquisition/opensky_plot.py) and exposes
-  `render_map()` for reuse by other acquisition or analysis scripts.
-- `models/`: machine-learning models, training code and prediction utilities.
+## Modules
 
-At present, the implemented functionality is concentrated in `acquisition/`.
-The other directories are reserved for the subsequent stages of the thesis and
-should contain code that can be imported or executed reproducibly rather than
-one-off generated outputs.
+- [`acquisition/`](acquisition/): OpenSky and ENAIRE downloads, live snapshots,
+  safety logic and map rendering. See [`acquisition/README.md`](acquisition/README.md).
+- [`preprocessing/`](preprocessing/): converts monthly raw OpenSky archives into
+  regular 10-second UTC state files. See [`preprocessing/README.md`](preprocessing/README.md).
+- [`conflict_detection/`](conflict_detection/): detects current/predicted
+  separation events, creates validation screenshots and calculates quality
+  metrics. See [`conflict_detection/README.md`](conflict_detection/README.md).
+- `trajectories/`, `visualization/` and `models/`: reserved for later thesis
+  stages; they are not currently complete command-line pipelines.
 
 ## Data flow
 
 ```text
-src/acquisition/
+src/acquisition/download_opensky_sector.py
         ↓
-data/raw/
+data/raw/opensky_sectors/<source-sector>/year=YYYY/month=MM/*.csv
         ↓
-src/preprocessing/
+src/preprocessing/preprocess_opensky_10s.py
         ↓
-data/processed/
+data/processed/opensky_10s/<analysis-area>/year=YYYY/month=MM/*_10s.csv
         ↓
-src/trajectories/ and src/conflict_detection/
+src/conflict_detection/detect_opensky_conflicts.py
         ↓
-src/models/ and src/visualization/
+data/processed/opensky_separation/<area>/runs/<run-name>/
         ↓
-results/
+quality analysis, validation screenshots and thesis figures
 ```
+
+The raw downloader uses a bounding-box/envelope preset because that is the
+efficient query area. The preprocessor then applies the exact polygon preset
+used by the analysis, for example `LECMSAN` inside `LECMSAN_ENVELOPE`.
+
+## Quick command reference
+
+```bash
+# Download January and February 2019 (end is exclusive)
+python3 src/acquisition/download_opensky_sector.py \
+  --sector LECMSAN_ENVELOPE \
+  --start "2019-01-01 00:00:00" \
+  --end "2019-03-01 00:00:00"
+
+# Build regular 10-second files (months are inclusive)
+python3 src/preprocessing/preprocess_opensky_10s.py \
+  --source-sector LECMSAN_ENVELOPE \
+  --analysis-area LECMSAN \
+  --start-month 2019-01 \
+  --end-month 2019-02
+
+# Detect events (end is inclusive and should be 10-second aligned)
+python3 src/conflict_detection/detect_opensky_conflicts.py \
+  --area LECMSAN \
+  --start "2019-01-01 00:00:00" \
+  --end "2019-02-28 23:59:50"
+```
+
+Configuration is shared through `src/acquisition/bbox_presets.json`,
+`separation_profiles.json`, `waypoints.json` and `corridors.json`. The
+separation profile is loaded by the detector and by the validation/rendering
+scripts, so record the profile name and version when reporting results.

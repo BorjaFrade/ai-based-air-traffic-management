@@ -1,44 +1,66 @@
 # Figures and maps
 
-This folder stores visual outputs generated from the aircraft state-vector data.
-The OpenSky maps in this folder (for example, `opensky_bcn_map.png`,
-`opensky_galicia_map.png` and `opensky_spain_north_map.png`) are produced by
-`src/acquisition/opensky_snapshot.py` with different geographic configurations.
+This directory contains rendered maps, plots and other visual outputs. The
+figures are analytical research outputs, not operational separation displays.
 
-## What the map represents
+## Live OpenSky map
 
-The map shows a geographic snapshot of aircraft detected by OpenSky inside the
-configured area of interest. It combines:
-
-- aircraft positions from the OpenSky state-vector response;
-- a geographic basemap, when the map-tile service is available;
-- aircraft labels and movement vectors based on heading and ground speed;
-- three-digit true-track labels at the tip of each movement vector, measured
-  clockwise from geographic north (for example, `072°` or `250°`);
-- altitude, vertical-speed and ground/airborne information used in the display;
-- pairwise proximity or conflict-warning annotations according to the configured
-  horizontal and vertical research thresholds.
-
-These annotations are analytical visualisations only. They are not an operational
-separation assessment and must not be interpreted as air-traffic-control advice.
-
-## How images are obtained
-
-From the repository root, run:
+Configure the area in `src/acquisition/opensky_snapshot.py` and run:
 
 ```bash
-python src/acquisition/opensky_snapshot.py
+python3 src/acquisition/opensky_snapshot.py
 ```
 
-The script queries the OpenSky states API, processes the response and saves the
-default map as `results/figures/opensky_snapshot_map.png`. The corresponding
-processed snapshot is saved as `data/raw/opensky/opensky_snapshot.csv` for
-traceability. When several configurations are being compared, rename or copy
-each generated PNG immediately—for example, to `opensky_bcn_map.png`,
-`opensky_galicia_map.png` or `opensky_spain_north_map.png`—so later runs do not
-overwrite the preserved figures.
+The script queries the live states API and writes:
 
-The geographic scope is controlled in the script. `AREA_MODE="BBOX"` uses
-`CUSTOM_BBOX`; `AREA_MODE="CENTER_RADIUS"` derives a bounding box around the
-selected airport preset and radius. Re-running the script replaces the current
-snapshot and map, so preserve renamed copies when comparing different runs.
+```text
+opensky_snapshot_map.png
+opensky_snapshot_separation.csv
+```
+
+The default map area is selected by `AREA_MODE` and either
+`SELECTED_BBOX_PRESET` or `SELECTED_PRESET`/`RADIUS_KM`. Re-running replaces
+the current-snapshot files. Rename or copy them immediately when preserving a
+specific area or observation time.
+
+## Historical quality figures
+
+Historical PNG/PDF figures are created inside the detector run by:
+
+```bash
+python3 src/conflict_detection/analyze_atc_safety_quality.py \
+  --area LECMSAN \
+  --run-name 20190101T000000_20190228T235950 \
+  --label "Manual control" \
+  --profile ENROUTE
+```
+
+The numbered outputs include current pair-state distributions, non-green rate,
+worst-horizon event state, snapshot time distributions, daily metrics, event
+episodes and episode duration. Each plot is written as `.png` and `.pdf`.
+
+## Validation screenshots
+
+To render selected yellow/orange/red moments from an existing run:
+
+```bash
+python3 src/conflict_detection/generate_random_validation_snapshots.py \
+  --area LECMSAN \
+  --run-name 20190101T000000_20190228T235950 \
+  --profile ENROUTE \
+  --n 10 \
+  --seed 42
+```
+
+The output directory contains `selected_random_moments.csv`,
+`validation_report.csv` and up to 30 PNGs. The requested pixel dimensions come
+from the selected area's `render` block in `src/acquisition/bbox_presets.json`.
+
+## Interpretation
+
+Maps combine aircraft state vectors, movement vectors, labels, optional
+waypoints/corridors and the configured research safety model. Horizontal and
+vertical thresholds, warning colours and prediction horizons come from
+`src/acquisition/separation_profiles.json`. The figures must therefore be
+reported together with the area, UTC observation interval, profile and source
+dataset; they must not be presented as operational ATC advice.

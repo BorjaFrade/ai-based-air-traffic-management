@@ -90,11 +90,28 @@ The map remains true 8K UHD:
 
 with Esri World Imagery as the satellite basemap.
 
+## Installation
+
+From this directory, install the dedicated geospatial dependencies:
+
+```bash
+python3 -m pip install -r requirements_enaire_airspace.txt
+```
+
 ## Run
 
 ```bash
-python3 download_enaire_airspace_map_8k_fl290_410.py
+python3 data/enaire_airspace/download_enaire_airspace_map.py
 ```
+
+The script has no command-line parameters. Edit the configuration constants at
+the top of `download_enaire_airspace_map.py` before running. For example, use
+`FILTER_BY_FL_RANGE = True`, `FL_MIN = 290`, `FL_MAX = 410` for the RVSM band,
+or set `FORCE_DOWNLOAD = True` to refresh the cached ENAIRE GeoJSON files.
+
+Run dates are not passed to the script: the source is the current ENAIRE ArcGIS
+REST layer at execution time. Record the execution date and archive the raw
+GeoJSON files when the map is used in the thesis.
 
 Existing ENAIRE GeoJSON data are reused while:
 

@@ -1,175 +1,238 @@
 # AI-Based Air Traffic Management
 
-Master's Thesis at the **[Universidad Nacional de Educación a Distancia (UNED)](https://www.uned.es/)** focused on the application of Artificial Intelligence (AI) models to Air Traffic Management (ATM).
+Master's thesis at the [Universidad Nacional de Educación a Distancia
+(UNED)](https://www.uned.es/) about the use of aircraft state-vector data and
+Artificial Intelligence methods for Air Traffic Management (ATM).
 
-The project investigates the use of historical and real-world aircraft trajectory data to analyse traffic situations, detect potential conflicts, study aircraft separation, and develop data-driven methods for supporting tactical air traffic conflict detection and resolution.
+The repository contains research code for acquiring OpenSky data, preparing
+regular 10-second traffic snapshots, analysing aircraft separation and
+generating figures and quality metrics. It is an academic project, not an
+operational air-traffic-control system.
 
-## 🎓 Master's Thesis
+## Thesis
 
-**Title:** Air Traffic Management Using Artificial Intelligence Models  
-**Degree:** Master's Degree  
-**University:** [Universidad Nacional de Educación a Distancia (UNED)](https://www.uned.es/)  
-**Author:** [Borja Rodríguez Frade](https://orcid.org/0000-0002-9097-1323) - [ORCID: 0000-0002-9097-1323](https://orcid.org/0000-0002-9097-1323)  
-**Supervisors:**  
-- [Félix Hernández del Olmo](https://orcid.org/0000-0002-0567-9572) — [ORCID: 0000-0002-0567-9572](https://orcid.org/0000-0002-0567-9572)  
-- [Elena Gaudioso Vázquez](https://orcid.org/0000-0003-2258-6623) — [ORCID: 0000-0003-2258-6623](https://orcid.org/0000-0003-2258-6623)  
+- **Title:** Air Traffic Management Using Artificial Intelligence Models
+- **Author:** [Borja Rodríguez Frade](https://orcid.org/0000-0002-9097-1323)
+- **Supervisors:** [Félix Hernández del Olmo](https://orcid.org/0000-0002-0567-9572) and [Elena Gaudioso Vázquez](https://orcid.org/0000-0003-2258-6623)
+- **Status:** Work in progress
+- **Academic year:** 2026–2027
 
-**Status:** Work in progress  
-**Academic Year:** 2026–2027
-## ✈️ Project Overview
+## Installation
 
-The main objective of this project is to investigate how Artificial Intelligence and data-driven models can support Air Traffic Management, particularly in scenarios involving multiple aircraft trajectories and potential loss of separation.
-
-The project combines:
-
-- historical aircraft trajectory data;
-- geospatial air traffic analysis;
-- aircraft state-vector processing;
-- horizontal and vertical separation analysis;
-- conflict detection;
-- Closest Point of Approach (CPA) analysis;
-- trajectory prediction;
-- machine-learning methods for conflict detection and resolution;
-- visualisation of air traffic scenarios.
-
-The work is intended exclusively for **academic and research purposes** and is not designed for operational or safety-critical Air Traffic Control applications.
-
-## 🛰️ Data Sources
-
-The project may use data obtained from different aviation data providers, including:
-
-- OpenSky Network;
-- EUROCONTROL;
-- Flightradar24;
-- other publicly available or research-access aviation datasets.
-
-For the historical part of the thesis, the repository also uses OpenSky's
-[Weekly 24 Hours of State Vector Data 2017–2022](https://opensky-network.org/data/scientific#d1)
-dataset. It contains complete Monday state-vector data, sampled at 10-second
-update intervals and distributed as hourly files. The download and geographic
-filtering workflow is implemented in
-[`src/acquisition/download_opensky_monday_states.py`](src/acquisition/download_opensky_monday_states.py).
-Historical state vectors can also be queried through OpenSky Trino with
-[`src/acquisition/download_opensky_trino_states.py`](src/acquisition/download_opensky_trino_states.py),
-using the shared study-area definitions in
-[`src/acquisition/bbox_presets.json`](src/acquisition/bbox_presets.json).
-
-Third-party datasets are **not distributed under the license of this repository**.
-
-Each dataset remains subject to the terms, conditions, attribution requirements, and licensing restrictions imposed by its original provider.
-
-Raw datasets should therefore not be uploaded to this repository unless their respective licenses explicitly allow redistribution.
-
-## 🗺️ Current Development
-
-The initial development focuses on processing aircraft state vectors and visualising air traffic within configurable geographical regions.
-
-Current functionality includes:
-
-- configurable geographic bounding boxes;
-- aircraft position visualisation;
-- satellite basemap integration;
-- barometric and geometric altitude processing;
-- ground speed and vertical speed;
-- trajectory-vector estimation;
-- ground/airborne aircraft differentiation;
-- configurable aircraft separation criteria;
-- pairwise aircraft proximity analysis;
-- conflict and proximity-warning visualisation.
-
-The current OpenSky snapshot workflow is split between acquisition/analysis and
-visualisation. [`opensky_snapshot.py`](src/acquisition/opensky_snapshot.py)
-downloads and analyses a snapshot, while
-[`opensky_plot.py`](src/acquisition/opensky_plot.py) provides the reusable map
-renderer for aircraft, labels, trajectory vectors, safety areas and cities.
-
-The snapshot configuration is externalised into JSON files:
-
-- [`location_presets.json`](src/acquisition/location_presets.json) for
-  center-radius locations;
-- [`bbox_presets.json`](src/acquisition/bbox_presets.json) for areas defined by
-  vertices or by center and radius;
-- [`separation_profiles.json`](src/acquisition/separation_profiles.json) for
-  horizontal and vertical separation thresholds.
-
-Run the current snapshot workflow from the repository root with:
+Run commands from the repository root. The project currently uses Python 3 and
+the packages listed in [`requirements.txt`](requirements.txt):
 
 ```bash
-python src/acquisition/opensky_snapshot.py
+python3 -m venv .venv
+source .venv/bin/activate
+python3 -m pip install -r requirements.txt
 ```
 
-The project will progressively incorporate historical trajectory processing and AI-based conflict analysis.
+Some optional acquisition scripts also require the packages they import:
+
+- `download_opensky_sector.py` and `download_opensky_trino_states.py` require
+  `pyopensky` and `python-dotenv`.
+- `download_enaire_corridors.py` requires `beautifulsoup4`.
+- The Trino visualisation workflow requires `imageio` (and an ffmpeg backend if
+  MP4 generation is enabled).
+
+Install these only when the corresponding workflow is needed, for example:
+
+```bash
+python3 -m pip install pyopensky python-dotenv beautifulsoup4 imageio
+```
+
+OpenSky credentials must never be committed. The Trino downloader reads
+`src/acquisition/credentials.env` when it exists, or the same variables from
+the environment:
+
+```dotenv
+OPENSKY_USERNAME=your_username
+OPENSKY_PASSWORD=your_password
+```
+
+The file is ignored by Git. OpenSky and ENAIRE are external services; respect
+their current access, rate-limit and licensing conditions.
+
+## End-to-end historical workflow
+
+The reproducible historical pipeline is:
+
+```text
+OpenSky Trino archive
+        ↓
+data/raw/opensky_sectors/<source-sector>/year=YYYY/month=MM/*.csv
+        ↓ preprocess_opensky_10s.py
+data/processed/opensky_10s/<analysis-area>/year=YYYY/month=MM/*_10s.csv
+        ↓ detect_opensky_conflicts.py
+data/processed/opensky_separation/<area>/runs/<run-name>/*.csv
+        ↓
+quality analysis and validation figures
+```
+
+All historical timestamps in the commands below are UTC.
+
+### 1. Download a raw sector archive
+
+The downloader queries one study-area bounding box at a time and writes
+monthly CSV files. The end timestamp is **exclusive**.
+
+For a January–February 2019 run:
+
+```bash
+python3 src/acquisition/download_opensky_sector.py \
+  --sector LECMSAN_ENVELOPE \
+  --start "2019-01-01 00:00:00" \
+  --end "2019-03-01 00:00:00"
+```
+
+Use `--max-windows 1` for a small connectivity test before a large download.
+The downloader is resumable and stores its raw archive under
+`data/raw/opensky_sectors/LECMSAN_ENVELOPE/`.
+
+The available area keys are defined in
+[`src/acquisition/bbox_presets.json`](src/acquisition/bbox_presets.json),
+including `LECMSAN_ENVELOPE`, `LECMSAN`, `GALICIA`, `NORTHERN_SPAIN` and
+`BARCELONA_50KM`.
+
+### 2. Build regular 10-second snapshots
+
+The preprocessor filters the envelope to the exact analysis polygon, applies
+the current cruise-band configuration (FL290–FL410), reconstructs a regular
+10-second UTC grid and writes reusable monthly files. Month bounds are
+inclusive and must use `YYYY-MM`.
+
+```bash
+python3 src/preprocessing/preprocess_opensky_10s.py \
+  --source-sector LECMSAN_ENVELOPE \
+  --analysis-area LECMSAN \
+  --start-month 2019-01 \
+  --end-month 2019-02
+```
+
+The output is written to `data/processed/opensky_10s/LECMSAN/`. Add
+`--overwrite` to regenerate existing monthly outputs, or
+`--keep-daily-cache` to retain the resumable daily cache.
+
+### 3. Detect current and predicted separation events
+
+The detector reads only the processed 10-second files. Its end timestamp is
+**inclusive**; use a 10-second-aligned value such as `23:59:50`.
+
+```bash
+python3 src/conflict_detection/detect_opensky_conflicts.py \
+  --area LECMSAN \
+  --start "2019-01-01 00:00:00" \
+  --end "2019-02-28 23:59:50"
+```
+
+The command creates a run directory named
+`20190101T000000_20190228T235950` under
+`data/processed/opensky_separation/LECMSAN/runs/`. It writes yellow,
+orange and red event CSVs, `run_summary.csv` and `daily_summary.csv`.
+
+### 4. Analyse safety quality
+
+Use the detector run name in the next stage. The default analysis label is
+`Manual control`; set a different label when comparing scenarios.
+
+```bash
+python3 src/conflict_detection/analyze_atc_safety_quality.py \
+  --area LECMSAN \
+  --run-name 20190101T000000_20190228T235950 \
+  --label "Manual control" \
+  --profile ENROUTE
+```
+
+Results are stored in the run's
+`quality_analysis/manual_control/` directory as CSV summaries and PNG/PDF
+figures. Use `--no-traffic-scan` when only event files are available or when a
+faster event-only analysis is required; this disables aircraft-exposure and
+daily normalised metrics.
+
+### 5. Generate random validation screenshots
+
+This samples up to `N` unique current-state moments per colour from an existing
+detector run and re-renders the full traffic snapshot.
+
+```bash
+python3 src/conflict_detection/generate_random_validation_snapshots.py \
+  --area LECMSAN \
+  --run-name 20190101T000000_20190228T235950 \
+  --profile ENROUTE \
+  --n 10 \
+  --seed 42
+```
+
+Outputs go to `validation_screenshots/random_seed_42/` inside the run. Omit
+`--seed` for a new random selection and pass `--n 20` to request up to 20
+yellow, 20 orange and 20 red screenshots.
+
+## Snapshot visualisation
+
+[`src/acquisition/opensky_snapshot.py`](src/acquisition/opensky_snapshot.py)
+queries the live OpenSky states API and creates one map. It is configured in
+the script rather than through command-line arguments. Before running it,
+change `AREA_MODE`, `SELECTED_BBOX_PRESET` (for example `GALICIA`) or
+`SELECTED_PRESET`/`RADIUS_KM` near the top of the file:
+
+```bash
+python3 src/acquisition/opensky_snapshot.py
+```
+
+The default outputs are `data/raw/opensky/opensky_snapshot.csv`,
+`results/figures/opensky_snapshot_map.png` and the relevant-pairs CSV in
+`results/figures/`. Re-running the script replaces these current-snapshot
+files, so copy or rename them when preserving a comparison.
+
+## ENAIRE reference data
+
+These commands download current ENAIRE AIP reference data and filter it to the
+configured areas. For a historical OpenSky study, use an archived AIRAC/AIP
+HTML source with `--source-html` or `--source-url`; the current ENAIRE page is
+not automatically a 2019 reference.
+
+```bash
+python3 src/acquisition/download_waypoints.py --areas LECMSAN GALICIA
+
+python3 src/acquisition/download_enaire_corridors.py \
+  --area LECMSAN \
+  --output src/acquisition/corridors.json
+```
+
+## Safety model
+
+The default `ENROUTE` profile is configured in
+[`src/acquisition/separation_profiles.json`](src/acquisition/separation_profiles.json).
+Its research thresholds are 5 NM horizontal and 1,000 ft vertical. The model
+also evaluates 1-, 2- and 5-minute constant-kinematics look-ahead intervals at
+5-second steps. These are modelling parameters, not universal operational ATC
+minima or safety advice.
 
 ## Repository structure
 
 ```text
 data/
-├── raw/              # Original OpenSky data and aeronautical source documents
-├── processed/        # Reusable cleaned and transformed datasets
-└── samples/          # Small datasets for examples and tests
+├── raw/                 # downloaded/source data; normally not committed
+└── processed/           # regularised states and derived events
 src/
-├── acquisition/      # Data collection and provider-specific clients
-├── preprocessing/    # Cleaning and feature preparation
-├── trajectories/     # Trajectory handling and analysis
-├── conflict_detection/
-├── visualization/
-└── models/
-notebooks/            # Exploratory and reproducible research notebooks
-experiments/          # Experiment configurations and runs
-results/              # Generated figures and tables
-docs/                 # Thesis and project documentation
-tests/                # Automated tests
+├── acquisition/         # OpenSky, ENAIRE and map acquisition utilities
+├── preprocessing/       # reusable 10-second state preparation
+└── conflict_detection/  # event detection, validation and quality analysis
+results/
+└── figures/             # maps, plots and rendered validation outputs
 ```
 
-The folders have the following responsibilities:
+See the README in each directory for the detailed script-level reference:
+[`src/README.md`](src/README.md),
+[`src/acquisition/README.md`](src/acquisition/README.md),
+[`src/preprocessing/README.md`](src/preprocessing/README.md),
+[`src/conflict_detection/README.md`](src/conflict_detection/README.md) and
+[`results/README.md`](results/README.md).
 
-- `data/`: datasets. `raw/` preserves source data without modification, `processed/`
-  is for cleaned or transformed data, and `samples/` is for small datasets used in
-  examples and tests. The original ILS documents are under `data/raw/ils/` and
-  OpenSky snapshots under `data/raw/opensky/`. Historical regional Parquet output
-  is generated under `data/raw/opensky_weekly/` and is intentionally not committed as
-  part of the source repository.
-- `src/`: reusable project code, organised by research stage. See
-  [`src/README.md`](src/README.md).
-- `notebooks/`: exploratory analyses, visual investigations and reproducible
-  research notebooks.
-- `experiments/`: experiment definitions, configurations and run-specific material.
-- `results/`: generated outputs such as figures and tables. See
-  [`results/README.md`](results/README.md).
-- `docs/`: thesis-related and technical documentation.
-- `tests/`: automated tests for the source code and data-processing pipeline.
-- `README.md`, `LICENSE` and `requirements.txt`: project entry-point documentation,
-  licensing information and Python dependencies respectively.
+## Data and licensing
 
-## ⚠️ Conflict Detection Model
-
-A simplified separation model is currently used for research and experimentation.
-
-Aircraft encounters can be classified according to configurable horizontal and vertical separation thresholds.
-
-The thresholds implemented in this repository are modelling parameters and **must not be interpreted as universally applicable operational ATC separation minima**.
-
-Actual separation requirements depend on airspace, surveillance capabilities, flight level, operational procedures, wake turbulence categories, and applicable aviation regulations.
-
-## 🧠 Planned AI Pipeline
-
-The expected research workflow is:
-
-```text
-Historical flight data
-        ↓
-Trajectory preprocessing
-        ↓
-Aircraft encounter extraction
-        ↓
-Separation / CPA / TCPA analysis
-        ↓
-Conflict scenario labelling
-        ↓
-Feature engineering
-        ↓
-Machine-learning models
-        ↓
-Conflict detection / prediction
-        ↓
-Resolution advisory research
+Third-party datasets are not distributed under this repository's license. Raw
+OpenSky, ENAIRE and other provider data remain subject to their original terms,
+attribution requirements and redistribution restrictions. Do not commit large
+raw or generated datasets unless their license and repository policy permit it.
