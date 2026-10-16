@@ -41,10 +41,9 @@ Figures (PNG + PDF):
     03_pair_event_state_distribution
     04_snapshot_current_time_distribution
     05_snapshot_event_time_distribution
-    06_daily_current_snapshot_share           (if traffic scan is enabled)
-    07_daily_event_episodes
-    08_episode_duration_histogram
-    09_aircraft_current_state_distribution    (if traffic scan is enabled)
+    06_daily_event_episodes
+    07_episode_duration_histogram
+    08_aircraft_current_state_distribution    (if traffic scan is enabled)
 
 The CSV summaries are deliberately machine-readable so that a later
 "manual vs automated controller" comparison can use exactly the same KPIs.
@@ -2133,6 +2132,98 @@ def build_summary_metrics(
 # PLOTTING
 # =============================================================================
 
+def set_adaptive_daily_xaxis(
+    ax,
+    daily: pd.DataFrame,
+) -> None:
+    """
+    Keep daily time axes readable.
+
+    Rules:
+      - If the data cover only one calendar month, label every available day.
+      - If the data cover more than one month, label only the 1st and 15th
+        of each month.
+
+    The bars themselves are never removed; only the visible tick labels are
+    reduced.
+    """
+    if daily.empty or "day" not in daily.columns:
+        return
+
+    dates = pd.to_datetime(
+        daily["day"],
+        errors="coerce",
+    )
+
+    valid = dates.notna()
+
+    if not valid.any():
+        return
+
+    valid_dates = dates.loc[valid]
+
+    month_count = int(
+        valid_dates.dt.to_period("M").nunique()
+    )
+
+    x = np.arange(len(daily))
+
+    if month_count <= 1:
+        # One-month analyses: show every available day.
+        tick_mask = valid.to_numpy()
+
+        tick_positions = x[tick_mask]
+
+        tick_labels = [
+            str(int(date.day))
+            for date in dates.loc[valid]
+        ]
+
+        rotation = 0
+
+    else:
+        # Multi-month analyses: keep only the 1st and 15th.
+        tick_mask = (
+            valid
+            & dates.dt.day.isin([1, 15])
+        ).to_numpy()
+
+        tick_positions = x[tick_mask]
+
+        tick_dates = dates.loc[
+            valid
+            & dates.dt.day.isin([1, 15])
+        ]
+
+        tick_labels = [
+            date.strftime("%b %-d")
+            for date in tick_dates
+        ]
+
+        rotation = 0
+
+        # Fallback for platforms where %-d is unsupported.
+        if any("%" in label for label in tick_labels):
+            tick_labels = [
+                f"{date.strftime('%b')} {int(date.day)}"
+                for date in tick_dates
+            ]
+
+    ax.set_xticks(
+        tick_positions
+    )
+
+    ax.set_xticklabels(
+        tick_labels,
+        rotation=rotation,
+        ha="center",
+    )
+
+    ax.set_xlabel(
+        "Date (UTC)"
+    )
+
+
 def save_figure(
     fig,
     output_base: Path,
@@ -2163,7 +2254,6 @@ def plot_state_distribution(
     dataframe: pd.DataFrame,
     colours: dict[str, str],
     title: str,
-    subtitle: str,
     output_base: Path,
 ):
     fig, ax = plt.subplots(
@@ -2221,16 +2311,7 @@ def plot_state_distribution(
         title,
         fontsize=13,
         fontweight="bold",
-    )
-
-    ax.text(
-        0.5,
-        1.01,
-        subtitle,
-        transform=ax.transAxes,
-        ha="center",
-        va="bottom",
-        fontsize=9,
+        pad=14,
     )
 
     ax.set_ylim(
@@ -2355,6 +2436,7 @@ def plot_non_green_rate(
         title,
         fontsize=13,
         fontweight="bold",
+        pad=14,
     )
 
     ax.grid(
@@ -2501,6 +2583,7 @@ def plot_daily_current_snapshot_share(
         title,
         fontsize=13,
         fontweight="bold",
+        pad=14,
     )
 
     ax.legend(
@@ -2592,16 +2675,9 @@ def plot_daily_episodes(
 
         bottom += values
 
-    ax.set_xticks(
-        x
-    )
-
-    ax.set_xticklabels(
-        daily[
-            "day"
-        ],
-        rotation=45,
-        ha="right",
+    set_adaptive_daily_xaxis(
+        ax,
+        daily,
     )
 
     ax.set_ylabel(
@@ -2612,15 +2688,20 @@ def plot_daily_episodes(
         title,
         fontsize=13,
         fontweight="bold",
+        pad=14,
     )
 
+    # Keep the legend outside the plotting area so it never overlaps
+    # the title or the bars.
     ax.legend(
-        ncol=3,
-        loc="upper center",
+        ncol=1,
+        loc="upper left",
         bbox_to_anchor=(
-            0.5,
-            1.13,
+            1.01,
+            1.0,
         ),
+        borderaxespad=0.0,
+        frameon=True,
     )
 
     ax.grid(
@@ -2628,7 +2709,15 @@ def plot_daily_episodes(
         alpha=0.2,
     )
 
-    fig.tight_layout()
+    # Reserve space on the right for the external legend.
+    fig.tight_layout(
+        rect=(
+            0.0,
+            0.0,
+            0.88,
+            1.0,
+        )
+    )
 
     save_figure(
         fig,
@@ -2745,6 +2834,7 @@ def plot_episode_duration_histogram(
         title,
         fontsize=13,
         fontweight="bold",
+        pad=14,
     )
 
     ax.legend()
@@ -3144,12 +3234,7 @@ def main() -> None:
     plot_state_distribution(
         pair_current,
         colours,
-        title=(
-            f"{args.label}: current pair-state distribution"
-        ),
-        subtitle=(
-            "Actual state at each pair × 10-second observation"
-        ),
+        title="Current pair-state distribution",
         output_base=(
             output_dir
             / "01_pair_current_state_distribution"
@@ -3159,9 +3244,7 @@ def main() -> None:
     plot_non_green_rate(
         pair_current,
         colours,
-        title=(
-            f"{args.label}: current non-green rate"
-        ),
+        title="Current non-green pair rate",
         output_base=(
             output_dir
             / "02_pair_current_non_green_rate"
@@ -3171,12 +3254,7 @@ def main() -> None:
     plot_state_distribution(
         pair_event,
         colours,
-        title=(
-            f"{args.label}: worst-horizon pair-state distribution"
-        ),
-        subtitle=(
-            "event_state = worst of NOW, 0-1, 1-2 and 2-5 min"
-        ),
+        title="Worst predicted pair-state distribution",
         output_base=(
             output_dir
             / "03_pair_event_state_distribution"
@@ -3186,12 +3264,7 @@ def main() -> None:
     plot_state_distribution(
         snapshot_current,
         colours,
-        title=(
-            f"{args.label}: time spent in each current safety level"
-        ),
-        subtitle=(
-            "Each 10-second snapshot is assigned its worst CURRENT pair state"
-        ),
+        title="Current safety-state exposure over time",
         output_base=(
             output_dir
             / "04_snapshot_current_time_distribution"
@@ -3201,52 +3274,35 @@ def main() -> None:
     plot_state_distribution(
         snapshot_event,
         colours,
-        title=(
-            f"{args.label}: time exposed to predicted safety events"
-        ),
-        subtitle=(
-            "Each 10-second snapshot is assigned its worst event_state "
-            "within the prediction horizon"
-        ),
+        title="Exposure to predicted safety events",
         output_base=(
             output_dir
             / "05_snapshot_event_time_distribution"
         ),
     )
 
-    plot_daily_current_snapshot_share(
-        daily,
-        colours,
-        title=(
-            f"{args.label}: daily share of CURRENT safety states"
-        ),
-        output_base=(
-            output_dir
-            / "06_daily_current_snapshot_share"
-        ),
-    )
+    # The former daily 100%-stacked state-share figure is intentionally
+    # omitted from the default report: Green dominates almost the entire
+    # scale, so the non-green variation is visually unreadable and adds little
+    # beyond the normalized/event figures already exported.
 
     plot_daily_episodes(
         daily,
         colours,
-        title=(
-            f"{args.label}: independent safety-event episodes per day"
-        ),
+        title="Independent safety-event episodes per day",
         output_base=(
             output_dir
-            / "07_daily_event_episodes"
+            / "06_daily_event_episodes"
         ),
     )
 
     plot_episode_duration_histogram(
         episodes,
         colours,
-        title=(
-            f"{args.label}: duration of event episodes"
-        ),
+        title="Safety-event episode duration",
         output_base=(
             output_dir
-            / "08_episode_duration_histogram"
+            / "07_episode_duration_histogram"
         ),
     )
 
@@ -3254,16 +3310,10 @@ def main() -> None:
         plot_state_distribution(
             aircraft_current,
             colours,
-            title=(
-                f"{args.label}: aircraft-observation current-state distribution"
-            ),
-            subtitle=(
-                "Each aircraft × 10-second observation receives its worst "
-                "CURRENT pair state"
-            ),
+            title="Current state by aircraft observation",
             output_base=(
                 output_dir
-                / "09_aircraft_current_state_distribution"
+                / "08_aircraft_current_state_distribution"
             ),
         )
 
