@@ -61,7 +61,8 @@ PROJECT_ROOT/
     │   ├── opensky_plot.py
     │   ├── opensky_safety.py
     │   ├── separation_profiles.json
-    │   └── waypoints.json
+    │   ├── waypoints.json
+    │   └── corridors.json
     │
     └── conflict_detection/
         └── generate_random_validation_snapshots.py
@@ -135,6 +136,11 @@ WAYPOINTS_FILE = (
     / "waypoints.json"
 )
 
+CORRIDORS_FILE = (
+    ACQUISITION_DIR
+    / "corridors.json"
+)
+
 SEPARATION_PROFILES_FILE = (
     ACQUISITION_DIR
     / "separation_profiles.json"
@@ -180,6 +186,12 @@ DEFAULT_RENDER_DPI = 160
 DEFAULT_RENDER_WIDTH_PX = 3840
 
 DEFAULT_RENDER_HEIGHT_PX = 2160
+
+# Corridor overlay defaults for validation screenshots.
+SHOW_VALIDATION_CORRIDORS = True
+SHOW_VALIDATION_CORRIDOR_LABELS = True
+VALIDATION_CORRIDORS_ONLY_NEAR_TRAFFIC = False
+VALIDATION_CORRIDOR_TRAFFIC_DISTANCE_NM = 20.0
 
 
 # =============================================================================
@@ -258,6 +270,7 @@ from area_presets import (  # noqa: E402
     filter_dataframe_to_area,
     load_area_presets,
     load_waypoints_for_area,
+    load_corridors_for_area,
     resolve_area_preset,
 )
 
@@ -2085,6 +2098,37 @@ def main() -> None:
         f"{len(waypoints)}"
     )
 
+    # -------------------------------------------------------------------------
+    # ATS corridors / airways
+    # -------------------------------------------------------------------------
+
+    corridors = (
+        load_corridors_for_area(
+            CORRIDORS_FILE,
+            area_key=args.area,
+            area=area,
+        )
+    )
+
+    print(
+        f"Loaded corridors: "
+        f"{len(corridors)}"
+    )
+
+    if SHOW_VALIDATION_CORRIDORS and not corridors:
+        print(
+            "WARNING: corridor display is enabled, "
+            "but no corridors were loaded."
+        )
+
+    print(
+        "Corridor rendering: "
+        f"show={SHOW_VALIDATION_CORRIDORS} | "
+        f"labels={SHOW_VALIDATION_CORRIDOR_LABELS} | "
+        f"only_near_traffic={VALIDATION_CORRIDORS_ONLY_NEAR_TRAFFIC} | "
+        f"distance_nm={VALIDATION_CORRIDOR_TRAFFIC_DISTANCE_NM}"
+    )
+
     # =========================================================================
     # SAFETY PROFILE
     # =========================================================================
@@ -2367,6 +2411,22 @@ def main() -> None:
 
         "SHOW_WAYPOINT_LABELS":
             True,
+
+        # ---------------------------------------------------------------------
+        # ATS corridors / airways
+        # ---------------------------------------------------------------------
+
+        "SHOW_CORRIDORS":
+            SHOW_VALIDATION_CORRIDORS,
+
+        "CORRIDORS_ONLY_NEAR_TRAFFIC":
+            VALIDATION_CORRIDORS_ONLY_NEAR_TRAFFIC,
+
+        "CORRIDOR_TRAFFIC_DISTANCE_NM":
+            VALIDATION_CORRIDOR_TRAFFIC_DISTANCE_NM,
+
+        "SHOW_CORRIDOR_LABELS":
+            SHOW_VALIDATION_CORRIDOR_LABELS,
 
         "SHOW_ALTITUDE":
             True,
@@ -2736,6 +2796,9 @@ def main() -> None:
 
             waypoints=
                 waypoints,
+
+            corridors=
+                corridors,
 
             show=
                 False,

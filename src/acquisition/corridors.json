@@ -1,0 +1,322 @@
+{
+  "_meta": {
+    "schema": "opensky-corridors-v1",
+    "generated_utc": "2026-10-15T21:07:53.119178+00:00",
+    "important": "Default ENAIRE URL is the current AIP. Use a historical source for historical traffic studies."
+  },
+  "LECMSAN": {
+    "name": "LECMSAN Santiago ATC sector",
+    "source": {
+      "name": "ENAIRE AIP ENR 3.2",
+      "url": "https://aip.enaire.es/AIP/contenido_AIP/ENR/LE_ENR_3_2_en.html",
+      "historical": false
+    },
+    "filter": {
+      "area_key": "LECMSAN",
+      "bbox": {
+        "lamin": 41.793611,
+        "lamax": 45.0,
+        "lomin": -13.0,
+        "lomax": -5.625,
+        "extended": 1
+      },
+      "polygon": true,
+      "description": "ATS route portions with at least one sampled route segment intersecting the resolved study area."
+    },
+    "count": 11,
+    "corridors": [
+      {
+        "name": "M190",
+        "route": "M190",
+        "type": "ATS",
+        "segment_index": 1,
+        "points": [
+          {
+            "name": "MASIP",
+            "label": "MASIP",
+            "lat": 43.39222222222222,
+            "lon": -6.655555555555556
+          },
+          {
+            "name": "ROXER",
+            "label": "ROXER",
+            "lat": 43.213055555555556,
+            "lon": -7.3575
+          },
+          {
+            "name": "STG",
+            "label": "SANTIAGO DVOR/DME (STG)",
+            "lat": 42.926944444444445,
+            "lon": -8.425277777777778
+          }
+        ]
+      },
+      {
+        "name": "M30",
+        "route": "M30",
+        "type": "ATS",
+        "segment_index": 1,
+        "points": [
+          {
+            "name": "LOTEE",
+            "label": "LOTEE",
+            "lat": 44.65888888888889,
+            "lon": -5.836666666666666
+          },
+          {
+            "name": "MAVOS",
+            "label": "MAVOS",
+            "lat": 44.05444444444444,
+            "lon": -5.934722222222223
+          }
+        ]
+      },
+      {
+        "name": "N725",
+        "route": "N725",
+        "type": "ATS",
+        "segment_index": 1,
+        "points": [
+          {
+            "name": "STG",
+            "label": "SANTIAGO DVOR/DME (STG)",
+            "lat": 42.926944444444445,
+            "lon": -8.425277777777778
+          },
+          {
+            "name": "LOMDA",
+            "label": "LOMDA",
+            "lat": 42.85277777777778,
+            "lon": -7.296111111111111
+          },
+          {
+            "name": "BISMU",
+            "label": "BISMU",
+            "lat": 42.79666666666667,
+            "lon": -6.538611111111111
+          }
+        ]
+      },
+      {
+        "name": "N726",
+        "route": "N726",
+        "type": "ATS",
+        "segment_index": 1,
+        "points": [
+          {
+            "name": "STG",
+            "label": "SANTIAGO DVOR/DME (STG)",
+            "lat": 42.926944444444445,
+            "lon": -8.425277777777778
+          },
+          {
+            "name": "NARBO",
+            "label": "NARBO",
+            "lat": 42.13972222222222,
+            "lon": -8.228333333333333
+          },
+          {
+            "name": "ORTOP",
+            "label": "ORTOP",
+            "lat": 36.026666666666664,
+            "lon": -7.383333333333334
+          }
+        ]
+      },
+      {
+        "name": "N728",
+        "route": "N728",
+        "type": "ATS",
+        "segment_index": 1,
+        "points": [
+          {
+            "name": "KORUL",
+            "label": "KORUL",
+            "lat": 44.83527777777778,
+            "lon": -6.919722222222222
+          },
+          {
+            "name": "KORAV",
+            "label": "KORAV",
+            "lat": 43.653055555555554,
+            "lon": -7.865555555555555
+          },
+          {
+            "name": "STG",
+            "label": "SANTIAGO DVOR/DME (STG)",
+            "lat": 42.926944444444445,
+            "lon": -8.425277777777778
+          },
+          {
+            "name": "DEMOS",
+            "label": "DEMOS",
+            "lat": 41.92583333333333,
+            "lon": -9.361944444444443
+          },
+          {
+            "name": "ORTIS",
+            "label": "ORTIS",
+            "lat": 31.40694444444444,
+            "lon": -16.556944444444444
+          }
+        ]
+      },
+      {
+        "name": "N733",
+        "route": "N733",
+        "type": "ATS",
+        "segment_index": 1,
+        "points": [
+          {
+            "name": "STG",
+            "label": "SANTIAGO DVOR/DME (STG)",
+            "lat": 42.926944444444445,
+            "lon": -8.425277777777778
+          },
+          {
+            "name": "ELTEP",
+            "label": "ELTEP",
+            "lat": 42.61638888888889,
+            "lon": -7.783611111111111
+          },
+          {
+            "name": "FORNO",
+            "label": "FORNO",
+            "lat": 42.46805555555556,
+            "lon": -7.481388888888889
+          },
+          {
+            "name": "FINAM",
+            "label": "FINAM",
+            "lat": 42.42222222222222,
+            "lon": -7.3886111111111115
+          }
+        ]
+      },
+      {
+        "name": "P600",
+        "route": "P600",
+        "type": "ATS",
+        "segment_index": 1,
+        "points": [
+          {
+            "name": "LOTEE",
+            "label": "LOTEE",
+            "lat": 44.65888888888889,
+            "lon": -5.836666666666666
+          },
+          {
+            "name": "MEGAT",
+            "label": "MEGAT",
+            "lat": 43.49888888888889,
+            "lon": -7.596388888888889
+          },
+          {
+            "name": "STG",
+            "label": "SANTIAGO DVOR/DME (STG)",
+            "lat": 42.926944444444445,
+            "lon": -8.425277777777778
+          },
+          {
+            "name": "ASDEB",
+            "label": "ASDEB",
+            "lat": 42.51583333333333,
+            "lon": -8.491944444444444
+          },
+          {
+            "name": "TURON",
+            "label": "TURON",
+            "lat": 42.06805555555556,
+            "lon": -8.563333333333334
+          }
+        ]
+      },
+      {
+        "name": "T3",
+        "route": "T3",
+        "type": "ATS",
+        "segment_index": 1,
+        "points": [
+          {
+            "name": "FINAM",
+            "label": "FINAM",
+            "lat": 42.42222222222222,
+            "lon": -7.3886111111111115
+          },
+          {
+            "name": "BEDAL",
+            "label": "BEDAL",
+            "lat": 42.10472222222222,
+            "lon": -7.753888888888889
+          },
+          {
+            "name": "ASPOR",
+            "label": "ASPOR",
+            "lat": 41.815,
+            "lon": -8.081111111111111
+          }
+        ]
+      },
+      {
+        "name": "T326",
+        "route": "T326",
+        "type": "ATS",
+        "segment_index": 1,
+        "points": [
+          {
+            "name": "INSID",
+            "label": "INSID",
+            "lat": 42.275555555555556,
+            "lon": -7.094166666666666
+          },
+          {
+            "name": "ASPOR",
+            "label": "ASPOR",
+            "lat": 41.815,
+            "lon": -8.081111111111111
+          }
+        ]
+      },
+      {
+        "name": "T328",
+        "route": "T328",
+        "type": "ATS",
+        "segment_index": 1,
+        "points": [
+          {
+            "name": "ELTEP",
+            "label": "ELTEP",
+            "lat": 42.61638888888889,
+            "lon": -7.783611111111111
+          },
+          {
+            "name": "ASPOR",
+            "label": "ASPOR",
+            "lat": 41.815,
+            "lon": -8.081111111111111
+          }
+        ]
+      },
+      {
+        "name": "Z406",
+        "route": "Z406",
+        "type": "ATS",
+        "segment_index": 1,
+        "points": [
+          {
+            "name": "BEDAL",
+            "label": "BEDAL",
+            "lat": 42.10472222222222,
+            "lon": -7.753888888888889
+          },
+          {
+            "name": "RALUS",
+            "label": "RALUS",
+            "lat": 41.93666666666666,
+            "lon": -7.116388888888888
+          }
+        ]
+      }
+    ]
+  }
+}
