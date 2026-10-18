@@ -23,10 +23,32 @@ FIG_SIZE = (28, 16)
 MAP_FILE = Path("opensky_snapshot_map.png")
 AREA = {"name": "OpenSky"}
 AIRCRAFT_MARKER = None
+SEPARATION_PROFILE = "ENROUTE"
+MIN_HORIZONTAL_SEPARATION_NM = 5.0
+MIN_VERTICAL_SEPARATION_FT = 1000.0
+AREA_POLYGON = None
+LOOKAHEAD_INTERVAL_STATES = {}
+STATE_NORMAL = "NORMAL"
+STATE_PROXIMITY = "PROXIMITY"
+STATE_HIGH_RISK = "HIGH_RISK"
+STATE_CONFLICT = "CONFLICT"
 
 # Defaults are overwritten by config=globals() from the acquisition scripts.
 SHOW_WAYPOINTS = False
 SHOW_WAYPOINT_LABELS = False
+SHOW_CITIES = True
+MAX_CITIES = 10
+SHOW_LABELS = True
+SHOW_ALTITUDE = True
+SHOW_GROUND_SPEED = True
+SHOW_VERTICAL_SPEED = True
+SHOW_TRAJECTORY_VECTOR = True
+SHOW_SAFETY_AREA = True
+SHOW_SAFETY_AREA_FILL = True
+VERTICAL_SPEED_LEVEL_THRESHOLD_FPM = 100.0
+VERTICAL_SPEED_CLIMB_COLOR = "#00D26A"
+VERTICAL_SPEED_DESCENT_COLOR = "#FF4040"
+VERTICAL_SPEED_LEVEL_COLOR = "#D8D8D8"
 WAYPOINT_MARKER = "s"
 WAYPOINT_MARKER_SIZE = 34
 WAYPOINT_FACE_COLOR = "white"
@@ -74,6 +96,69 @@ SAFETY_STATE_DISPLAY_NAMES = {
 
 _BASEMAP_CACHE = {}
 _CITY_CACHE = {}
+
+
+# Shared visual contract for OpenSky and SCAT validation snapshots.  Dataset
+# adapters should only provide the data-specific fields (safety profile,
+# polygon, title and optional overlays); the map language remains identical.
+SHARED_VALIDATION_RENDER_DEFAULTS = {
+    "SHOW_BASEMAP": True,
+    "SHOW_LABELS": True,
+    "SHOW_CITIES": True,
+    "SHOW_WAYPOINTS": True,
+    "SHOW_WAYPOINT_LABELS": True,
+    "SHOW_CORRIDORS": True,
+    "CORRIDORS_ONLY_NEAR_TRAFFIC": False,
+    "CORRIDOR_TRAFFIC_DISTANCE_NM": 20.0,
+    "SHOW_CORRIDOR_LABELS": True,
+    "SHOW_ALTITUDE": True,
+    "SHOW_GROUND_SPEED": True,
+    "SHOW_VERTICAL_SPEED": True,
+    "SHOW_TRAJECTORY_VECTOR": True,
+    "SHOW_SAFETY_AREA": True,
+    "CHECK_GROUND_AIRCRAFT_SAFETY": False,
+    "SAFETY_AREA_POINTS": 120,
+    "SAFETY_AREA_LINEWIDTH": 1.1,
+    "SAFETY_AREA_ALPHA": 0.55,
+    "SHOW_SAFETY_AREA_FILL": True,
+    "SAFETY_AREA_FILL_ALPHA": 0.035,
+    "AIRCRAFT_SIZE": 180,
+    "MAX_CITIES": 10,
+    "VERTICAL_SPEED_LEVEL_THRESHOLD_FPM": 100.0,
+    "VERTICAL_SPEED_CLIMB_COLOR": "#00D26A",
+    "VERTICAL_SPEED_DESCENT_COLOR": "#FF4040",
+    "VERTICAL_SPEED_LEVEL_COLOR": "#D8D8D8",
+    "GROUND_COLOR": "#FFD400",
+}
+
+
+def build_shared_validation_render_config(
+    area,
+    *,
+    width_px: int,
+    height_px: int,
+    dpi: int = FIG_DPI,
+    title_prefix: str = "OpenSky Traffic Snapshot",
+    show_basemap: bool = True,
+    overrides: dict | None = None,
+) -> dict:
+    """Build the common validation map style used by OpenSky and SCAT."""
+    if width_px <= 0 or height_px <= 0 or dpi <= 0:
+        raise ValueError("Render width, height and DPI must be positive")
+
+    config = dict(SHARED_VALIDATION_RENDER_DEFAULTS)
+    config.update(
+        {
+            "FIG_SIZE": (width_px / dpi, height_px / dpi),
+            "FIG_DPI": dpi,
+            "AREA_POLYGON": area.get("polygon"),
+            "TITLE_PREFIX": title_prefix,
+            "SHOW_BASEMAP": bool(show_basemap),
+        }
+    )
+    if overrides:
+        config.update(overrides)
+    return config
 
 
 
@@ -2675,6 +2760,10 @@ def add_cached_basemap(
     bbox,
 ):
 
+    if globals().get("SHOW_BASEMAP", True) is False:
+        ax.set_facecolor("0.15")
+        return
+
     cache_key = _bbox_cache_key(bbox)
 
     if cache_key in _BASEMAP_CACHE:
@@ -2956,9 +3045,14 @@ def render_map(
     # TITLE
     # ============================================================
     
+    title_prefix = globals().get(
+        "TITLE_PREFIX",
+        "OpenSky Traffic Snapshot",
+    )
+
     fig.suptitle(
     
-        f"OpenSky Traffic Snapshot - "
+        f"{title_prefix} - "
         f"{AREA['name']} - "
         f"{SEPARATION_PROFILE} - "
         + snapshot_time.strftime(

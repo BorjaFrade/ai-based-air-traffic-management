@@ -131,5 +131,74 @@
       "width_px": 3840,
       "height_px": 3840
     }
+  },
+  "SCAT_ESMM_GOTHENBURG_GG": {
+    "name": "SCAT ESMM/GG Gothenburg local airspace envelope",
+    "type": "vertices",
+    "vertices": {
+      "lamin": 57.4997222,
+      "lamax": 57.8330556,
+      "lomin": 12.0766667,
+      "lomax": 12.5022222,
+      "extended": 1
+    },
+    "airspace": {
+      "dataset": "SCAT",
+      "source_file": "airspace.json",
+      "centre": "ESMM",
+      "sector": "GG",
+      "altitude_min_ft": 0,
+      "altitude_max_ft": 1500
+    },
+    "render": {
+      "width_px": 3840,
+      "height_px": 2160
+    }
+  },
+  "SCAT_ESMM_MALMO_MS": {
+    "name": "SCAT ESMM/MS Malmo local airspace envelope",
+    "type": "vertices",
+    "vertices": {
+      "lamin": 55.3955556,
+      "lamax": 55.6733333,
+      "lomin": 13.2152778,
+      "lomax": 13.5375,
+      "extended": 1
+    },
+    "airspace": {
+      "dataset": "SCAT",
+      "source_file": "airspace.json",
+      "centre": "ESMM",
+      "sector": "MS",
+      "altitude_min_ft": 0,
+      "altitude_max_ft": 2000
+    },
+    "render": {
+      "width_px": 3840,
+      "height_px": 2160
+    }
+  },
+  "SCAT_ESOS_STOCKHOLM_SE": {
+    "name": "SCAT ESOS/SE Stockholm local airspace envelope",
+    "type": "vertices",
+    "vertices": {
+      "lamin": 59.3916667,
+      "lamax": 59.6627778,
+      "lomin": 17.8566667,
+      "lomax": 18.1672222,
+      "extended": 1
+    },
+    "airspace": {
+      "dataset": "SCAT",
+      "source_file": "airspace.json",
+      "centre": "ESOS",
+      "sector": "SE",
+      "altitude_min_ft": 0,
+      "altitude_max_ft": 19500
+    },
+    "render": {
+      "width_px": 3840,
+      "height_px": 2160
+    }
   }
 }

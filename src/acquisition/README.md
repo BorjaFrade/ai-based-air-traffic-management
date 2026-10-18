@@ -10,13 +10,22 @@ Run every command from the repository root. Historical times are UTC.
 
 - [`bbox_presets.json`](bbox_presets.json): bounding boxes, polygons and render
   sizes. Current keys include `LECMSAN_ENVELOPE`, `LECMSAN`, `GALICIA`,
-  `NORTHERN_SPAIN` and `BARCELONA_50KM`.
+  `NORTHERN_SPAIN`, `BARCELONA_50KM` and the SCAT-backed Swedish sectors
+  `SCAT_ESMM_GOTHENBURG_GG`, `SCAT_ESMM_MALMO_MS` and
+  `SCAT_ESOS_STOCKHOLM_SE`.
 - [`location_presets.json`](location_presets.json): airport-centred locations
   used by the live snapshot script.
 - [`separation_profiles.json`](separation_profiles.json): `ENROUTE`,
   `TERMINAL`, `FINAL_APPROACH` and `CUSTOM` research profiles.
 - [`waypoints.json`](waypoints.json) and [`corridors.json`](corridors.json):
   ENAIRE reference layers used by map rendering and validation screenshots.
+
+The SCAT airspace envelopes can be checked against the downloaded
+`airspace.json` with:
+
+```bash
+python3 src/acquisition/validate_scat_airspace_presets.py
+```
 
 ## Historical OpenSky archive
 

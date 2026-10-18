@@ -80,3 +80,39 @@ The `--analysis-area` value must name a polygon preset in
 [`../acquisition/bbox_presets.json`](../acquisition/bbox_presets.json). A
 bounding-box/envelope preset is appropriate for `--source-sector`; the exact
 polygon is applied during preprocessing.
+
+## SCAT weekly ZIP archives
+
+[`preprocess_scat_10s.py`](preprocess_scat_10s.py) is the corresponding
+adapter for the SCAT dataset. It streams the flight JSON files from the 13
+weekly ZIPs and keeps the temporal context that OpenSky does not provide:
+flight-plan updates, controller clearances, active control centre and
+predicted route. It writes chronological daily files under
+`data/processed/scat_10s/<AREA>/date=YYYY-MM-DD/`.
+
+The area presets `SCAT_ESMM_GOTHENBURG_GG`, `SCAT_ESMM_MALMO_MS` and
+`SCAT_ESOS_STOCKHOLM_SE` are envelopes of the real SCAT sectors documented in
+`airspace.json`, not arbitrary city-radius boxes.
+
+Smoke test one hundred flights from one week:
+
+```bash
+python3 src/preprocessing/preprocess_scat_10s.py \
+  --area SCAT_ESMM_GOTHENBURG_GG \
+  --week 20161015_20161021 \
+  --max-flights 100 \
+  --overwrite
+```
+
+Process the complete downloaded dataset for one area:
+
+```bash
+python3 src/preprocessing/preprocess_scat_10s.py \
+  --area SCAT_ESOS_STOCKHOLM_SE \
+  --overwrite
+```
+
+The script uses an external chronological merge for each daily file, so the
+conflict detector can stream snapshots without loading a whole week into
+memory. Use `--keep-intermediate` when auditing the unsorted per-archive
+parts.

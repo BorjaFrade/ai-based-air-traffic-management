@@ -284,6 +284,7 @@ from opensky_safety import (  # noqa: E402
 )
 
 from opensky_plot import (  # noqa: E402
+    build_shared_validation_render_config,
     render_map,
 )
 
@@ -2310,204 +2311,36 @@ def main() -> None:
     # PLOT CONFIGURATION
     # =========================================================================
 
-    config = {
-
-        # ---------------------------------------------------------------------
-        # Safety
-        # ---------------------------------------------------------------------
-
-        "SEPARATION_PROFILE":
-            args.profile,
-
-        "STATE_NORMAL":
-            STATE_NORMAL,
-
-        "STATE_PROXIMITY":
-            STATE_PROXIMITY,
-
-        "STATE_HIGH_RISK":
-            STATE_HIGH_RISK,
-
-        "STATE_CONFLICT":
-            STATE_CONFLICT,
-
-        "ENABLED_SAFETY_STATES":
-            enabled_states(
-                state_rules
-            ),
-
-        "SAFETY_STATE_COLORS":
-            safety_colours,
-
-        "SAFETY_STATE_DISPLAY_NAMES":
-            safety_names,
-
-        "NORMAL_AIRCRAFT_COLOR":
-            safety_colours[
-                STATE_NORMAL
-            ],
-
-        "PROXIMITY_AIRCRAFT_COLOR":
-            safety_colours[
-                STATE_PROXIMITY
-            ],
-
-        "HIGH_RISK_AIRCRAFT_COLOR":
-            safety_colours[
-                STATE_HIGH_RISK
-            ],
-
-        "CONFLICT_AIRCRAFT_COLOR":
-            safety_colours[
-                STATE_CONFLICT
-            ],
-
-        "WARNING_AIRCRAFT_COLOR":
-            safety_colours[
-                STATE_PROXIMITY
-            ],
-
-        # ---------------------------------------------------------------------
-        # Separation thresholds
-        # ---------------------------------------------------------------------
-
-        "MIN_HORIZONTAL_SEPARATION_NM":
-            min_horizontal_nm,
-
-        "MIN_VERTICAL_SEPARATION_FT":
-            min_vertical_ft,
-
-        "LOOKAHEAD_MINUTES":
-            [
-                1,
-                2,
-                5,
-            ],
-
-        "LOOKAHEAD_INTERVAL_STATES":
-            {},
-
-        # ---------------------------------------------------------------------
-        # Geographic area
-        # ---------------------------------------------------------------------
-
-        "AREA_POLYGON":
-            area.get(
-                "polygon"
-            ),
-
-        # ---------------------------------------------------------------------
-        # Map
-        # ---------------------------------------------------------------------
-
-        "SHOW_LABELS":
-            True,
-
-        "SHOW_CITIES":
-            True,
-
-        "SHOW_WAYPOINTS":
-            True,
-
-        "SHOW_WAYPOINT_LABELS":
-            True,
-
-        # ---------------------------------------------------------------------
-        # ATS corridors / airways
-        # ---------------------------------------------------------------------
-
-        "SHOW_CORRIDORS":
-            SHOW_VALIDATION_CORRIDORS,
-
-        "CORRIDORS_ONLY_NEAR_TRAFFIC":
-            VALIDATION_CORRIDORS_ONLY_NEAR_TRAFFIC,
-
-        "CORRIDOR_TRAFFIC_DISTANCE_NM":
-            VALIDATION_CORRIDOR_TRAFFIC_DISTANCE_NM,
-
-        "SHOW_CORRIDOR_LABELS":
-            SHOW_VALIDATION_CORRIDOR_LABELS,
-
-        "SHOW_ALTITUDE":
-            True,
-
-        "SHOW_GROUND_SPEED":
-            True,
-
-        "SHOW_VERTICAL_SPEED":
-            True,
-
-        "SHOW_TRAJECTORY_VECTOR":
-            True,
-
-        # ---------------------------------------------------------------------
-        # Safety circles
-        # ---------------------------------------------------------------------
-
-        "SHOW_SAFETY_AREA":
-            True,
-
-        "CHECK_GROUND_AIRCRAFT_SAFETY":
-            False,
-
-        "SAFETY_AREA_POINTS":
-            120,
-
-        "SAFETY_AREA_LINEWIDTH":
-            1.1,
-
-        "SAFETY_AREA_ALPHA":
-            0.55,
-
-        "SHOW_SAFETY_AREA_FILL":
-            True,
-
-        "SAFETY_AREA_FILL_ALPHA":
-            0.035,
-
-        # ---------------------------------------------------------------------
-        # Aircraft
-        # ---------------------------------------------------------------------
-
-        "AIRCRAFT_SIZE":
-            180,
-
-        # ---------------------------------------------------------------------
-        # Cities
-        # ---------------------------------------------------------------------
-
-        "MAX_CITIES":
-            10,
-
-        # ---------------------------------------------------------------------
-        # Vertical-speed display
-        # ---------------------------------------------------------------------
-
-        "VERTICAL_SPEED_LEVEL_THRESHOLD_FPM":
-            100.0,
-
-        "VERTICAL_SPEED_CLIMB_COLOR":
-            "#00D26A",
-
-        "VERTICAL_SPEED_DESCENT_COLOR":
-            "#FF4040",
-
-        "VERTICAL_SPEED_LEVEL_COLOR":
-            "#D8D8D8",
-
-        "GROUND_COLOR":
-            "#FFD400",
-
-        # ---------------------------------------------------------------------
-        # Resolution FROM bbox_presets.json
-        # ---------------------------------------------------------------------
-
-        "FIG_SIZE":
-            render_figsize,
-
-        "FIG_DPI":
-            render_dpi,
-    }
+    config = build_shared_validation_render_config(
+        area,
+        width_px=render_width_px,
+        height_px=render_height_px,
+        dpi=render_dpi,
+        title_prefix="OpenSky Traffic Snapshot",
+        overrides={
+            "SEPARATION_PROFILE": args.profile,
+            "STATE_NORMAL": STATE_NORMAL,
+            "STATE_PROXIMITY": STATE_PROXIMITY,
+            "STATE_HIGH_RISK": STATE_HIGH_RISK,
+            "STATE_CONFLICT": STATE_CONFLICT,
+            "ENABLED_SAFETY_STATES": enabled_states(state_rules),
+            "SAFETY_STATE_COLORS": safety_colours,
+            "SAFETY_STATE_DISPLAY_NAMES": safety_names,
+            "NORMAL_AIRCRAFT_COLOR": safety_colours[STATE_NORMAL],
+            "PROXIMITY_AIRCRAFT_COLOR": safety_colours[STATE_PROXIMITY],
+            "HIGH_RISK_AIRCRAFT_COLOR": safety_colours[STATE_HIGH_RISK],
+            "CONFLICT_AIRCRAFT_COLOR": safety_colours[STATE_CONFLICT],
+            "WARNING_AIRCRAFT_COLOR": safety_colours[STATE_PROXIMITY],
+            "MIN_HORIZONTAL_SEPARATION_NM": min_horizontal_nm,
+            "MIN_VERTICAL_SEPARATION_FT": min_vertical_ft,
+            "LOOKAHEAD_MINUTES": [1, 2, 5],
+            "LOOKAHEAD_INTERVAL_STATES": {},
+            "SHOW_CORRIDORS": SHOW_VALIDATION_CORRIDORS,
+            "CORRIDORS_ONLY_NEAR_TRAFFIC": VALIDATION_CORRIDORS_ONLY_NEAR_TRAFFIC,
+            "CORRIDOR_TRAFFIC_DISTANCE_NM": VALIDATION_CORRIDOR_TRAFFIC_DISTANCE_NM,
+            "SHOW_CORRIDOR_LABELS": SHOW_VALIDATION_CORRIDOR_LABELS,
+        },
+    )
 
     # =========================================================================
     # GENERATE SCREENSHOTS

@@ -70,6 +70,47 @@ data/processed/opensky_separation/<area>/runs/<run-name>/*.csv
 quality analysis and validation figures
 ```
 
+### SCAT workflow
+
+The SCAT dataset is a separate Swedish ATM source with flight JSONs rather
+than OpenSky state rows. Its files contain surveillance plots, system-updated
+flight plans, controller clearances and predicted trajectories. The SCAT
+adapter preserves those time-varying fields while producing the same
+chronological 10-second state contract used by the shared safety model:
+
+```text
+data/raw/scat/weekly_archives/*.zip
+        ↓ preprocess_scat_10s.py
+data/processed/scat_10s/<analysis-area>/date=YYYY-MM-DD/*_10s.csv
+        ↓ detect_scat_conflicts.py
+data/processed/scat_separation/<area>/runs/<run-name>/*.csv
+        ↓ generate_scat_validation_snapshots.py
+validation_screenshots/random_seed_42/*.png
+```
+
+SCAT validation snapshots reuse the OpenSky map style through
+`opensky_plot.build_shared_validation_render_config`: by default they use the
+same satellite basemap, aircraft labels, state colours, vectors and
+separation areas. SCAT-specific flight-plan and controller-clearance fields
+remain in the validation footer. Use `--no-basemap` only for offline renders.
+
+Example for the real SCAT local sector envelopes:
+
+```bash
+python3 src/preprocessing/preprocess_scat_10s.py \
+  --area SCAT_ESMM_GOTHENBURG_GG \
+  --overwrite
+
+python3 src/conflict_detection/detect_scat_conflicts.py \
+  --area SCAT_ESMM_GOTHENBURG_GG \
+  --start "2016-10-15 00:00:00" \
+  --end "2016-10-21 23:59:50"
+```
+
+Use `src/acquisition/validate_scat_airspace_presets.py` to verify that the
+Swedish bbox presets still match the SCAT `airspace.json` shipped inside a
+downloaded archive.
+
 All historical timestamps in the commands below are UTC.
 
 ### 1. Download a raw sector archive

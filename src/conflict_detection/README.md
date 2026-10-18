@@ -85,6 +85,26 @@ metrics and first predicted state occurrences.
 The detector does not have an `--overwrite` option. A new date range creates a
 new run directory; rerunning the same range recreates that run's CSV files.
 
+## SCAT detector
+
+[`detect_scat_conflicts.py`](detect_scat_conflicts.py) consumes the daily
+files produced by [`../preprocessing/preprocess_scat_10s.py`](../preprocessing/preprocess_scat_10s.py):
+
+```bash
+python3 src/conflict_detection/detect_scat_conflicts.py \
+  --area SCAT_ESMM_GOTHENBURG_GG \
+  --start "2016-10-15 00:00:00" \
+  --end "2016-10-21 23:59:50"
+```
+
+SCAT event CSVs use the same yellow/orange/red safety states and look-ahead
+metrics as OpenSky, but add per-aircraft context columns for the linked flight
+plan and latest clearance, including CFL, assigned heading/speed, COPN/COPX,
+route, active centre and predicted next fix.
+
+The output is written below
+`data/processed/scat_separation/<AREA>/runs/<RUN_NAME>/`.
+
 ## 2. Analyse safety quality
 
 [`analyze_atc_safety_quality.py`](analyze_atc_safety_quality.py) reads the
@@ -168,6 +188,24 @@ total. Omit `--seed` for a different selection on each run. The output is:
 The PNG dimensions are read from the selected area's `render` configuration in
 `bbox_presets.json`. The script also overlays waypoints and ATS corridors when
 those reference files are available.
+
+For SCAT use:
+
+```bash
+python3 src/conflict_detection/generate_scat_validation_snapshots.py \
+  --area SCAT_ESMM_GOTHENBURG_GG \
+  --run-name 20161015T000000_20161021T235950 \
+  --n 10 \
+  --seed 42
+```
+
+The renderer recalculates the selected pair and writes PNGs, a selected
+moments CSV and `validation_report.csv`. SCAT consumes the same shared
+`opensky_plot.py` visual configuration as OpenSky: satellite basemap, city and
+aircraft labels, state colours, trajectory vectors and safety areas. The SCAT
+route and current clearance context are added only as a validation footer.
+Add `--no-basemap` for offline or reproducible rendering without tile
+downloads.
 
 ## Input contract
 

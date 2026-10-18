@@ -70,5 +70,23 @@
     "icao": "EDDF",
     "lat": 50.0379,
     "lon": 8.5622
+  },
+  "GOT": {
+    "name": "Gothenburg-Landvetter",
+    "icao": "ESGG",
+    "lat": 57.6628,
+    "lon": 12.2798
+  },
+  "MMX": {
+    "name": "Malmo Airport",
+    "icao": "ESMS",
+    "lat": 55.5363,
+    "lon": 13.3762
+  },
+  "ARN": {
+    "name": "Stockholm-Arlanda",
+    "icao": "ESSA",
+    "lat": 59.6519,
+    "lon": 17.9186
   }
 }
