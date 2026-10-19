@@ -3586,5 +3586,2531 @@
         ]
       }
     ]
+  },
+  "SCAT_ESMM_GOTHENBURG_GG": {
+    "name": "SCAT ESMM/GG Gothenburg local airspace envelope",
+    "type": "vertices",
+    "bbox": {
+      "lamin": 57.4997222,
+      "lamax": 57.8330556,
+      "lomin": 12.0766667,
+      "lomax": 12.5022222,
+      "extended": 1
+    },
+    "polygon": null,
+    "center": {
+      "lat": 57.6663889,
+      "lon": 12.289444450000001
+    },
+    "source": {
+      "name": "LFV eAIP Sweden ENR 4.4",
+      "section": "ENR 4.4 - Name-code designators for significant points",
+      "origin": "web",
+      "index_url": "https://www.aro.lfv.se/content/eaip/default_offline.html",
+      "url": "https://www.aro.lfv.se/content/eaip/AIP%20AMDT%201-2026_2026_08_07/eAIP/ES-ENR%204.4-en-GB.html",
+      "document_url": "https://www.aro.lfv.se/content/eaip/AIP%20AMDT%201-2026_2026_08_07/eAIP/ES-ENR%204.4-en-GB.html",
+      "authority": "LFV / AIS Sweden",
+      "aip_section": "ENR 4.4",
+      "aixm_class": "SignificantPoint",
+      "aixm_type": "ICAO",
+      "effective_date": null,
+      "downloaded_utc": "2026-10-19T13:31:43+00:00"
+    },
+    "filter": {
+      "types": [
+        "ICAO"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Official AIP ENR 4.4 ICAO significant points inside the resolved study area; polygon presets are clipped exactly using area_presets.point_is_inside_area."
+    },
+    "count": 2,
+    "waypoints": [
+      {
+        "name": "DEGAV",
+        "type": "ICAO",
+        "lon": 12.34027778,
+        "lat": 57.72805556,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N15",
+          "N873"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "LALIL",
+        "type": "ICAO",
+        "lon": 12.17722222,
+        "lat": 57.77361111,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L617",
+          "L996",
+          "M852"
+        ],
+        "remarks": "Â"
+      }
+    ]
+  },
+  "SCAT_ESMM_GOTHENBURG_ENROUTE": {
+    "name": "SCAT ESMM/4 Gothenburg and western Sweden en-route envelope",
+    "type": "vertices",
+    "bbox": {
+      "lamin": 56.5225,
+      "lamax": 59.8905556,
+      "lomin": 10.4977778,
+      "lomax": 15.525,
+      "extended": 1
+    },
+    "polygon": null,
+    "center": {
+      "lat": 58.2065278,
+      "lon": 13.0113889
+    },
+    "source": {
+      "name": "LFV eAIP Sweden ENR 4.4",
+      "section": "ENR 4.4 - Name-code designators for significant points",
+      "origin": "web",
+      "index_url": "https://www.aro.lfv.se/content/eaip/default_offline.html",
+      "url": "https://www.aro.lfv.se/content/eaip/AIP%20AMDT%201-2026_2026_08_07/eAIP/ES-ENR%204.4-en-GB.html",
+      "document_url": "https://www.aro.lfv.se/content/eaip/AIP%20AMDT%201-2026_2026_08_07/eAIP/ES-ENR%204.4-en-GB.html",
+      "authority": "LFV / AIS Sweden",
+      "aip_section": "ENR 4.4",
+      "aixm_class": "SignificantPoint",
+      "aixm_type": "ICAO",
+      "effective_date": null,
+      "downloaded_utc": "2026-10-19T13:31:43+00:00"
+    },
+    "filter": {
+      "types": [
+        "ICAO"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Official AIP ENR 4.4 ICAO significant points inside the resolved study area; polygon presets are clipped exactly using area_presets.point_is_inside_area."
+    },
+    "count": 58,
+    "waypoints": [
+      {
+        "name": "ARQUS",
+        "type": "ICAO",
+        "lon": 12.92861111,
+        "lat": 57.09583333,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L617"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "BEDOS",
+        "type": "ICAO",
+        "lon": 15.13055556,
+        "lat": 57.35972222,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "N851"
+        ],
+        "remarks": "(A): ESCF, ESKN, ESSL,Â\nESSP\n(D): ESMT"
+      },
+      {
+        "name": "BOMGU",
+        "type": "ICAO",
+        "lon": 10.71861111,
+        "lat": 58.90666667,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "Y440",
+          "Z132"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "DEGAV",
+        "type": "ICAO",
+        "lon": 12.34027778,
+        "lat": 57.72805556,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N15",
+          "N873"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "DEKIK",
+        "type": "ICAO",
+        "lon": 14.30777778,
+        "lat": 56.76444444,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N33",
+          "N851",
+          "Z702"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "DEPEX",
+        "type": "ICAO",
+        "lon": 15.0225,
+        "lat": 59.19194444,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N866",
+          "Y42"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "DETNA",
+        "type": "ICAO",
+        "lon": 11.06916667,
+        "lat": 57.5875,
+        "fra_relevance": "(DI)",
+        "ats_routes": [],
+        "remarks": "(D): ESGG\nFor usage en-route, see AIP Denmark"
+      },
+      {
+        "name": "DETSO",
+        "type": "ICAO",
+        "lon": 14.26444444,
+        "lat": 58.6,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "L734",
+          "N873",
+          "Y130"
+        ],
+        "remarks": "(A): ESCF, ESKN, ESSA, ESSB, ESSL, ESSP\n(D): ESGG"
+      },
+      {
+        "name": "EBURI",
+        "type": "ICAO",
+        "lon": 14.66055556,
+        "lat": 59.8,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "N623",
+          "Z166"
+        ],
+        "remarks": "(A): ENGM, ENRY, ENTO"
+      },
+      {
+        "name": "ELBUX",
+        "type": "ICAO",
+        "lon": 11.97694444,
+        "lat": 57.55527778,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "M852",
+          "N607",
+          "N873"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "ELPAX",
+        "type": "ICAO",
+        "lon": 15.27333333,
+        "lat": 58.09555556,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "N872",
+          "Z703"
+        ],
+        "remarks": "(D): ESSA, ESSB"
+      },
+      {
+        "name": "ELVAV",
+        "type": "ICAO",
+        "lon": 10.95972222,
+        "lat": 57.96611111,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Re-routing point"
+      },
+      {
+        "name": "GELMA",
+        "type": "ICAO",
+        "lon": 14.20361111,
+        "lat": 57.03972222,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "N850"
+        ],
+        "remarks": "(A): ESMK"
+      },
+      {
+        "name": "GETPA",
+        "type": "ICAO",
+        "lon": 11.92555556,
+        "lat": 59.03583333,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L727",
+          "L996"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "GIXUN",
+        "type": "ICAO",
+        "lon": 11.86916667,
+        "lat": 57.42111111,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L997",
+          "M852"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "GURLI",
+        "type": "ICAO",
+        "lon": 10.56611111,
+        "lat": 58.42444444,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Re-routing point"
+      },
+      {
+        "name": "IBGAX",
+        "type": "ICAO",
+        "lon": 15.39583333,
+        "lat": 59.72222222,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "L199",
+          "N623"
+        ],
+        "remarks": "(D): ESSA, ESSB"
+      },
+      {
+        "name": "INVOL",
+        "type": "ICAO",
+        "lon": 11.22138889,
+        "lat": 57.65444444,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N866"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "KELIN",
+        "type": "ICAO",
+        "lon": 12.05416667,
+        "lat": 58.24361111,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "L996",
+          "Y43"
+        ],
+        "remarks": "(D): ENGM, ENRY, ENTO"
+      },
+      {
+        "name": "KORET",
+        "type": "ICAO",
+        "lon": 11.90138889,
+        "lat": 58.81083333,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L727",
+          "L996"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "LABAN",
+        "type": "ICAO",
+        "lon": 13.29444444,
+        "lat": 58.16944444,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N873",
+          "Y430"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "LALIL",
+        "type": "ICAO",
+        "lon": 12.17722222,
+        "lat": 57.77361111,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L617",
+          "L996",
+          "M852"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "LAPSI",
+        "type": "ICAO",
+        "lon": 14.30555556,
+        "lat": 58.92055556,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "N866"
+        ],
+        "remarks": "(D): ESSA, ESSB"
+      },
+      {
+        "name": "LASLI",
+        "type": "ICAO",
+        "lon": 12.01166667,
+        "lat": 56.92833333,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "L997",
+          "N15"
+        ],
+        "remarks": "(D): EKCH, EKRK, ESMS, ESTL"
+      },
+      {
+        "name": "LATKU",
+        "type": "ICAO",
+        "lon": 11.97027778,
+        "lat": 58.55722222,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "L727",
+          "L996",
+          "Z132"
+        ],
+        "remarks": "(A): ESGG\n(D): ENGM, ENRY, ENTO"
+      },
+      {
+        "name": "LOBBI",
+        "type": "ICAO",
+        "lon": 11.49805556,
+        "lat": 57.31805556,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N873"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "LUKAX",
+        "type": "ICAO",
+        "lon": 13.14833333,
+        "lat": 57.71361111,
+        "fra_relevance": "(ID)",
+        "ats_routes": [],
+        "remarks": "(D): ESGG"
+      },
+      {
+        "name": "LURAR",
+        "type": "ICAO",
+        "lon": 14.95111111,
+        "lat": 58.31833333,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "N607"
+        ],
+        "remarks": "(A): ESCF, ESKN, ESSL, ESSP"
+      },
+      {
+        "name": "MAKUR",
+        "type": "ICAO",
+        "lon": 11.40694444,
+        "lat": 57.42972222,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N607",
+          "Z731"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "MISMA",
+        "type": "ICAO",
+        "lon": 13.20277778,
+        "lat": 56.64138889,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N872"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "MOGLU",
+        "type": "ICAO",
+        "lon": 11.76916667,
+        "lat": 59.125,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L727"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "MOKNI",
+        "type": "ICAO",
+        "lon": 15.06805556,
+        "lat": 57.64638889,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N850"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "MOXAM",
+        "type": "ICAO",
+        "lon": 13.31388889,
+        "lat": 58.53138889,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "L734",
+          "N866"
+        ],
+        "remarks": "(A): ESGG"
+      },
+      {
+        "name": "NEFYN",
+        "type": "ICAO",
+        "lon": 15.45083333,
+        "lat": 57.58388889,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N851"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "NEGIL",
+        "type": "ICAO",
+        "lon": 12.62527778,
+        "lat": 58.25138889,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L727",
+          "M852",
+          "N15",
+          "N866"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "NEMBA",
+        "type": "ICAO",
+        "lon": 14.37055556,
+        "lat": 57.15861111,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "N33",
+          "N850"
+        ],
+        "remarks": "(A): ESMS\n(D): ESCF, ESKN, ESSL, ESSP"
+      },
+      {
+        "name": "NIBNO",
+        "type": "ICAO",
+        "lon": 12.35888889,
+        "lat": 59.74,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "Z166"
+        ],
+        "remarks": "(A): ENRY, ENTO\n(D): ENGM, ENRY, ENTO"
+      },
+      {
+        "name": "NILEN",
+        "type": "ICAO",
+        "lon": 13.32194444,
+        "lat": 56.72888889,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "L617",
+          "N872"
+        ],
+        "remarks": "(A): ESGG"
+      },
+      {
+        "name": "OGIRO",
+        "type": "ICAO",
+        "lon": 13.12777778,
+        "lat": 58.77055556,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "M852"
+        ],
+        "remarks": "(AD): ESGG"
+      },
+      {
+        "name": "OKSAT",
+        "type": "ICAO",
+        "lon": 11.95722222,
+        "lat": 59.32944444,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "L996",
+          "P609"
+        ],
+        "remarks": "(A): ENRY, ENTO"
+      },
+      {
+        "name": "PELOX",
+        "type": "ICAO",
+        "lon": 13.46805556,
+        "lat": 57.07138889,
+        "fra_relevance": "(IA)",
+        "ats_routes": [],
+        "remarks": "(A): ESMT"
+      },
+      {
+        "name": "RASMU",
+        "type": "ICAO",
+        "lon": 13.81527778,
+        "lat": 56.75833333,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "M736",
+          "N850"
+        ],
+        "remarks": "(A): ESMS\n(D): EKCH, EKRK, ESMS"
+      },
+      {
+        "name": "REGMA",
+        "type": "ICAO",
+        "lon": 11.34944444,
+        "lat": 59.10888889,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L997"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "REPKU",
+        "type": "ICAO",
+        "lon": 10.60805556,
+        "lat": 58.80583333,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "L617",
+          "Y43"
+        ],
+        "remarks": "(D): ESGG"
+      },
+      {
+        "name": "RISMA",
+        "type": "ICAO",
+        "lon": 11.97916667,
+        "lat": 57.04194444,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "L997",
+          "N15"
+        ],
+        "remarks": "(A): ESGG"
+      },
+      {
+        "name": "ROXEN",
+        "type": "ICAO",
+        "lon": 14.03333333,
+        "lat": 56.56444444,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "N851",
+          "Z451"
+        ],
+        "remarks": "(D): EKCH, EKRK, ESMS"
+      },
+      {
+        "name": "SABAK",
+        "type": "ICAO",
+        "lon": 11.64277778,
+        "lat": 58.17666667,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "L617",
+          "L997",
+          "Y41",
+          "Y44",
+          "Y440",
+          "Z731"
+        ],
+        "remarks": "(AD): ENGM, ENRY, ENTO"
+      },
+      {
+        "name": "TEMLI",
+        "type": "ICAO",
+        "lon": 15.38388889,
+        "lat": 56.67833333,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "Z330"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "TOKSI",
+        "type": "ICAO",
+        "lon": 13.91111111,
+        "lat": 57.15555556,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "N872"
+        ],
+        "remarks": "(A): EKCH, EKRK, ESMT, ESTA\n(D): ESCF, ESKN, ESSL, ESSP"
+      },
+      {
+        "name": "TOPLA",
+        "type": "ICAO",
+        "lon": 12.33888889,
+        "lat": 57.13583333,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "L996",
+          "N195"
+        ],
+        "remarks": "(A): EKCH, EKRK, ESMS\n(D): ESGG"
+      },
+      {
+        "name": "UMIXA",
+        "type": "ICAO",
+        "lon": 13.71722222,
+        "lat": 57.15666667,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "Z703"
+        ],
+        "remarks": "(D): ESCF, ESKN, ESSL, ESSP"
+      },
+      {
+        "name": "UMTON",
+        "type": "ICAO",
+        "lon": 14.33888889,
+        "lat": 58.545,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "Y430"
+        ],
+        "remarks": "(A): ESSB\n(D): ESGG"
+      },
+      {
+        "name": "VADIN",
+        "type": "ICAO",
+        "lon": 11.64388889,
+        "lat": 57.13777778,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "M852"
+        ],
+        "remarks": "(D): ESGG"
+      },
+      {
+        "name": "VATEX",
+        "type": "ICAO",
+        "lon": 11.82055556,
+        "lat": 59.3175,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "P609",
+          "Z166"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "VEDAR",
+        "type": "ICAO",
+        "lon": 12.12361111,
+        "lat": 56.53166667,
+        "fra_relevance": "(DI)",
+        "ats_routes": [
+          "L997"
+        ],
+        "remarks": "(D): EKCH, EKRK"
+      },
+      {
+        "name": "VEPIP",
+        "type": "ICAO",
+        "lon": 14.51972222,
+        "lat": 56.92027778,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N851"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "XENTA",
+        "type": "ICAO",
+        "lon": 11.48277778,
+        "lat": 58.69138889,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "L997",
+          "Y43",
+          "Z132"
+        ],
+        "remarks": "(A): ENGM, ENRY, ENTO\n(D): ESGG"
+      },
+      {
+        "name": "XIDMI",
+        "type": "ICAO",
+        "lon": 11.93666667,
+        "lat": 59.71777778,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Â"
+      }
+    ]
+  },
+  "SCAT_ESMM_MALMO_MS": {
+    "name": "SCAT ESMM/MS Malmo local airspace envelope",
+    "type": "vertices",
+    "bbox": {
+      "lamin": 55.3955556,
+      "lamax": 55.6733333,
+      "lomin": 13.2152778,
+      "lomax": 13.5375,
+      "extended": 1
+    },
+    "polygon": null,
+    "center": {
+      "lat": 55.53444445,
+      "lon": 13.3763889
+    },
+    "source": {
+      "name": "LFV eAIP Sweden ENR 4.4",
+      "section": "ENR 4.4 - Name-code designators for significant points",
+      "origin": "web",
+      "index_url": "https://www.aro.lfv.se/content/eaip/default_offline.html",
+      "url": "https://www.aro.lfv.se/content/eaip/AIP%20AMDT%201-2026_2026_08_07/eAIP/ES-ENR%204.4-en-GB.html",
+      "document_url": "https://www.aro.lfv.se/content/eaip/AIP%20AMDT%201-2026_2026_08_07/eAIP/ES-ENR%204.4-en-GB.html",
+      "authority": "LFV / AIS Sweden",
+      "aip_section": "ENR 4.4",
+      "aixm_class": "SignificantPoint",
+      "aixm_type": "ICAO",
+      "effective_date": null,
+      "downloaded_utc": "2026-10-19T13:31:43+00:00"
+    },
+    "filter": {
+      "types": [
+        "ICAO"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Official AIP ENR 4.4 ICAO significant points inside the resolved study area; polygon presets are clipped exactly using area_presets.point_is_inside_area."
+    },
+    "count": 0,
+    "waypoints": []
+  },
+  "SCAT_ESMM_MALMO_ENROUTE": {
+    "name": "SCAT ESMM/8 Malmo and southern Sweden en-route envelope",
+    "type": "vertices",
+    "bbox": {
+      "lamin": 54.2625,
+      "lamax": 56.3166667,
+      "lomin": 12.8422222,
+      "lomax": 16.2361111,
+      "extended": 1
+    },
+    "polygon": null,
+    "center": {
+      "lat": 55.28958335,
+      "lon": 14.539166649999999
+    },
+    "source": {
+      "name": "LFV eAIP Sweden ENR 4.4",
+      "section": "ENR 4.4 - Name-code designators for significant points",
+      "origin": "web",
+      "index_url": "https://www.aro.lfv.se/content/eaip/default_offline.html",
+      "url": "https://www.aro.lfv.se/content/eaip/AIP%20AMDT%201-2026_2026_08_07/eAIP/ES-ENR%204.4-en-GB.html",
+      "document_url": "https://www.aro.lfv.se/content/eaip/AIP%20AMDT%201-2026_2026_08_07/eAIP/ES-ENR%204.4-en-GB.html",
+      "authority": "LFV / AIS Sweden",
+      "aip_section": "ENR 4.4",
+      "aixm_class": "SignificantPoint",
+      "aixm_type": "ICAO",
+      "effective_date": null,
+      "downloaded_utc": "2026-10-19T13:31:43+00:00"
+    },
+    "filter": {
+      "types": [
+        "ICAO"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Official AIP ENR 4.4 ICAO significant points inside the resolved study area; polygon presets are clipped exactly using area_presets.point_is_inside_area."
+    },
+    "count": 35,
+    "waypoints": [
+      {
+        "name": "ADVIS",
+        "type": "ICAO",
+        "lon": 13.00638889,
+        "lat": 55.38472222,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L990"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "AMROR",
+        "type": "ICAO",
+        "lon": 15.09722222,
+        "lat": 54.89,
+        "fra_relevance": "(EX)",
+        "ats_routes": [
+          "N983"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "ASTOS",
+        "type": "ICAO",
+        "lon": 12.96138889,
+        "lat": 56.12055556,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "Z451",
+          "Z490"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "BAKLI",
+        "type": "ICAO",
+        "lon": 13.56083333,
+        "lat": 54.91666667,
+        "fra_relevance": "(EXAI)",
+        "ats_routes": [
+          "Z400"
+        ],
+        "remarks": "(A): EKCH, EKRK, ESMS\n(I): Only AVBL as Intermediate for traffic from/to ADs in DK-SE FAB"
+      },
+      {
+        "name": "BALOX",
+        "type": "ICAO",
+        "lon": 13.42694444,
+        "lat": 55.03555556,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L983",
+          "M736"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "BIKRU",
+        "type": "ICAO",
+        "lon": 14.16666667,
+        "lat": 54.91666667,
+        "fra_relevance": "(EXDI)",
+        "ats_routes": [
+          "N33",
+          "Z493"
+        ],
+        "remarks": "(D): EKCH, EKRK\n(I): Only AVBL as Intermediate for traffic from/to ADs in DK-SE FAB"
+      },
+      {
+        "name": "DETNI",
+        "type": "ICAO",
+        "lon": 14.34416667,
+        "lat": 54.91666667,
+        "fra_relevance": "(EXI)",
+        "ats_routes": [
+          "P12"
+        ],
+        "remarks": "(I): Only AVBL as Intermediate for traffic from/to ADs in DK-SE FAB"
+      },
+      {
+        "name": "DETUS",
+        "type": "ICAO",
+        "lon": 12.99972222,
+        "lat": 55.02277778,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L983"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "EKRAL",
+        "type": "ICAO",
+        "lon": 13.96277778,
+        "lat": 55.77666667,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L990",
+          "P605"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "ELVIX",
+        "type": "ICAO",
+        "lon": 14.09416667,
+        "lat": 55.41194444,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "L621",
+          "L975",
+          "L996",
+          "M611",
+          "N195",
+          "N33",
+          "Z330"
+        ],
+        "remarks": "(A): EKCH, EKRK"
+      },
+      {
+        "name": "ETPIG",
+        "type": "ICAO",
+        "lon": 14.215,
+        "lat": 56.1875,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "N33",
+          "P605"
+        ],
+        "remarks": "(D): ESMS"
+      },
+      {
+        "name": "ETRUS",
+        "type": "ICAO",
+        "lon": 15.63472222,
+        "lat": 55.47333333,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "L87",
+          "L987",
+          "M864",
+          "P12"
+        ],
+        "remarks": "(D): EKCH, EKRK"
+      },
+      {
+        "name": "GIROR",
+        "type": "ICAO",
+        "lon": 14.40666667,
+        "lat": 55.06,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L983",
+          "M864"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "GORAX",
+        "type": "ICAO",
+        "lon": 13.04055556,
+        "lat": 55.80611111,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N851"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "GORPI",
+        "type": "ICAO",
+        "lon": 15.655,
+        "lat": 54.91666667,
+        "fra_relevance": "(EX)",
+        "ats_routes": [
+          "N746"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "GOSOT",
+        "type": "ICAO",
+        "lon": 14.85777778,
+        "lat": 54.80555556,
+        "fra_relevance": "(EX)",
+        "ats_routes": [
+          "L996"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "KEKOV",
+        "type": "ICAO",
+        "lon": 14.44111111,
+        "lat": 54.94944444,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N195",
+          "Z491"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "KEMAX",
+        "type": "ICAO",
+        "lon": 13.45388889,
+        "lat": 56.12638889,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N851",
+          "Q44",
+          "T408",
+          "Z490"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "KOLOB",
+        "type": "ICAO",
+        "lon": 14.94416667,
+        "lat": 54.82305556,
+        "fra_relevance": "(EX)",
+        "ats_routes": [
+          "L617",
+          "N195"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "KOTAM",
+        "type": "ICAO",
+        "lon": 14.83666667,
+        "lat": 56.13277778,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "L990",
+          "P863",
+          "Z330",
+          "Z490"
+        ],
+        "remarks": "(AD): EKCH, EKRK, ESMS, ESTL"
+      },
+      {
+        "name": "LUSID",
+        "type": "ICAO",
+        "lon": 15.29611111,
+        "lat": 54.91666667,
+        "fra_relevance": "(EX)",
+        "ats_routes": [
+          "L621",
+          "L87"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "MALIV",
+        "type": "ICAO",
+        "lon": 13.03694444,
+        "lat": 55.16277778,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L987",
+          "M611",
+          "P605",
+          "P862"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "MAXUM",
+        "type": "ICAO",
+        "lon": 13.60388889,
+        "lat": 55.66138889,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L621",
+          "L996",
+          "M736"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "MIDIC",
+        "type": "ICAO",
+        "lon": 14.73333333,
+        "lat": 55.38333333,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Â"
+      },
+      {
+        "name": "NISLO",
+        "type": "ICAO",
+        "lon": 12.88472222,
+        "lat": 55.4825,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L975"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "OKAGA",
+        "type": "ICAO",
+        "lon": 13.76361111,
+        "lat": 54.91666667,
+        "fra_relevance": "(EXI)",
+        "ats_routes": [],
+        "remarks": "(I): Only AVBL as Intermediate for traffic from/to ADs in DK-SE FAB"
+      },
+      {
+        "name": "POKEN",
+        "type": "ICAO",
+        "lon": 14.56416667,
+        "lat": 54.81972222,
+        "fra_relevance": "(EX)",
+        "ats_routes": [
+          "Q800",
+          "Z212",
+          "Z491"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "ROXUB",
+        "type": "ICAO",
+        "lon": 14.08,
+        "lat": 55.26305556,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "M743"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "RUMAR",
+        "type": "ICAO",
+        "lon": 16.07083333,
+        "lat": 55.03361111,
+        "fra_relevance": "(EX)",
+        "ats_routes": [
+          "L983"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "SALLO",
+        "type": "ICAO",
+        "lon": 13.38611111,
+        "lat": 54.91666667,
+        "fra_relevance": "(EXDI)",
+        "ats_routes": [
+          "M44",
+          "M736"
+        ],
+        "remarks": "(D): EKCH, EKRK, ESMS\n(I): Only AVBL as Intermediate for traffic from/to ADs in DK-SE FAB"
+      },
+      {
+        "name": "SIMEG",
+        "type": "ICAO",
+        "lon": 13.50111111,
+        "lat": 55.25,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L987",
+          "M736",
+          "Z491",
+          "Z493"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "TELMO",
+        "type": "ICAO",
+        "lon": 14.11638889,
+        "lat": 55.05472222,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "L983",
+          "Z491"
+        ],
+        "remarks": "(D): EKCH, EKRK, ESMS"
+      },
+      {
+        "name": "TIDVU",
+        "type": "ICAO",
+        "lon": 13.5575,
+        "lat": 55.41138889,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L975",
+          "M736",
+          "M743",
+          "P605",
+          "Z400"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "UNGAV",
+        "type": "ICAO",
+        "lon": 13.99472222,
+        "lat": 54.91666667,
+        "fra_relevance": "(EXI)",
+        "ats_routes": [
+          "M864"
+        ],
+        "remarks": "(I): Only AVBL as Intermediate for traffic from/to ADs in DK-SE FAB"
+      },
+      {
+        "name": "VULGE",
+        "type": "ICAO",
+        "lon": 14.85,
+        "lat": 55.58333333,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Â"
+      }
+    ]
+  },
+  "SCAT_ESOS_STOCKHOLM_SE": {
+    "name": "SCAT ESOS/SE Stockholm local airspace envelope",
+    "type": "vertices",
+    "bbox": {
+      "lamin": 59.3916667,
+      "lamax": 59.6627778,
+      "lomin": 17.8566667,
+      "lomax": 18.1672222,
+      "extended": 1
+    },
+    "polygon": null,
+    "center": {
+      "lat": 59.52722225,
+      "lon": 18.01194445
+    },
+    "source": {
+      "name": "LFV eAIP Sweden ENR 4.4",
+      "section": "ENR 4.4 - Name-code designators for significant points",
+      "origin": "web",
+      "index_url": "https://www.aro.lfv.se/content/eaip/default_offline.html",
+      "url": "https://www.aro.lfv.se/content/eaip/AIP%20AMDT%201-2026_2026_08_07/eAIP/ES-ENR%204.4-en-GB.html",
+      "document_url": "https://www.aro.lfv.se/content/eaip/AIP%20AMDT%201-2026_2026_08_07/eAIP/ES-ENR%204.4-en-GB.html",
+      "authority": "LFV / AIS Sweden",
+      "aip_section": "ENR 4.4",
+      "aixm_class": "SignificantPoint",
+      "aixm_type": "ICAO",
+      "effective_date": null,
+      "downloaded_utc": "2026-10-19T13:31:43+00:00"
+    },
+    "filter": {
+      "types": [
+        "ICAO"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Official AIP ENR 4.4 ICAO significant points inside the resolved study area; polygon presets are clipped exactly using area_presets.point_is_inside_area."
+    },
+    "count": 0,
+    "waypoints": []
+  },
+  "SCAT_ESOS_STOCKHOLM_ENROUTE": {
+    "name": "SCAT ESOS/6 Stockholm and eastern Sweden en-route envelope",
+    "type": "vertices",
+    "bbox": {
+      "lamin": 57.3319444,
+      "lamax": 60.3577778,
+      "lomin": 16.8586111,
+      "lomax": 21.0,
+      "extended": 1
+    },
+    "polygon": null,
+    "center": {
+      "lat": 58.8448611,
+      "lon": 18.929305550000002
+    },
+    "source": {
+      "name": "LFV eAIP Sweden ENR 4.4",
+      "section": "ENR 4.4 - Name-code designators for significant points",
+      "origin": "web",
+      "index_url": "https://www.aro.lfv.se/content/eaip/default_offline.html",
+      "url": "https://www.aro.lfv.se/content/eaip/AIP%20AMDT%201-2026_2026_08_07/eAIP/ES-ENR%204.4-en-GB.html",
+      "document_url": "https://www.aro.lfv.se/content/eaip/AIP%20AMDT%201-2026_2026_08_07/eAIP/ES-ENR%204.4-en-GB.html",
+      "authority": "LFV / AIS Sweden",
+      "aip_section": "ENR 4.4",
+      "aixm_class": "SignificantPoint",
+      "aixm_type": "ICAO",
+      "effective_date": null,
+      "downloaded_utc": "2026-10-19T13:31:43+00:00"
+    },
+    "filter": {
+      "types": [
+        "ICAO"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Official AIP ENR 4.4 ICAO significant points inside the resolved study area; polygon presets are clipped exactly using area_presets.point_is_inside_area."
+    },
+    "count": 48,
+    "waypoints": [
+      {
+        "name": "AKVOW",
+        "type": "ICAO",
+        "lon": 17.2,
+        "lat": 60.2,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Re-routing point"
+      },
+      {
+        "name": "ALAMI",
+        "type": "ICAO",
+        "lon": 20.91583333,
+        "lat": 59.04777778,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "N746",
+          "P606",
+          "T408"
+        ],
+        "remarks": "(A):EFHK"
+      },
+      {
+        "name": "ALOLA",
+        "type": "ICAO",
+        "lon": 18.61833333,
+        "lat": 59.26,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "M851",
+          "M92",
+          "T316",
+          "T365",
+          "Z540"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "APTUG",
+        "type": "ICAO",
+        "lon": 19.13888889,
+        "lat": 59.32666667,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "M851",
+          "P607"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "APZER",
+        "type": "ICAO",
+        "lon": 17.57722222,
+        "lat": 58.82833333,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "M996"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "ARMOD",
+        "type": "ICAO",
+        "lon": 17.34611111,
+        "lat": 57.50083333,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "M607",
+          "Z228"
+        ],
+        "remarks": "(AD):ESSA, ESSB"
+      },
+      {
+        "name": "BABAP",
+        "type": "ICAO",
+        "lon": 18.70777778,
+        "lat": 59.42222222,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "N5",
+          "P156",
+          "P607",
+          "T316"
+        ],
+        "remarks": "(D): ESSA"
+      },
+      {
+        "name": "DEREX",
+        "type": "ICAO",
+        "lon": 20.21083333,
+        "lat": 57.67277778,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "P739",
+          "P863"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "DIGOX",
+        "type": "ICAO",
+        "lon": 19.60277778,
+        "lat": 59.11555556,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "M92"
+        ],
+        "remarks": "(D): ESSB"
+      },
+      {
+        "name": "DISRU",
+        "type": "ICAO",
+        "lon": 17.73361111,
+        "lat": 58.59722222,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "M996"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "DIWDE",
+        "type": "ICAO",
+        "lon": 17.46666667,
+        "lat": 58.46666667,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Re-routing point"
+      },
+      {
+        "name": "DODAM",
+        "type": "ICAO",
+        "lon": 19.30166667,
+        "lat": 60.04444444,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N873"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "ELRID",
+        "type": "ICAO",
+        "lon": 18.455,
+        "lat": 59.56916667,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N850",
+          "N872",
+          "Y360"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "ELTOK",
+        "type": "ICAO",
+        "lon": 16.99,
+        "lat": 59.82444444,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "M996",
+          "P607",
+          "T317",
+          "Z15",
+          "Z183"
+        ],
+        "remarks": "(A): ESSA"
+      },
+      {
+        "name": "EVLAN",
+        "type": "ICAO",
+        "lon": 19.11194444,
+        "lat": 60.25222222,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L24",
+          "Y96"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "GOTAL",
+        "type": "ICAO",
+        "lon": 18.46194444,
+        "lat": 58.24388889,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "T316"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "IFCAG",
+        "type": "ICAO",
+        "lon": 17.25,
+        "lat": 58.56666667,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Re-routing point"
+      },
+      {
+        "name": "INGIS",
+        "type": "ICAO",
+        "lon": 17.46527778,
+        "lat": 58.61111111,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "M607"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "INSUK",
+        "type": "ICAO",
+        "lon": 20.48111111,
+        "lat": 58.3575,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N623"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "INWIQ",
+        "type": "ICAO",
+        "lon": 17.50222222,
+        "lat": 58.93805556,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L199",
+          "M607",
+          "M996",
+          "N851",
+          "Z330"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "KOGAV",
+        "type": "ICAO",
+        "lon": 17.22972222,
+        "lat": 60.08111111,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "L77",
+          "Z11",
+          "Z255"
+        ],
+        "remarks": "(D): ESSA"
+      },
+      {
+        "name": "KOSKA",
+        "type": "ICAO",
+        "lon": 20.67611111,
+        "lat": 59.18277778,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "L990",
+          "N624"
+        ],
+        "remarks": "(D): EFHK"
+      },
+      {
+        "name": "LINSA",
+        "type": "ICAO",
+        "lon": 17.41166667,
+        "lat": 59.72444444,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N873",
+          "P607"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "LUPET",
+        "type": "ICAO",
+        "lon": 19.87638889,
+        "lat": 59.64027778,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "L77",
+          "Y360"
+        ],
+        "remarks": "(A): ESSA, ESSB"
+      },
+      {
+        "name": "NEBSI",
+        "type": "ICAO",
+        "lon": 20.94138889,
+        "lat": 58.905,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "L734",
+          "L870",
+          "M92",
+          "P607"
+        ],
+        "remarks": "(A): ESSA, ESSB"
+      },
+      {
+        "name": "NEKET",
+        "type": "ICAO",
+        "lon": 20.57861111,
+        "lat": 58.30444444,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N616",
+          "N623"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "NEKLA",
+        "type": "ICAO",
+        "lon": 19.26361111,
+        "lat": 59.0,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "N623",
+          "P156",
+          "Z540"
+        ],
+        "remarks": "(A): ESSB\n(D): ESSA, ESSB"
+      },
+      {
+        "name": "NEPVA",
+        "type": "ICAO",
+        "lon": 18.56638889,
+        "lat": 58.92888889,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "T316"
+        ],
+        "remarks": "(D): ESSA, ESSB"
+      },
+      {
+        "name": "NEREN",
+        "type": "ICAO",
+        "lon": 20.77166667,
+        "lat": 58.62777778,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N197",
+          "Q44"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "NIKEG",
+        "type": "ICAO",
+        "lon": 18.30416667,
+        "lat": 58.69111111,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L199"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "NILUG",
+        "type": "ICAO",
+        "lon": 17.88472222,
+        "lat": 58.81583333,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L199",
+          "L734",
+          "Z226",
+          "Z227",
+          "Z228",
+          "Z229"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "NISIX",
+        "type": "ICAO",
+        "lon": 20.43166667,
+        "lat": 59.31861111,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "M851"
+        ],
+        "remarks": "(D): ESSA, ESSB, EFHK"
+      },
+      {
+        "name": "NOSLI",
+        "type": "ICAO",
+        "lon": 17.25805556,
+        "lat": 59.07277778,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N850",
+          "T31"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "NUGPU",
+        "type": "ICAO",
+        "lon": 17.48444444,
+        "lat": 58.78027778,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "M607"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "ODIBI",
+        "type": "ICAO",
+        "lon": 18.87555556,
+        "lat": 58.95194444,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "N5",
+          "T365"
+        ],
+        "remarks": "(D): ESSA, ESSB"
+      },
+      {
+        "name": "OGLOB",
+        "type": "ICAO",
+        "lon": 19.46222222,
+        "lat": 59.93305556,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Â"
+      },
+      {
+        "name": "OLANU",
+        "type": "ICAO",
+        "lon": 17.71861111,
+        "lat": 57.46888889,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "P606"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "PETEV",
+        "type": "ICAO",
+        "lon": 17.01222222,
+        "lat": 59.20722222,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L87",
+          "N872"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "POKAS",
+        "type": "ICAO",
+        "lon": 19.3925,
+        "lat": 59.98138889,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Â"
+      },
+      {
+        "name": "RASEL",
+        "type": "ICAO",
+        "lon": 20.41472222,
+        "lat": 58.02805556,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L199",
+          "P156",
+          "Y130",
+          "Y40"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "REMSA",
+        "type": "ICAO",
+        "lon": 17.58888889,
+        "lat": 57.48027778,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Re-routing point"
+      },
+      {
+        "name": "RIKUM",
+        "type": "ICAO",
+        "lon": 19.40805556,
+        "lat": 59.97083333,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "N851"
+        ],
+        "remarks": "(D): ESSA, ESSB"
+      },
+      {
+        "name": "ROGMI",
+        "type": "ICAO",
+        "lon": 18.00166667,
+        "lat": 58.19388889,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "M996",
+          "Z229"
+        ],
+        "remarks": "(A): ESSA, ESSB\n(D): ESSB"
+      },
+      {
+        "name": "RUNGA",
+        "type": "ICAO",
+        "lon": 19.72416667,
+        "lat": 59.74972222,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "N872"
+        ],
+        "remarks": "(A): ESSA, ESSB"
+      },
+      {
+        "name": "TOMBU",
+        "type": "ICAO",
+        "lon": 19.56777778,
+        "lat": 59.22944444,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "N616",
+          "P607"
+        ],
+        "remarks": "(AD): ESSA"
+      },
+      {
+        "name": "TOVRI",
+        "type": "ICAO",
+        "lon": 18.76694444,
+        "lat": 59.74972222,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N851"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "VACRA",
+        "type": "ICAO",
+        "lon": 18.39166667,
+        "lat": 60.27916667,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L87",
+          "L870",
+          "N5",
+          "T31",
+          "T316"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "XILAN",
+        "type": "ICAO",
+        "lon": 19.07611111,
+        "lat": 59.65944444,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L77",
+          "L870",
+          "N616",
+          "N872",
+          "Y40"
+        ],
+        "remarks": "Â"
+      }
+    ]
+  },
+  "SCAT_ESOS_CENTRAL_ENROUTE": {
+    "name": "SCAT ESOS/3 central Sweden en-route envelope",
+    "type": "vertices",
+    "bbox": {
+      "lamin": 58.2430556,
+      "lamax": 61.3563889,
+      "lomin": 12.1741667,
+      "lomax": 17.3016667,
+      "extended": 1
+    },
+    "polygon": null,
+    "center": {
+      "lat": 59.79972225,
+      "lon": 14.7379167
+    },
+    "source": {
+      "name": "LFV eAIP Sweden ENR 4.4",
+      "section": "ENR 4.4 - Name-code designators for significant points",
+      "origin": "web",
+      "index_url": "https://www.aro.lfv.se/content/eaip/default_offline.html",
+      "url": "https://www.aro.lfv.se/content/eaip/AIP%20AMDT%201-2026_2026_08_07/eAIP/ES-ENR%204.4-en-GB.html",
+      "document_url": "https://www.aro.lfv.se/content/eaip/AIP%20AMDT%201-2026_2026_08_07/eAIP/ES-ENR%204.4-en-GB.html",
+      "authority": "LFV / AIS Sweden",
+      "aip_section": "ENR 4.4",
+      "aixm_class": "SignificantPoint",
+      "aixm_type": "ICAO",
+      "effective_date": null,
+      "downloaded_utc": "2026-10-19T13:31:43+00:00"
+    },
+    "filter": {
+      "types": [
+        "ICAO"
+      ],
+      "coordinates": "longitude, latitude",
+      "description": "Official AIP ENR 4.4 ICAO significant points inside the resolved study area; polygon presets are clipped exactly using area_presets.point_is_inside_area."
+    },
+    "count": 49,
+    "waypoints": [
+      {
+        "name": "ABJAZ",
+        "type": "ICAO",
+        "lon": 13.83333333,
+        "lat": 60.4,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Â"
+      },
+      {
+        "name": "AGWIM",
+        "type": "ICAO",
+        "lon": 14.83333333,
+        "lat": 60.28333333,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Â"
+      },
+      {
+        "name": "AKVOW",
+        "type": "ICAO",
+        "lon": 17.2,
+        "lat": 60.2,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Re-routing point"
+      },
+      {
+        "name": "ARGIB",
+        "type": "ICAO",
+        "lon": 16.74472222,
+        "lat": 59.84805556,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "P609",
+          "Z166",
+          "Z183"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "ARIWA",
+        "type": "ICAO",
+        "lon": 13.83333333,
+        "lat": 60.23333333,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Â"
+      },
+      {
+        "name": "BAZOQ",
+        "type": "ICAO",
+        "lon": 16.3,
+        "lat": 59.01666667,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Re-routing point"
+      },
+      {
+        "name": "BEDLA",
+        "type": "ICAO",
+        "lon": 16.225,
+        "lat": 59.62888889,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N623",
+          "N866",
+          "P609"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "BUGAX",
+        "type": "ICAO",
+        "lon": 12.89916667,
+        "lat": 61.0,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "M82",
+          "T89"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "DEPEX",
+        "type": "ICAO",
+        "lon": 15.0225,
+        "lat": 59.19194444,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N866",
+          "Y42"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "DETSO",
+        "type": "ICAO",
+        "lon": 14.26444444,
+        "lat": 58.6,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "L734",
+          "N873",
+          "Y130"
+        ],
+        "remarks": "(A): ESCF, ESKN, ESSA, ESSB, ESSL, ESSP\n(D): ESGG"
+      },
+      {
+        "name": "DIKVI",
+        "type": "ICAO",
+        "lon": 14.36305556,
+        "lat": 61.29555556,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L199",
+          "P850"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "EBURI",
+        "type": "ICAO",
+        "lon": 14.66055556,
+        "lat": 59.8,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "N623",
+          "Z166"
+        ],
+        "remarks": "(A): ENGM, ENRY, ENTO"
+      },
+      {
+        "name": "ELTOK",
+        "type": "ICAO",
+        "lon": 16.99,
+        "lat": 59.82444444,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "M996",
+          "P607",
+          "T317",
+          "Z15",
+          "Z183"
+        ],
+        "remarks": "(A): ESSA"
+      },
+      {
+        "name": "ESEBA",
+        "type": "ICAO",
+        "lon": 12.39222222,
+        "lat": 60.01277778,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N623",
+          "Z259"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "GEVRU",
+        "type": "ICAO",
+        "lon": 14.32972222,
+        "lat": 60.74277778,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L199",
+          "M996",
+          "N133",
+          "Z371"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "GIMLO",
+        "type": "ICAO",
+        "lon": 15.84361111,
+        "lat": 58.70694444,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L734"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "IBGAX",
+        "type": "ICAO",
+        "lon": 15.39583333,
+        "lat": 59.72222222,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "L199",
+          "N623"
+        ],
+        "remarks": "(D): ESSA, ESSB"
+      },
+      {
+        "name": "IFCAG",
+        "type": "ICAO",
+        "lon": 17.25,
+        "lat": 58.56666667,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Re-routing point"
+      },
+      {
+        "name": "KOGAV",
+        "type": "ICAO",
+        "lon": 17.22972222,
+        "lat": 60.08111111,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "L77",
+          "Z11",
+          "Z255"
+        ],
+        "remarks": "(D): ESSA"
+      },
+      {
+        "name": "KOXIM",
+        "type": "ICAO",
+        "lon": 15.73555556,
+        "lat": 58.40027778,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N872"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "LAPSI",
+        "type": "ICAO",
+        "lon": 14.30555556,
+        "lat": 58.92055556,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "N866"
+        ],
+        "remarks": "(D): ESSA, ESSB"
+      },
+      {
+        "name": "LEGPO",
+        "type": "ICAO",
+        "lon": 14.43833333,
+        "lat": 60.04611111,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "L199",
+          "M852",
+          "Z183"
+        ],
+        "remarks": "(D): ENGM, ENRY, ENTO"
+      },
+      {
+        "name": "LIBSI",
+        "type": "ICAO",
+        "lon": 16.24972222,
+        "lat": 58.73138889,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N872"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "LOMLA",
+        "type": "ICAO",
+        "lon": 13.19361111,
+        "lat": 60.59083333,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "Z15"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "LURAR",
+        "type": "ICAO",
+        "lon": 14.95111111,
+        "lat": 58.31833333,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "N607"
+        ],
+        "remarks": "(A): ESCF, ESKN, ESSL, ESSP"
+      },
+      {
+        "name": "MASEV",
+        "type": "ICAO",
+        "lon": 12.53472222,
+        "lat": 60.17777778,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "L24",
+          "Z183"
+        ],
+        "remarks": "(D): ENGM, ENRY, ENTO"
+      },
+      {
+        "name": "MILNU",
+        "type": "ICAO",
+        "lon": 15.30027778,
+        "lat": 59.97694444,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N15",
+          "Z183"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "MOXAM",
+        "type": "ICAO",
+        "lon": 13.31388889,
+        "lat": 58.53138889,
+        "fra_relevance": "(IA)",
+        "ats_routes": [
+          "L734",
+          "N866"
+        ],
+        "remarks": "(A): ESGG"
+      },
+      {
+        "name": "NEGIL",
+        "type": "ICAO",
+        "lon": 12.62527778,
+        "lat": 58.25138889,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L727",
+          "M852",
+          "N15",
+          "N866"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "NIBNO",
+        "type": "ICAO",
+        "lon": 12.35888889,
+        "lat": 59.74,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "Z166"
+        ],
+        "remarks": "(A): ENRY, ENTO\n(D): ENGM, ENRY, ENTO"
+      },
+      {
+        "name": "NOSLI",
+        "type": "ICAO",
+        "lon": 17.25805556,
+        "lat": 59.07277778,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N850",
+          "T31"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "OGIRO",
+        "type": "ICAO",
+        "lon": 13.12777778,
+        "lat": 58.77055556,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "M852"
+        ],
+        "remarks": "(AD): ESGG"
+      },
+      {
+        "name": "OTMAB",
+        "type": "ICAO",
+        "lon": 14.83333333,
+        "lat": 60.11666667,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Â"
+      },
+      {
+        "name": "PELIT",
+        "type": "ICAO",
+        "lon": 15.68777778,
+        "lat": 59.20055556,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N873",
+          "Y42"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "PELUP",
+        "type": "ICAO",
+        "lon": 16.47805556,
+        "lat": 58.27888889,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L87",
+          "N851",
+          "Z226"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "PERAX",
+        "type": "ICAO",
+        "lon": 16.38138889,
+        "lat": 60.07611111,
+        "fra_relevance": "(ID)",
+        "ats_routes": [
+          "M996"
+        ],
+        "remarks": "(D): ESSB"
+      },
+      {
+        "name": "PETEV",
+        "type": "ICAO",
+        "lon": 17.01222222,
+        "lat": 59.20722222,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L87",
+          "N872"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "ROGED",
+        "type": "ICAO",
+        "lon": 12.60666667,
+        "lat": 60.51277778,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "P607",
+          "P850"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "ROVPA",
+        "type": "ICAO",
+        "lon": 12.39555556,
+        "lat": 60.73388889,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "M82",
+          "Z15",
+          "Z418"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "SUVAR",
+        "type": "ICAO",
+        "lon": 12.71944444,
+        "lat": 61.15138889,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "M996"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "TABUT",
+        "type": "ICAO",
+        "lon": 15.91694444,
+        "lat": 59.51916667,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N866"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "TEKVA",
+        "type": "ICAO",
+        "lon": 12.71944444,
+        "lat": 59.98472222,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N623",
+          "Z259"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "TINKA",
+        "type": "ICAO",
+        "lon": 16.29638889,
+        "lat": 59.20527778,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "Y42",
+          "Y430"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "TIPIX",
+        "type": "ICAO",
+        "lon": 16.52416667,
+        "lat": 58.90472222,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N872"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "TONSA",
+        "type": "ICAO",
+        "lon": 16.52027778,
+        "lat": 58.60916667,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "L87",
+          "N850"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "TORVA",
+        "type": "ICAO",
+        "lon": 16.21194444,
+        "lat": 59.4125,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N873"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "TUSNI",
+        "type": "ICAO",
+        "lon": 16.8175,
+        "lat": 59.32944444,
+        "fra_relevance": "(I)",
+        "ats_routes": [],
+        "remarks": "Re-routing point"
+      },
+      {
+        "name": "UMLAX",
+        "type": "ICAO",
+        "lon": 17.06972222,
+        "lat": 61.0,
+        "fra_relevance": "(I)",
+        "ats_routes": [
+          "N15"
+        ],
+        "remarks": "Â"
+      },
+      {
+        "name": "UMTON",
+        "type": "ICAO",
+        "lon": 14.33888889,
+        "lat": 58.545,
+        "fra_relevance": "(IAD)",
+        "ats_routes": [
+          "Y430"
+        ],
+        "remarks": "(A): ESSB\n(D): ESGG"
+      }
+    ]
   }
 }

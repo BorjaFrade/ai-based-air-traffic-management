@@ -232,20 +232,31 @@ The default outputs are `data/raw/opensky/opensky_snapshot.csv`,
 `results/figures/`. Re-running the script replaces these current-snapshot
 files, so copy or rename them when preserving a comparison.
 
-## ENAIRE reference data
+## AIP reference data
 
-These commands download current ENAIRE AIP reference data and filter it to the
-configured areas. For a historical OpenSky study, use an archived AIRAC/AIP
-HTML source with `--source-html` or `--source-url`; the current ENAIRE page is
-not automatically a 2019 reference.
+These commands download current ENAIRE or Swedish LFV eAIP reference data and
+filter it to the configured areas. `--source auto` chooses ENAIRE for Spanish
+presets and LFV for the `SCAT_*` Swedish presets while preserving existing
+entries when `--areas` is used.
 
 ```bash
-python3 src/acquisition/download_waypoints.py --areas LECMSAN GALICIA
+python3 src/acquisition/download_waypoints.py \
+  --source auto \
+  --areas GALICIA \
+  SCAT_ESMM_GOTHENBURG_ENROUTE \
+  SCAT_ESMM_MALMO_ENROUTE \
+  SCAT_ESOS_STOCKHOLM_ENROUTE \
+  SCAT_ESOS_CENTRAL_ENROUTE
 
 python3 src/acquisition/download_enaire_corridors.py \
   --area LECMSAN \
   --output src/acquisition/corridors.json
 ```
+
+The Swedish source is LFV's official eAIP/AROWeb ENR 4.4. For historical
+SCAT or OpenSky comparisons, provide an archived AIRAC HTML document with
+`--source-html` or its direct URL with `--source-url`; current AIP data is not
+automatically the historical waypoint network.
 
 ## Safety model
 

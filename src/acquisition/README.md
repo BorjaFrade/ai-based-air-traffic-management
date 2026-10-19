@@ -117,20 +117,43 @@ The map is `results/figures/opensky_snapshot_map.png`; relevant pair data is
 also exported under `results/figures/`. These files are overwritten on the next
 run, so preserve named copies for comparisons.
 
-## ENAIRE waypoints and ATS corridors
+## AIP waypoints and ATS corridors
 
 ### Waypoints
 
-[`download_waypoints.py`](download_waypoints.py) downloads ENAIRE AIP ENR 4.4
-significant points and filters them to one or more configured areas.
+[`download_waypoints.py`](download_waypoints.py) downloads significant points
+from ENAIRE AIP ENR 4.4 or the official Swedish LFV eAIP ENR 4.4 and filters
+them to one or more configured areas. The output keeps existing entries when
+`--areas` is used.
 
 ```bash
-# Update two areas while preserving other entries
+# Update Spanish areas from ENAIRE
 python3 src/acquisition/download_waypoints.py \
+  --source enaire \
   --areas LECMSAN GALICIA
 
-# Rebuild every configured area
-python3 src/acquisition/download_waypoints.py --all-areas
+# Update Swedish SCAT presets from LFV, preserving Galicia and other entries
+python3 src/acquisition/download_waypoints.py \
+  --source sweden \
+  --areas SCAT_ESMM_GOTHENBURG_GG \
+  SCAT_ESMM_GOTHENBURG_ENROUTE \
+  SCAT_ESMM_MALMO_MS \
+  SCAT_ESMM_MALMO_ENROUTE \
+  SCAT_ESOS_STOCKHOLM_SE \
+  SCAT_ESOS_STOCKHOLM_ENROUTE \
+  SCAT_ESOS_CENTRAL_ENROUTE
+
+# Update Spanish and Swedish areas in one run
+python3 src/acquisition/download_waypoints.py \
+  --source auto \
+  --areas GALICIA \
+  SCAT_ESMM_GOTHENBURG_ENROUTE \
+  SCAT_ESMM_MALMO_ENROUTE \
+  SCAT_ESOS_STOCKHOLM_ENROUTE \
+  SCAT_ESOS_CENTRAL_ENROUTE
+
+# Rebuild every configured area from ENAIRE and LFV
+python3 src/acquisition/download_waypoints.py --source auto --all-areas
 
 # Use an archived AIP HTML file for a historical study
 python3 src/acquisition/download_waypoints.py \
@@ -138,9 +161,14 @@ python3 src/acquisition/download_waypoints.py \
   --source-html /path/to/historical_ENR_4_4_en.html
 ```
 
-The output defaults to [`waypoints.json`](waypoints.json). The default source
-is the current ENAIRE AIP, so it must not be described as the 2019 waypoint
-network without an archived historical source.
+The output defaults to [`waypoints.json`](waypoints.json). With `--source
+auto`, Spanish presets use the current ENAIRE AIP and `SCAT_*` presets use the
+current LFV eAIP. The Swedish default entry point is
+`https://www.aro.lfv.se/content/eaip/default_offline.html`; the script follows
+the current issue to ENR 4.4. Use `--source-url` for a direct/pinned document,
+or `--source-html` for an archived HTML section. Current AIP data must not be
+described as the 2016 SCAT or 2019 OpenSky waypoint network without an archived
+historical AIRAC source.
 
 ### ATS corridors
 
