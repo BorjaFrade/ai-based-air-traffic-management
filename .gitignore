@@ -6,6 +6,8 @@ __pycache__/
 # General
 *.bak
 *.DS_Store
+*.zip
+*.pdf
 
 # Enviroment
 *.env
