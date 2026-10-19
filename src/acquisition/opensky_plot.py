@@ -3717,10 +3717,12 @@ def render_map(
                         ),
                     )
     
-    
-                    placement_failed = True
-    
-                    break
+                    # Aircraft labels are contextual information. A dense
+                    # snapshot or an aircraft close to the map boundary can
+                    # leave no legal candidate position for one label. Keep
+                    # the aircraft icon and the rest of the layout instead
+                    # of invalidating the complete validation image.
+                    continue
     
     
                 final_aircraft_artists.append(
