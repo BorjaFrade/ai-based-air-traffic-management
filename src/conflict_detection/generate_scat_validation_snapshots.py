@@ -48,6 +48,9 @@ from opensky_safety import (  # noqa: E402
     state_colours,
     state_display_names,
 )
+from scat_units import (  # noqa: E402
+    filter_flight_level_band,
+)
 
 
 PROCESSED_ROOT = PROJECT_ROOT / "data" / "processed" / "scat_10s"
@@ -118,6 +121,24 @@ def run_directory(area: str, run_name: str) -> Path:
     if not path.exists():
         raise FileNotFoundError(f"SCAT detector run not found: {path}")
     return path
+
+
+def load_run_analysis_band(run_dir: Path) -> tuple[float | None, float | None]:
+    """Read the detector's recorded FL filter, if this is a filtered run."""
+    summary_path = run_dir / "run_summary.csv"
+    if not summary_path.exists():
+        return None, None
+    summary = pd.read_csv(summary_path, low_memory=False)
+    if summary.empty or not {
+        "analysis_fl_min",
+        "analysis_fl_max",
+    }.issubset(summary.columns):
+        return None, None
+    minimum = pd.to_numeric(summary.iloc[0]["analysis_fl_min"], errors="coerce")
+    maximum = pd.to_numeric(summary.iloc[0]["analysis_fl_max"], errors="coerce")
+    if pd.isna(minimum) or pd.isna(maximum):
+        return None, None
+    return float(minimum), float(maximum)
 
 
 def load_events(run_dir: Path) -> pd.DataFrame:
@@ -345,12 +366,37 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--chunksize", type=int, default=250_000)
     parser.add_argument("--no-basemap", action="store_true")
     parser.add_argument("--allow-empty", action="store_true")
+    parser.add_argument(
+        "--min-fl",
+        type=float,
+        default=None,
+        help="Override the detector's minimum analysed flight level",
+    )
+    parser.add_argument(
+        "--max-fl",
+        type=float,
+        default=None,
+        help="Override the detector's maximum analysed flight level",
+    )
+    parser.add_argument(
+        "--all-flight-levels",
+        action="store_true",
+        help="Render all levels instead of the filter recorded by the detector",
+    )
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
     run_dir = run_directory(args.area, args.run_name)
+    recorded_min_fl, recorded_max_fl = load_run_analysis_band(run_dir)
+    if args.all_flight_levels:
+        analysis_min_fl, analysis_max_fl = None, None
+    elif args.min_fl is not None or args.max_fl is not None:
+        analysis_min_fl = args.min_fl
+        analysis_max_fl = args.max_fl
+    else:
+        analysis_min_fl, analysis_max_fl = recorded_min_fl, recorded_max_fl
     events = load_events(run_dir)
     selected = select_samples(events, args.n, args.seed) if not events.empty else pd.DataFrame()
     seed_label = "random" if args.seed is None else f"random_seed_{args.seed}"
@@ -379,6 +425,11 @@ def main() -> None:
     area = resolve_area_preset(args.area, presets)
     bbox = area["bbox"]
     width, height, dpi, config = render_config(area, args.no_basemap)
+    if analysis_min_fl is None:
+        analysis_band = "all flight levels"
+    else:
+        analysis_band = f"FL{analysis_min_fl:g}-FL{analysis_max_fl:g}"
+    print(f"Validation analysis band: {analysis_band}")
     waypoints = load_waypoints_for_area(
         WAYPOINTS_FILE,
         area_key=args.area,
@@ -397,6 +448,11 @@ def main() -> None:
         if snapshot is None:
             raise RuntimeError(f"No traffic snapshot found for timestamp {timestamp}")
         snapshot = prepare_for_plot(snapshot)
+        snapshot = filter_flight_level_band(
+            snapshot,
+            analysis_min_fl,
+            analysis_max_fl,
+        )
         snapshot.reset_index(drop=True, inplace=True)
 
         pair_results, aircraft_states, interval_states, skipped_pairs = analyse_aircraft_snapshot(
@@ -473,6 +529,8 @@ def main() -> None:
                 "detector_vertical_ft": selected_row.get("vertical_sep_ft", ""),
                 "recomputed_vertical_ft": pair_result.get("vertical_sep_ft", "") if pair_result else "",
                 "skipped_pairs_missing_vertical": skipped_pairs,
+                "analysis_fl_min": "" if analysis_min_fl is None else analysis_min_fl,
+                "analysis_fl_max": "" if analysis_max_fl is None else analysis_max_fl,
                 "pair_found_on_map": pair_result is not None,
                 "image_width_px": width,
                 "image_height_px": height,

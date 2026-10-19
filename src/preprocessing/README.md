@@ -91,8 +91,22 @@ predicted route. It writes chronological daily files under
 `data/processed/scat_10s/<AREA>/date=YYYY-MM-DD/`.
 
 The area presets `SCAT_ESMM_GOTHENBURG_GG`, `SCAT_ESMM_MALMO_MS` and
-`SCAT_ESOS_STOCKHOLM_SE` are envelopes of the real SCAT sectors documented in
-`airspace.json`, not arbitrary city-radius boxes.
+`SCAT_ESOS_STOCKHOLM_SE` are envelopes of the real local SCAT sectors
+documented in `airspace.json`, not arbitrary city-radius boxes. The matching
+`*_ENROUTE` presets use the real ESMM/4, ESMM/8, ESOS/6 and ESOS/3 sector
+envelopes for the first-pass FL290–FL410 analysis.
+
+The preprocessor keeps source surveillance rows at all levels. The SCAT
+detector applies FL290–FL410 by default, matching the OpenSky cruise-band
+experiment; use `--all-flight-levels` for an airport/terminal analysis.
+
+After preprocessing, validate the feet/metres, m/s/kt and vertical-rate
+conversions with:
+
+```bash
+python3 src/preprocessing/validate_scat_units.py \
+  --area SCAT_ESMM_GOTHENBURG_ENROUTE
+```
 
 Smoke test one hundred flights from one week:
 

@@ -10,9 +10,11 @@ Run every command from the repository root. Historical times are UTC.
 
 - [`bbox_presets.json`](bbox_presets.json): bounding boxes, polygons and render
   sizes. Current keys include `LECMSAN_ENVELOPE`, `LECMSAN`, `GALICIA`,
-  `NORTHERN_SPAIN`, `BARCELONA_50KM` and the SCAT-backed Swedish sectors
+  `NORTHERN_SPAIN`, `BARCELONA_50KM`, the local SCAT-backed Swedish sectors
   `SCAT_ESMM_GOTHENBURG_GG`, `SCAT_ESMM_MALMO_MS` and
-  `SCAT_ESOS_STOCKHOLM_SE`.
+  `SCAT_ESOS_STOCKHOLM_SE`, and the en-route envelopes
+  `SCAT_ESMM_GOTHENBURG_ENROUTE`, `SCAT_ESMM_MALMO_ENROUTE`,
+  `SCAT_ESOS_STOCKHOLM_ENROUTE` and `SCAT_ESOS_CENTRAL_ENROUTE`.
 - [`location_presets.json`](location_presets.json): airport-centred locations
   used by the live snapshot script.
 - [`separation_profiles.json`](separation_profiles.json): `ENROUTE`,

@@ -111,6 +111,12 @@ Use `src/acquisition/validate_scat_airspace_presets.py` to verify that the
 Swedish bbox presets still match the SCAT `airspace.json` shipped inside a
 downloaded archive.
 
+For en-route traffic use the sector envelopes
+`SCAT_ESMM_GOTHENBURG_ENROUTE`, `SCAT_ESMM_MALMO_ENROUTE`,
+`SCAT_ESOS_STOCKHOLM_ENROUTE` or `SCAT_ESOS_CENTRAL_ENROUTE`. The SCAT
+detector analyses FL290–FL410 by default; use `--all-flight-levels` only for
+terminal-area experiments.
+
 All historical timestamps in the commands below are UTC.
 
 ### 1. Download a raw sector archive

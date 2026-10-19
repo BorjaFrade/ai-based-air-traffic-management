@@ -92,7 +92,7 @@ files produced by [`../preprocessing/preprocess_scat_10s.py`](../preprocessing/p
 
 ```bash
 python3 src/conflict_detection/detect_scat_conflicts.py \
-  --area SCAT_ESMM_GOTHENBURG_GG \
+  --area SCAT_ESMM_GOTHENBURG_ENROUTE \
   --start "2016-10-15 00:00:00" \
   --end "2016-10-21 23:59:50"
 ```
@@ -101,6 +101,11 @@ SCAT event CSVs use the same yellow/orange/red safety states and look-ahead
 metrics as OpenSky, but add per-aircraft context columns for the linked flight
 plan and latest clearance, including CFL, assigned heading/speed, COPN/COPX,
 route, active centre and predicted next fix.
+
+The detector analyses FL290–FL410 by default. This avoids mixing terminal
+traffic from the local `GG`, `MS` and `SE` sectors with the en-route conflict
+experiment. Use `--all-flight-levels` for a terminal-area run, or set
+`--min-fl` and `--max-fl` explicitly.
 
 The output is written below
 `data/processed/scat_separation/<AREA>/runs/<RUN_NAME>/`.

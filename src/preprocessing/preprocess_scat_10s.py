@@ -51,6 +51,11 @@ from area_presets import (  # noqa: E402
     point_is_inside_area,
     resolve_area_preset,
 )
+from scat_units import (  # noqa: E402
+    FT_TO_M,
+    MPS_TO_FPM,
+    MPS_TO_KT,
+)
 
 
 INPUT_ROOT = PROJECT_ROOT / "data" / "raw" / "scat" / "weekly_archives"
@@ -65,10 +70,6 @@ ARCHIVE_RE = re.compile(
     r"^scat(?P<start>\d{8})_(?P<end>\d{8})\.zip$",
     re.IGNORECASE,
 )
-
-MPS_TO_KT = 1.9438444924406
-MPS_TO_FPM = 196.8503937008
-FT_TO_M = 0.3048
 
 SKIP_MEMBERS = {"airspace.json", "grib_meteo.json"}
 
@@ -222,6 +223,7 @@ def extract_kinematics(plot: dict) -> dict | None:
     if None in (lat, lon, epoch):
         return None
 
+    # ASTERIX CAT062 I062/136 is a flight level in hundreds of feet.
     measured_fl = finite_number((plot.get("I062/136") or {}).get("measured_flight_level"))
     item_380 = plot.get("I062/380") or {}
     altitude_item = item_380.get("subitem6") or {}
@@ -235,6 +237,8 @@ def extract_kinematics(plot: dict) -> dict | None:
     if altitude_ft is None:
         altitude_ft = finite_number(altitude_item.get("altitude"))
 
+    # I062/185 Cartesian Vx/Vy are decoded in m/s.  The JSON export uses the
+    # geographical-North convention for Vy, so the norm is ground speed.
     velocity_item = plot.get("I062/185") or {}
     vx = finite_number(velocity_item.get("vx"))
     vy = finite_number(velocity_item.get("vy"))
@@ -246,6 +250,8 @@ def extract_kinematics(plot: dict) -> dict | None:
     if heading is None and vx is not None and vy is not None and speed_ms:
         heading = math.degrees(math.atan2(vx, vy)) % 360.0
 
+    # I062/220 is already decoded as feet/minute; retain that source unit and
+    # derive the SI column only for the shared OpenSky-compatible contract.
     rate_fpm = finite_number((plot.get("I062/220") or {}).get("rocd"))
     if rate_fpm is None:
         rate_fpm = finite_number((item_380.get("subitem13") or {}).get("baro_vert_rate"))
@@ -599,6 +605,16 @@ def main() -> None:
         "area": args.area,
         "area_preset": area,
         "grid_seconds": args.grid_seconds,
+        "units": {
+            "baro_altitude_ft": "ft",
+            "baroaltitude": "m",
+            "measured_flight_level": "FL (100 ft)",
+            "velocity": "m/s",
+            "ground_speed_kt": "kt",
+            "vertical_rate": "m/s",
+            "vertical_rate_fpm": "ft/min",
+            "true_track": "degrees",
+        },
         "columns": SCAT_COLUMNS,
         "archives": [str(path) for path in archives],
         "archive_stats": all_stats,

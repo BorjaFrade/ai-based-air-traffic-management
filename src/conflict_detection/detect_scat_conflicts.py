@@ -35,6 +35,11 @@ if str(SCRIPT_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPT_DIR))
 
 import detect_opensky_conflicts as opensky_detector  # noqa: E402
+from scat_units import (  # noqa: E402
+    DEFAULT_ANALYSIS_FL_MAX,
+    DEFAULT_ANALYSIS_FL_MIN,
+    filter_flight_level_band,
+)
 
 
 INPUT_ROOT = PROJECT_ROOT / "data" / "processed" / "scat_10s"
@@ -200,6 +205,23 @@ def parse_args() -> argparse.Namespace:
         default=0,
         help="0 means all snapshots; useful for a smoke test",
     )
+    parser.add_argument(
+        "--min-fl",
+        type=float,
+        default=DEFAULT_ANALYSIS_FL_MIN,
+        help=f"Minimum analysed flight level (default: FL{DEFAULT_ANALYSIS_FL_MIN:g})",
+    )
+    parser.add_argument(
+        "--max-fl",
+        type=float,
+        default=DEFAULT_ANALYSIS_FL_MAX,
+        help=f"Maximum analysed flight level (default: FL{DEFAULT_ANALYSIS_FL_MAX:g})",
+    )
+    parser.add_argument(
+        "--all-flight-levels",
+        action="store_true",
+        help="Disable the default FL290-FL410 first-pass filter",
+    )
     return parser.parse_args()
 
 
@@ -209,6 +231,10 @@ def main() -> None:
     end = parse_utc(args.end)
     if start > end or args.chunksize <= 0 or args.max_snapshots < 0:
         raise SystemExit("Invalid date range, chunksize or max-snapshots")
+    min_fl = None if args.all_flight_levels else args.min_fl
+    max_fl = None if args.all_flight_levels else args.max_fl
+    if min_fl is not None and (min_fl < 0 or max_fl is None or min_fl > max_fl):
+        raise SystemExit("Invalid flight-level analysis band")
 
     files = discover_files(args.area, start, end)
     paths = output_paths(args.area, start, end)
@@ -225,6 +251,10 @@ def main() -> None:
         "pairs_distance_pruned": 0,
         "pairs_cpa_pruned": 0,
         "pairs_detailed": 0,
+        "aircraft_rows_before_fl_filter": 0,
+        "aircraft_rows_after_fl_filter": 0,
+        "analysis_fl_min": "" if min_fl is None else min_fl,
+        "analysis_fl_max": "" if max_fl is None else max_fl,
         opensky_detector.STATE_PROXIMITY: 0,
         opensky_detector.STATE_HIGH_RISK: 0,
         opensky_detector.STATE_CONFLICT: 0,
@@ -236,7 +266,14 @@ def main() -> None:
     print("SCAT separation detector")
     print(f"Area: {args.area} | Start UTC: {start} | End UTC: {end}")
     print(f"Input files: {len(files)} | Output: {paths['directory']}")
-    print("Safety model: shared ENROUTE profile; look-ahead: 1, 2 and 5 minutes")
+    if min_fl is None:
+        analysis_band = "all flight levels"
+    else:
+        analysis_band = f"FL{min_fl:g}-FL{max_fl:g}"
+    print(
+        "Safety model: shared ENROUTE profile; "
+        f"analysis band: {analysis_band}; look-ahead: 1, 2 and 5 minutes"
+    )
     print("=" * 78, flush=True)
 
     try:
@@ -261,6 +298,10 @@ def main() -> None:
                 day,
                 {"day": day, "yellow": 0, "orange": 0, "red": 0, "snapshots": 0},
             )["snapshots"] += 1
+            totals["aircraft_rows_before_fl_filter"] += len(snapshot)
+            snapshot = filter_flight_level_band(snapshot, min_fl, max_fl)
+            snapshot.reset_index(drop=True, inplace=True)
+            totals["aircraft_rows_after_fl_filter"] += len(snapshot)
             if len(snapshot) < 2:
                 continue
 
