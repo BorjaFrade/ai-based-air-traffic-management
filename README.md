@@ -117,6 +117,16 @@ For en-route traffic use the sector envelopes
 detector analyses FL290–FL410 by default; use `--all-flight-levels` only for
 terminal-area experiments.
 
+For the exploratory TFM phase, use [`src/scat_analysis/README.md`](src/scat_analysis/README.md).
+That pipeline preserves SCAT's native surveillance resolution, extracts
+time-varying controller clearances and studies `ATC_INTERVENTION`; a clearance
+is not treated as a conflict label. The existing OpenSky rule states are only
+applied by stage 10 for a final comparison. The current resource-safe run
+processes stage 05 in one-hour blocks with chunk checkpoints and stops after
+the first archive week (`20161015_20161021`); stages 06–10 will first be run
+against that scoped feature table before expanding the analysis to all 13
+weeks.
+
 All historical timestamps in the commands below are UTC.
 
 ### 1. Download a raw sector archive

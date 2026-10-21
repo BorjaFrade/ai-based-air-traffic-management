@@ -13,6 +13,10 @@ relative to the project.
 - [`conflict_detection/`](conflict_detection/): detects current/predicted
   separation events, creates validation screenshots and calculates quality
   metrics. See [`conflict_detection/README.md`](conflict_detection/README.md).
+- [`scat_analysis/`](scat_analysis/): exploratory SCAT analysis of controller
+  interventions, continuous interaction features, provisional counterfactual
+  labels and the final OpenSky-rule comparison. See
+  [`scat_analysis/README.md`](scat_analysis/README.md).
 - `trajectories/`, `visualization/` and `models/`: reserved for later thesis
   stages; they are not currently complete command-line pipelines.
 
