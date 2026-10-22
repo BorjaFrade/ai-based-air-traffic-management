@@ -16,6 +16,7 @@ import numpy as np
 import pandas as pd
 
 from common import DEFAULT_OUTPUT_ROOT, update_read_me_first
+from pilot_scope import PILOT_WEEK, assert_pilot_frame, assert_pilot_parquet, scope_config
 
 
 def mad_scale(values: pd.Series) -> float:
@@ -114,7 +115,7 @@ def add_provisional_labels(frame: pd.DataFrame) -> pd.DataFrame:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--features-path", type=Path, default=DEFAULT_OUTPUT_ROOT / "05_features" / "interaction_features.parquet")
+    parser.add_argument("--features-path", type=Path, default=DEFAULT_OUTPUT_ROOT / "05_features" / f"primary_interaction_features_{PILOT_WEEK}.parquet")
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT / "09_counterfactual")
     parser.add_argument("--overwrite", action="store_true")
     return parser.parse_args()
@@ -128,7 +129,11 @@ def main() -> None:
         raise SystemExit(f"Output already exists: {output_path}; use --overwrite")
     if not args.features_path.exists():
         raise FileNotFoundError("Run 05_build_interaction_features.py first")
+    if args.features_path.name != f"primary_interaction_features_{PILOT_WEEK}.parquet":
+        raise SystemExit("Stage 09 requires first-week primary interaction features")
+    assert_pilot_parquet(args.features_path)
     features = pd.read_parquet(args.features_path)
+    assert_pilot_frame(features)
     features["ATC_INTERVENTION"] = pd.to_numeric(features["ATC_INTERVENTION"], errors="coerce").fillna(0).astype(int)
     features["relative_seconds"] = pd.to_numeric(features["relative_seconds"], errors="coerce")
     counterfactuals = build_pair_counterfactuals(features)
@@ -160,6 +165,7 @@ def main() -> None:
         except ImportError:
             pass
     config = {
+        **scope_config(),
         "features_path": str(args.features_path),
         "counterfactual": "constant pre-clearance kinematic prediction compared with observed post-clearance pair trajectory",
         "labels": ["UNKNOWN", "LIKELY_INTERACTION_RELATED", "LIKELY_NON_INTERACTION_OPERATIONAL"],
@@ -172,6 +178,8 @@ def main() -> None:
     report = [
         "# SCAT provisional counterfactual clearance analysis",
         "",
+        "- analysis_scope: `FIRST_WEEK_PILOT`",
+        f"- archive_week: `{PILOT_WEEK}`",
         f"- Clearance/nearby-aircraft pair cases: **{len(counterfactuals)}**",
         f"- Clearance-level representative labels: **{len(labels)}**",
         *[f"- `{label}`: **{int(counts.get(label, 0))}**" for label in ["UNKNOWN", "LIKELY_INTERACTION_RELATED", "LIKELY_NON_INTERACTION_OPERATIONAL"]],

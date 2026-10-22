@@ -713,6 +713,9 @@ def parse_args() -> argparse.Namespace:
 
 def main() -> None:
     args = parse_args()
+    from pilot_scope import PILOT_WEEK, SCOPE_ERROR, assert_pilot_parquet, scope_config
+    if args.stop_after_week.strip() != PILOT_WEEK:
+        raise SystemExit(SCOPE_ERROR)
     if (
         args.target_chunk_size <= 0
         or args.max_neighbours <= 0
@@ -757,6 +760,7 @@ def main() -> None:
     stop_after_week = args.stop_after_week.strip()
     if stop_after_week and stop_after_week not in weeks:
         raise SystemExit(f"Unknown --stop-after-week {stop_after_week}; available weeks: {', '.join(weeks)}")
+    weeks = [PILOT_WEEK]
     partition_manifest = prepare_partitions(args, partition_root, weeks)
     checkpoint_dir.mkdir(parents=True, exist_ok=True)
     completed_blocks = set(checkpoint.get("completed_blocks", []))
@@ -817,10 +821,11 @@ def main() -> None:
         if stopped_after_week:
             break
 
-    feature_shards = sorted(checkpoint_dir.glob("raw_features_*.parquet"))
+    feature_shards = sorted(checkpoint_dir.glob(f"raw_features_{PILOT_WEEK}_*.parquet"))
     if not feature_shards:
         raise RuntimeError("No focal/nearby pairs could be computed")
     quality = merge_feature_shards(feature_shards, output_path)
+    assert_pilot_parquet(output_path)
     dictionary = [
         ("horizontal_separation_nm", "Current horizontal separation in nautical miles."),
         ("vertical_separation_ft", "Absolute current vertical separation in feet."),
@@ -839,6 +844,7 @@ def main() -> None:
     ]
     pd.DataFrame(dictionary, columns=["feature", "definition"]).to_csv(args.output_root / "feature_dictionary.csv", index=False)
     config = {
+        **scope_config(),
         "states_path": str(args.states_path),
         "max_target_rows": args.max_target_rows,
         "target_chunk_size": args.target_chunk_size,
@@ -855,7 +861,7 @@ def main() -> None:
     }
     (args.output_root / "run_config.json").write_text(json.dumps(config, indent=2), encoding="utf-8")
     (args.output_root / "feature_quality_report.md").write_text(
-        "# SCAT interaction feature quality\n\n" + "\n".join(f"- {key}: **{value}**" for key, value in quality.items()) + "\n\n"
+        "# SCAT interaction feature quality\n\n- analysis_scope: `FIRST_WEEK_PILOT`\n- archive_week: `20161015_20161021`\n\n" + "\n".join(f"- {key}: **{value}**" for key, value in quality.items()) + "\n\n"
         "All separation, CPA/TCPA and closing-rate variables remain continuous. No 5 NM/1000 ft rule, conflict target or OpenSky colour state is applied.\n",
         encoding="utf-8",
     )

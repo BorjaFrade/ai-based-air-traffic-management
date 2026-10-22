@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 
 from common import DEFAULT_OUTPUT_ROOT, PROJECT_ROOT, update_read_me_first
+from pilot_scope import PILOT_WEEK, assert_pilot_frame, assert_pilot_parquet, scope_config
 
 ACQUISITION_DIR = PROJECT_ROOT / "src" / "acquisition"
 if str(ACQUISITION_DIR) not in sys.path:
@@ -37,7 +38,7 @@ def classify(horizontal, vertical, rules):
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--features-path", type=Path, default=DEFAULT_OUTPUT_ROOT / "05_features" / "interaction_features.parquet")
+    parser.add_argument("--features-path", type=Path, default=DEFAULT_OUTPUT_ROOT / "05_features" / f"primary_interaction_features_{PILOT_WEEK}.parquet")
     parser.add_argument("--labels-path", type=Path, default=DEFAULT_OUTPUT_ROOT / "09_counterfactual" / "provisional_interaction_labels.parquet")
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT / "10_opensky_comparison")
     parser.add_argument("--profile", default="ENROUTE")
@@ -53,7 +54,11 @@ def main() -> None:
         raise SystemExit(f"Output already exists: {output_path}; use --overwrite")
     if not args.features_path.exists() or not args.labels_path.exists():
         raise FileNotFoundError("Run stages 05 and 09 before stage 10")
+    if args.features_path.name != f"primary_interaction_features_{PILOT_WEEK}.parquet":
+        raise SystemExit("Stage 10 requires first-week primary interaction features")
+    assert_pilot_parquet(args.features_path)
     features = event_rows(pd.read_parquet(args.features_path))
+    assert_pilot_frame(features)
     labels = pd.read_parquet(args.labels_path)
     labels = labels[["clearance_id", "provisional_label", "reason_score", "confidence_score"]].drop_duplicates("clearance_id")
     events = features.merge(labels, on="clearance_id", how="left")
@@ -77,6 +82,7 @@ def main() -> None:
     ]
     mismatch[[column for column in columns if column in mismatch]].to_csv(args.output_root / "mismatch_cases.csv", index=False)
     config = {
+        **scope_config(),
         "features_path": str(args.features_path),
         "labels_path": str(args.labels_path),
         "profile": args.profile,
@@ -88,6 +94,8 @@ def main() -> None:
     report = [
         "# SCAT versus OpenSky rule comparison",
         "",
+        "- analysis_scope: `FIRST_WEEK_PILOT`",
+        f"- archive_week: `{PILOT_WEEK}`",
         f"- Event rows compared: **{len(events)}**",
         f"- OpenSky profile: **{args.profile}**",
         "",

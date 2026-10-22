@@ -21,23 +21,20 @@ from sklearn.feature_selection import mutual_info_classif
 from sklearn.impute import SimpleImputer
 
 from common import DEFAULT_OUTPUT_ROOT, update_read_me_first
+from pilot_scope import PILOT_WEEK, assert_pilot_frame, assert_pilot_parquet, scope_config
 
 
 FEATURES = [
-    "horizontal_separation_nm", "vertical_separation_ft", "cpa_nm", "tcpa_min",
-    "horizontal_closing_rate_nm_min", "vertical_closing_rate_fpm", "crossing_angle_deg",
-    "traffic_density", "flight_level", "focal_ground_speed_kt",
+    "min_horizontal_separation", "min_vertical_separation", "min_predicted_horizontal_cpa",
+    "tcpa_at_min_cpa", "max_horizontal_closing_rate", "max_vertical_closing_rate",
+    "median_crossing_angle", "median_traffic_density", "flight_level", "ground_speed_kt",
 ]
 
 
 def event_rows(features: pd.DataFrame) -> pd.DataFrame:
-    selected = []
-    for _, group in features.groupby("window_id", sort=False):
-        eligible = group.loc[group["predictor_eligible"].astype(bool) & (pd.to_numeric(group["relative_seconds"], errors="coerce") <= 0)]
-        if eligible.empty:
-            continue
-        selected.append(eligible.iloc[pd.to_numeric(eligible["relative_seconds"], errors="coerce").abs().argmin()])
-    return pd.DataFrame(selected).reset_index(drop=True)
+    if "anchor_relative_seconds" not in features or features.window_id.duplicated().any():
+        raise SystemExit("Stage 08 requires one pre-event row per pilot window")
+    return features.reset_index(drop=True)
 
 
 def quantile_bins(series: pd.Series, bins: int = 4) -> pd.Series:
@@ -50,7 +47,7 @@ def quantile_bins(series: pd.Series, bins: int = 4) -> pd.Series:
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--features-path", type=Path, default=DEFAULT_OUTPUT_ROOT / "05_features" / "interaction_features.parquet")
+    parser.add_argument("--features-path", type=Path, default=DEFAULT_OUTPUT_ROOT / "05_features" / f"window_features_{PILOT_WEEK}.parquet")
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT / "08_dependency_screen")
     parser.add_argument("--overwrite", action="store_true")
     return parser.parse_args()
@@ -63,7 +60,11 @@ def main() -> None:
         raise SystemExit(f"Output already exists: {args.output_root}; use --overwrite")
     if not args.features_path.exists():
         raise FileNotFoundError("Run 05_build_interaction_features.py first")
+    if args.features_path.name != f"window_features_{PILOT_WEEK}.parquet":
+        raise SystemExit("Stage 08 requires first-week primary window features")
+    assert_pilot_parquet(args.features_path)
     events = event_rows(pd.read_parquet(args.features_path))
+    assert_pilot_frame(events)
     if events.empty:
         raise RuntimeError("No event-level rows available")
     y = pd.to_numeric(events["ATC_INTERVENTION"], errors="coerce").fillna(0).astype(int)
@@ -93,6 +94,8 @@ def main() -> None:
     report = [
         "# SCAT dependency screen",
         "",
+        "- analysis_scope: `FIRST_WEEK_PILOT`",
+        f"- archive_week: `{PILOT_WEEK}`",
         f"- Event rows: **{len(events)}**",
         f"- Variables discretised using data-driven quantiles: **{len(available)}**",
         f"- Method: **{method}**",
@@ -102,7 +105,7 @@ def main() -> None:
         "Mutual-information edges and conditional probabilities describe association with `ATC_INTERVENTION`, not causality.",
     ]
     (args.output_root / "dependency_screen_report.md").write_text("\n".join(report) + "\n", encoding="utf-8")
-    (args.output_root / "run_config.json").write_text(json.dumps({"features_path": str(args.features_path), "method": method, "target": "ATC_INTERVENTION", "conflict_label_created": False}, indent=2), encoding="utf-8")
+    (args.output_root / "run_config.json").write_text(json.dumps({**scope_config(), "features_path": str(args.features_path), "method": method, "target": "ATC_INTERVENTION", "conflict_label_created": False}, indent=2), encoding="utf-8")
     update_read_me_first(args.output_root.parent)
     print(f"Dependency screen complete: {args.output_root}")
 

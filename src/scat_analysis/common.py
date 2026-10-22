@@ -500,6 +500,16 @@ def update_read_me_first(base_root: Path = DEFAULT_OUTPUT_ROOT) -> Path:
         "",
         "This pipeline studies `ATC_INTERVENTION`, not conflict. A recorded clearance is not treated as a conflict label. The OpenSky GREEN/YELLOW/ORANGE/RED rules are deliberately deferred to stage 10.",
         "",
+        "## Analysis scope",
+        "",
+        "- Stages 01–04: existing 13-week source and preprocessing dataset; preserved without recomputation.",
+        "- Stages 05+: `FIRST_WEEK_PILOT` only, `archive_week=20161015_20161021`. No other week may be processed without explicit authorization.",
+        "- Stage 06 uses one pre-event row per primary matched window. Stages 07–10 have not been run and require a separate pilot-safe review before use.",
+        "- Altitude-stratified Stage 06 primary domain: **FL290–FL410**; exploratory domains: **<2000 ft**, **2000–8000 ft**, **8000–29000 ft**. Above FL410 is count-only.",
+        "- Purpose: use the first-week SCAT intervention pilot to decide how to segment and process the larger OpenSky dataset, without treating clearances as conflict labels.",
+        "- [Pilot progress log](PILOT_STAGE06_PROGRESS.md) and [pilot report](PILOT_STAGE06_REPORT.md) document completed work.",
+        "- [Altitude-stratified report](PILOT_STAGE06_ALTITUDE_STRATIFIED_REPORT.md) and [OpenSky processing plan](OPENSKY_PROCESSING_PLAN_FROM_SCAT.md) record the new iteration.",
+        "",
         "## Stage status",
         "",
     ]
@@ -507,6 +517,12 @@ def update_read_me_first(base_root: Path = DEFAULT_OUTPUT_ROOT) -> Path:
         directory = base_root / stage
         if not directory.exists():
             lines.append(f"- `{stage}`: not run")
+            continue
+        if stage == "05_features" and (directory / "window_features_v2_audit_report.md").exists():
+            lines.append("- `05_features`: first-week pilot complete — [V2 altitude/physical audit](05_features/window_features_v2_audit_report.md), [V1 quality](05_features/window_feature_quality_report.md)")
+            continue
+        if stage == "06_exploration" and (directory / "altitude_stratified_run_config.json").exists():
+            lines.append("- `06_exploration`: first-week pilot complete — [global exploration](06_exploration/exploration_report.md), [altitude inventory](06_exploration/altitude_band_inventory.csv), [cruise comparison](06_exploration/cruise_FL290_410_intervention_vs_control.csv)")
             continue
         reports = sorted(directory.glob("*_report.md")) + sorted(directory.glob("*_summary.md"))
         artifacts = sorted(directory.glob("*.parquet")) + sorted(directory.glob("*.csv"))

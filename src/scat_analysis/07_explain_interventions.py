@@ -25,33 +25,24 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.tree import DecisionTreeClassifier, export_text
 
 from common import DEFAULT_OUTPUT_ROOT, update_read_me_first
+from pilot_scope import PILOT_WEEK, assert_pilot_frame, assert_pilot_parquet, scope_config
 
 
 FEATURE_COLUMNS = [
-    "horizontal_separation_nm", "vertical_separation_ft", "relative_velocity_kt",
-    "horizontal_closing_rate_nm_min", "vertical_closing_rate_fpm", "relative_heading_deg",
-    "crossing_angle_deg", "relative_bearing_deg", "cpa_nm", "tcpa_min",
-    "predicted_min_horizontal_sep_nm", "predicted_min_vertical_sep_ft",
-    "time_to_predicted_minimum_s", "traffic_density", "nearby_aircraft_count_30nm",
-    "shared_fpl_route_token_count", "topsky_predicted_min_sep_nm_proxy",
-    "topsky_predicted_time_to_min_s_proxy", "separation_trend_30s", "separation_trend_60s",
-    "separation_trend_120s",
+    "min_horizontal_separation", "p05_horizontal_separation", "horizontal_sep_at_event",
+    "min_vertical_separation", "p05_vertical_separation", "vertical_sep_at_event",
+    "min_predicted_horizontal_cpa", "vertical_sep_at_min_cpa", "tcpa_at_min_cpa",
+    "max_horizontal_closing_rate", "max_vertical_closing_rate", "median_crossing_angle",
+    "median_traffic_density", "n_unique_neighbours", "median_relative_velocity_kt",
+    "flight_level", "ground_speed_kt", "vertical_rate_fpm", "min_kinematic_predicted_sep_nm",
+    "min_topsky_predicted_sep_nm_proxy", "horizontal_sep_trend_60s", "vertical_sep_trend_60s",
 ]
 
 
 def event_rows(features: pd.DataFrame) -> pd.DataFrame:
-    features = features.copy()
-    features["relative_seconds"] = pd.to_numeric(features["relative_seconds"], errors="coerce")
-    features["predictor_eligible"] = features["predictor_eligible"].astype(bool)
-    selected = []
-    for _, group in features.groupby("window_id", sort=False):
-        eligible = group.loc[group["predictor_eligible"] & (group["relative_seconds"] <= 5)]
-        if eligible.empty:
-            eligible = group.loc[group["relative_seconds"] <= 0]
-        if eligible.empty:
-            continue
-        selected.append(eligible.iloc[(eligible["relative_seconds"].abs()).argmin()])
-    return pd.DataFrame(selected).reset_index(drop=True)
+    if "anchor_relative_seconds" not in features or features.window_id.duplicated().any():
+        raise SystemExit("Stage 07 requires one pre-event row per pilot window")
+    return features.reset_index(drop=True)
 
 
 def metric_row(name: str, y_true, probability, prediction, split: str) -> dict:
@@ -170,7 +161,7 @@ def make_calibration_figure(y_test, probabilities: dict[str, np.ndarray], output
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--features-path", type=Path, default=DEFAULT_OUTPUT_ROOT / "05_features" / "interaction_features.parquet")
+    parser.add_argument("--features-path", type=Path, default=DEFAULT_OUTPUT_ROOT / "05_features" / f"window_features_{PILOT_WEEK}.parquet")
     parser.add_argument("--output-root", type=Path, default=DEFAULT_OUTPUT_ROOT / "07_explainability")
     parser.add_argument("--overwrite", action="store_true")
     return parser.parse_args()
@@ -183,10 +174,14 @@ def main() -> None:
         raise SystemExit(f"Output already exists: {args.output_root}; use --overwrite")
     if not args.features_path.exists():
         raise FileNotFoundError("Run 05_build_interaction_features.py first")
+    if args.features_path.name != f"window_features_{PILOT_WEEK}.parquet":
+        raise SystemExit("Stage 07 requires first-week primary window features")
+    assert_pilot_parquet(args.features_path)
     events = event_rows(pd.read_parquet(args.features_path))
+    assert_pilot_frame(events)
     if events.empty:
         raise RuntimeError("No event-level rows available")
-    if (events["relative_seconds"] > 0).any():
+    if (events["anchor_relative_seconds"] > 0).any():
         raise RuntimeError("Leakage check failed: a post-clearance row entered the predictive event table")
     events["ATC_INTERVENTION"] = pd.to_numeric(events["ATC_INTERVENTION"], errors="coerce").fillna(0).astype(int)
     columns = [column for column in FEATURE_COLUMNS if column in events.columns]
@@ -228,10 +223,10 @@ def main() -> None:
         for filename in ("logistic_coefficients.csv", "xgboost_feature_importance.csv", "shap_feature_importance.csv", "ebm_feature_importance.csv"):
             pd.DataFrame([{"status": "not_run", "reason": "training split has one class"}]).to_csv(args.output_root / filename, index=False)
         (args.output_root / "decision_tree_rules.txt").write_text("Not run: training split has one class.\n", encoding="utf-8")
-        config = {"features_path": str(args.features_path), "features": columns, "split": "archive_week_temporal_flight_disjoint_with_1200s_embargo", "target": "ATC_INTERVENTION", "status": "insufficient_training_classes", "conflict_label_created": False}
+        config = {**scope_config(), "features_path": str(args.features_path), "features": columns, "split": "archive_week_temporal_flight_disjoint_with_1200s_embargo", "target": "ATC_INTERVENTION", "status": "insufficient_training_classes", "conflict_label_created": False}
         (args.output_root / "run_config.json").write_text(json.dumps(config, indent=2), encoding="utf-8")
         (args.output_root / "explainability_report.md").write_text(
-            "# SCAT intervention explainability\n\n"
+            f"# SCAT intervention explainability\n\n- analysis_scope: `FIRST_WEEK_PILOT`\n- archive_week: `{PILOT_WEEK}`\n\n"
             "The model stage was not run because the temporal training split contains only one target class. This is expected for a small smoke test; run it with enough intervention and control windows.\n",
             encoding="utf-8",
         )
@@ -299,6 +294,7 @@ def main() -> None:
     ebm_status = save_optional_ebm(X_train_imputed, y_train, X_test_imputed, y_test, columns, args.output_root / "ebm_feature_importance.csv")
     make_calibration_figure(y_test, probabilities, args.output_root)
     config = {
+        **scope_config(),
         "features_path": str(args.features_path),
         "features": columns,
         "split": "chronological archive weeks; flight-disjoint; 1200-second window-overlap embargo; post-clearance rows excluded",
@@ -310,6 +306,8 @@ def main() -> None:
     report = [
         "# SCAT intervention explainability",
         "",
+        "- analysis_scope: `FIRST_WEEK_PILOT`",
+        f"- archive_week: `{PILOT_WEEK}`",
         f"- Training rows: **{len(train)}**",
         f"- Temporal test rows: **{len(test)}**",
         f"- Excluded split rows (flight overlap/embargo): **{len(events) - len(train) - len(test)}**",
