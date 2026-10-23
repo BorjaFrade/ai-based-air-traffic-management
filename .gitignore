@@ -19,6 +19,7 @@ __pycache__/
 *.mp4
 *.png
 *.csv
+*.parquet
 
 # Distribution / packaging
 .Python
