@@ -24,8 +24,10 @@ to `archive_week=20161015_20161021` (`FIRST_WEEK_PILOT`). No other week may be
 processed without explicit authorization. Stage 05 is complete for that week;
 its existing interaction table was filtered by exact primary matching IDs,
 then stage 05b produced one pre-event row per window. Stage 06 has been run
-on those windows. Separately authorized cruise-only Stages 07 and 09 are now complete;
-do not run Stages 08 or 10 or another SCAT week without separate authorization.
+on those windows. Separately authorized cruise-only Stage 07, Stage 09 V1 and
+Stage 09 V2 are now complete;
+Stage 10 has now been separately authorized and run on that same cruise cohort.
+Do not run Stage 08 or another SCAT week without separate authorization.
 
 The altitude-stratified Stage 06 iteration first audited and created
 `window_features_v2_20161015_20161021.parquet` from the existing primary
@@ -76,11 +78,41 @@ before any explicit rerun. `--overwrite` regenerates only Stage 09 outputs
 while reusing validated native-state/day checkpoints; it is not needed to
 read the existing result.
 
+The separately authorized `09b_clearance_aware_counterfactual_cruise.py`
+preserves V1 as a read-only `KINEMATIC_COUNTERFACTUAL_BASELINE`. V2 joins the
+immediately preceding/current/next actionable SCAT clearances, rejects old or
+incoherent prior instructions, and compares previous-command CF-A against
+V1 kinematic CF-B. It reuses V1's native-state cache, candidate pairs,
+censoring and TRAIN-control error calibration. Only 60/120 s determine V2
+labels; 300/600 s are diagnostic. No LEVEL pair shows a CF-A/CF-B difference
+above control error at the primary horizons. V2 yields 1 provisional
+interaction-related, 192 non-interaction and 3,905 UNKNOWN events; the decision
+remains `INSUFFICIENT_COUNTERFACTUAL_EVIDENCE`. Its separate outputs and
+resumable day checkpoints are in `09_counterfactual_cruise_v2/`; neither V1
+nor earlier stages were recomputed.
+
+The reformulated `10_compare_rule_geometry_with_atc_intervention_cruise.py`
+compares continuous traffic geometry and predeclared fixed/predicted rules with
+recorded ATC intervention in the 4,098 matched cruise pairs. It reads the
+existing Stage 05 native pair rows in batches to keep paired separation/CPA
+coherent, reuses Stage 07 splits and saved TEST predictions, and writes only
+its own `10_rule_geometry_comparison_cruise/` outputs and
+`PILOT_STAGE10_RULE_GEOMETRY_VS_ATC_REPORT.md`. Neither intervention nor any
+rule/Stage 09 label is conflict ground truth. The legacy
+`10_compare_opensky_rules.py` was preserved and not run. The exact production
+OpenSky dynamic colour-state logic cannot be reconstructed from the available
+pair aggregates; a static profile proxy is explicitly separated from that
+unavailable comparator. The Stage 10 decision is `REVISE_RULE_COMPARISON`;
+the bounded OpenSky quality/feature-yield pilot remains `UNDETERMINED` and
+full OpenSky processing is not authorized.
+
 See [the original pilot report](../../data/processed/scat/PILOT_STAGE06_REPORT.md),
 [the altitude-stratified report](../../data/processed/scat/PILOT_STAGE06_ALTITUDE_STRATIFIED_REPORT.md),
 [the final cruise matching V2 report](../../data/processed/scat/PILOT_CRUISE_MATCHING_V2_REPORT.md),
 [the Stage 07 cruise explainability report](../../data/processed/scat/PILOT_STAGE07_CRUISE_EXPLAINABILITY_REPORT.md),
 [the Stage 09 cruise counterfactual report](../../data/processed/scat/PILOT_STAGE09_CRUISE_COUNTERFACTUAL_REPORT.md),
+[the Stage 09 V2 clearance-aware report](../../data/processed/scat/PILOT_STAGE09_V2_CLEARANCE_AWARE_REPORT.md),
+[the Stage 10 geometry/intervention report](../../data/processed/scat/PILOT_STAGE10_RULE_GEOMETRY_VS_ATC_REPORT.md),
 [the OpenSky plan](../../data/processed/scat/OPENSKY_PROCESSING_PLAN_FROM_SCAT.md)
 and [the task log](../../data/processed/scat/PILOT_STAGE06_PROGRESS.md).
 
