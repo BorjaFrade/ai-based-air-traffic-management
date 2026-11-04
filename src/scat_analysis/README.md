@@ -116,6 +116,171 @@ See [the original pilot report](../../data/processed/scat/PILOT_STAGE06_REPORT.m
 [the OpenSky plan](../../data/processed/scat/OPENSKY_PROCESSING_PLAN_FROM_SCAT.md)
 and [the task log](../../data/processed/scat/PILOT_STAGE06_PROGRESS.md).
 
+## Stages 20–21: clearance attribution and maneuver screening
+
+These stages examine whether the association between encounter geometry and
+ATC clearances persists when unique clearances and contiguous encounters are
+counted separately. They also provide an initial retrospective screen for
+maneuvers. They write only to the directory specified by `--out` and do not
+change earlier stage outputs.
+
+- `stage20_audit_clearances.py` joins pair-at-time observations to unique
+  HEADING/LEVEL clearances. It reports counts by color, preceding and following
+  orders, attribution of one order to multiple pairs, and contiguous non-green
+  episodes.
+- `stage21_maneuver_screening.py` compares observed heading/altitude changes
+  and separation with a simplified inertial, no-maneuver projection. This is
+  a retrospective screen, not a causal counterfactual.
+- `scat_stage_io.py` provides shared CSV/Parquet reading, column discovery,
+  and UTC timestamp normalization. `stage20_export_pairs.py` replays the Stage
+  16 calculation on processed surveillance and predicted-route inputs to
+  export every route-predictor pair snapshot. Keep these scripts together in
+  `src/scat_analysis/`.
+
+Run the examples below from the repository root. They require `pandas` and
+`numpy`; Parquet input also requires `pyarrow`. DuckDB is not required:
+
+```bash
+python3 -m pip install --upgrade pandas numpy pyarrow
+```
+
+### Find and inspect the inputs
+
+The original unique-clearance table is
+`data/processed/scat/03_clearances/scat_clearances.parquet`. Stage 16 itself
+saved aggregates and a sample, so use the separate full export in
+`results/stage20/pairs/`. Each `pairs_<week>.parquet` contains the nominal
+week's route-predictor snapshots, both original `flight_key` values, source
+members, `m_min`, `tau_sec`, frozen Stage 19 color, and the Stage 16 300-second
+label. The export is generated with:
+
+```bash
+python3 src/scat_analysis/stage20_export_pairs.py \
+  --out results/stage20/pairs --weeks all
+```
+
+This replay reads the existing Stage 02 surveillance and prediction Parquet
+files, follows the Stage 16 120-second snapshot, 20-minute horizon, 10-second
+prediction grid, FL290–410 and 350 NM population, and retains only the 91
+nominal days used in Stage 19. It does not overwrite Stage 16–19 results.
+Inspect the canonical input before auditing:
+
+```bash
+python3 src/scat_analysis/stage20_audit_clearances.py \
+  --pairs results/stage20/pairs \
+  --clearances data/processed/scat/03_clearances/scat_clearances.parquet \
+  --inspect \
+  --out results/stage20
+```
+
+Inspection prints the columns and three sample rows per input and creates
+`results/stage20/mapping_example.json`. The auditor requires this canonical
+pair schema and automatically recognizes the Stage 03 `clearance_epoch` as
+event time. It restricts Stage 03's unique clearance IDs to the Stage 13/14
+eligible orders used by Stage 16, excluding speed-only and other ineligible
+records. It reports calibration and test weeks separately without refitting
+the Stage 19 color thresholds.
+
+### Stage 20: pilot and full audit
+
+```bash
+python3 src/scat_analysis/stage20_audit_clearances.py \
+  --pairs results/stage20/pairs/pairs_20161015_20161021.parquet \
+  --clearances data/processed/scat/03_clearances/scat_clearances.parquet \
+  --out results/stage20_pilot_week
+
+python3 src/scat_analysis/stage20_audit_clearances.py \
+  --pairs results/stage20/pairs \
+  --clearances data/processed/scat/03_clearances/scat_clearances.parquet \
+  --out results/stage20
+```
+
+The first command audits one complete week; the second covers all 13 weeks.
+The output files are:
+
+| File | Contents |
+| --- | --- |
+| `stage20_summary.json` | Totals, rules, mappings, and warnings |
+| `stage20_by_color.csv` | Pair-at-time observations and attributed ATC events by color |
+| `stage20_episodes.csv` | Contiguous non-green episodes grouped by pair and time gap |
+| `stage20_non_green_observations.csv.gz` | Non-green observations with preceding/following ATC events |
+| `stage20_clearance_attribution.csv.gz` | One row per unique clearance, including how many observations of each color attribute it |
+
+Review `stage20_summary.json`, `stage20_by_color.csv`, and
+`stage20_episodes.csv` first. The completed export contains 21,567,488
+pair-at-time observations and 8,434 red ones over 13 weeks. Its color counts
+and Stage 16 order labels match the saved Stage 19 tables exactly. See the
+[Stage 20 audit report](../../results/stage20/STAGE20_AUDIT_REPORT.md) for the
+attribution results and interpretation.
+
+### Stage 21: observed trajectories and maneuver screening
+
+Stage 21 reads the complete Stage 20 episode, observation and clearance
+tables, plus the original Stage 02 surveillance points and Stage 03 clearance
+records. The surveillance altitude column is `altitude_ft`; pass `--alt-unit ft`
+explicitly. Inspect the input schemas, then run a reproducible calibration
+pilot and freeze its rules for the full run:
+
+```bash
+python3 src/scat_analysis/stage21_maneuver_screening.py \
+  --stage20 results/stage20 \
+  --tracks data/processed/scat/02_traffic/scat_states.parquet \
+  --clearances data/processed/scat/03_clearances/scat_clearances.parquet \
+  --alt-unit ft --inspect
+
+python3 src/scat_analysis/stage21_maneuver_screening.py \
+  --stage20 results/stage20 \
+  --tracks data/processed/scat/02_traffic/scat_states.parquet \
+  --clearances data/processed/scat/03_clearances/scat_clearances.parquet \
+  --alt-unit ft --pilot --pilot-week 20161015_20161021 \
+  --pilot-per-stratum 20 --seed 42 --out results/stage21/pilot
+
+python3 src/scat_analysis/stage21_maneuver_screening.py \
+  --stage20 results/stage20 \
+  --tracks data/processed/scat/02_traffic/scat_states.parquet \
+  --clearances data/processed/scat/03_clearances/scat_clearances.parquet \
+  --alt-unit ft --pilot-summary results/stage21/pilot/stage21_summary.json \
+  --out results/stage21
+```
+
+The pilot draws 20 calibration episodes from each of six strata: red with no
+order, prior only, later only, or both; orange; and yellow. The full run keeps
+calibration and test separate. Both use a 20-minute horizon, synchronized
+10-second samples, a maximum 30-second interpolation gap, and at least 80%
+coverage with both endpoints observed. Missing future points are never
+extrapolated. A conclusion that predicted loss was not observed requires
+complete coverage of the 20-minute grid. The outputs are
+`stage21_summary.json`, `stage21_by_color.csv`,
+`stage21_encounters.csv`, `stage21_clearance_maneuvers.csv`,
+`stage21_counterfactuals.csv`, `STAGE21_VALIDATION_REPORT.md`, and example
+figures in `results/stage21/`. See the
+[Stage 21 validation report](../../results/stage21/STAGE21_VALIDATION_REPORT.md)
+for denominators, red episodes without linked orders, maneuver screening and
+publication limits.
+
+### Interpretation and data checks
+
+- Stage 20 attributes a clearance to every pair containing that aircraft
+  within the time window. This does not establish that the order responded to
+  that encounter. Repeated observations and unique clearance events are
+  reported separately. Red/orange labels are predictions, not realized
+  incidents.
+- Stage 21 compares Stage 16's predicted minimum at the first snapshot of an
+  episode's highest color with observed horizontal and vertical separation at
+  the same subsequent instants. Its pre-order, constant-velocity projection is
+  a screening reference only. A compatible maneuver and a larger observed
+  separation do not establish that the order prevented a conflict.
+- These outputs are neither calibrated risk estimates nor verified resolved
+  conflicts. Before interpreting full-run counts, check coverage of the 91
+  nominal days and confirm that the Stage 16–18 FL290–410, 350 NM, and 120 s
+  filters were applied. Stage 20 audits attribution; it does not rebuild pairs
+  or correct historical selections.
+- Stage 21 marks encounters with insufficient synchronized surveillance as
+  excluded from observed-minimum estimates. A route string may indicate
+  planned level information, but it cannot establish when a turn or level
+  change was planned. All maneuver and inertial results need operational
+  review before publication.
+
 ## Resource-safe staged execution
 
 Stages 04 and 05 are designed to stay below the available RAM. Stage 04

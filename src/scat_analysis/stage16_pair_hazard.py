@@ -266,7 +266,7 @@ def week_clock(states: pd.DataFrame) -> float:
 
 
 def analyse_week(week: str, states: pd.DataFrame, pred_parquet: pq.ParquetFile, rules: dict, args,
-                 events: pd.DataFrame) -> dict:
+                 events: pd.DataFrame, pair_sink=None) -> dict:
     arrays = s15.build_arrays(states, rules["deadband"])
     times = arrays["time_epoch"].astype(float)
     t0 = week_clock(states)
@@ -366,6 +366,19 @@ def analyse_week(week: str, states: pd.DataFrame, pred_parquet: pq.ParquetFile, 
         n_pairs = len(i0)
         for p, (X, Y, Z) in zip(PREDICTORS, ((XR, YR, ZR), (XC, YC, ZC))):
             keep, feat = pair_features(X, Y, Z, i0, i1, grid, rules, stride, args.keep_below)
+            if p == "R" and pair_sink is not None:
+                # Stage 20 export: emit the full route-predictor population,
+                # including the distant pairs omitted from Stage 16's sample.
+                pair_sink(week, T, states, rows[i0[keep]], rows[i1[keep]],
+                          feat, pair_lab[keep, 1])
+                if (~keep).any():
+                    far_i0, far_i1 = i0[~keep], i1[~keep]
+                    far_keep, far_feat = pair_features(
+                        X, Y, Z, far_i0, far_i1, grid, rules, stride, float("inf"))
+                    if not far_keep.all():
+                        raise ValueError("Non-finite predicted separation in full pair export")
+                    pair_sink(week, T, states, rows[far_i0], rows[far_i1],
+                              far_feat, pair_lab[~keep, 1])
             kept_lab = pair_lab[keep]
             mbin = np.clip(np.digitize(feat["m_min"], M_EDGES) - 1, 0, nM - 1)
             tbin = np.clip(np.digitize(feat["tau"], TAU_EDGES) - 1, 0, nT - 1)
