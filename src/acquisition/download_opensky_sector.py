@@ -682,22 +682,33 @@ def process_month(
         month_floor(month_start),
     )
 
+    # A monthly file can cover only a bounded part of a calendar month.
+    # Extend its recorded interval when a later run requests more hours.
+    if (
+        paths["csv"].exists()
+        and paths["manifest"].exists()
+    ):
+        previous = json.loads(paths["manifest"].read_text())
+        previous_filters = previous.get("filters", {})
+        if (previous_filters.get("filter_fl_band") != FILTER_FL_BAND or
+                previous_filters.get("keep_only_airborne") != KEEP_ONLY_AIRBORNE):
+            raise ValueError(
+                f"Existing archive has different query filters: {paths['manifest']}. "
+                "Choose another --output-root."
+            )
+        previous_start = parse_utc(previous["start_utc"])
+        previous_end = parse_utc(previous["end_utc_exclusive"])
+        if previous_start <= month_start and previous_end >= month_end:
+            print(f"SKIP covered interval: {paths['csv']}")
+            return 0, True
+        month_start = min(month_start, previous_start)
+        month_end = max(month_end, previous_end)
+
     windows = build_windows(
         month_start,
         month_end,
         QUERY_WINDOW_MINUTES,
     )
-
-    # If final monthly CSV + manifest exist, the month is complete.
-    if (
-        paths["csv"].exists()
-        and paths["manifest"].exists()
-    ):
-        print(
-            f"SKIP completed month: "
-            f"{paths['csv']}"
-        )
-        return 0, True
 
     paths["cache"].mkdir(
         parents=True,
@@ -889,6 +900,22 @@ def parse_arguments():
         ),
     )
 
+    parser.add_argument(
+        "--all-altitudes",
+        action="store_true",
+        help=(
+            "Disable the FL290-FL410 query filter. The output is written "
+            "to data/raw/opensky_sectors_all_altitudes by default so it "
+            "cannot mix with the existing filtered archive."
+        ),
+    )
+
+    parser.add_argument(
+        "--output-root",
+        type=Path,
+        help="Override the archive output root (must not mix filter settings).",
+    )
+
     return parser.parse_args()
 
 
@@ -897,7 +924,18 @@ def parse_arguments():
 # =============================================================================
 
 def main():
+    global FILTER_FL_BAND, OUTPUT_ROOT
     args = parse_arguments()
+
+    if args.all_altitudes:
+        FILTER_FL_BAND = False
+        OUTPUT_ROOT = PROJECT_ROOT / "data" / "raw" / "opensky_sectors_all_altitudes"
+    if args.output_root is not None:
+        OUTPUT_ROOT = args.output_root
+    if args.all_altitudes and OUTPUT_ROOT.resolve() == (
+        PROJECT_ROOT / "data" / "raw" / "opensky_sectors"
+    ).resolve():
+        raise ValueError("Unfiltered downloads need a separate --output-root")
 
     start = parse_utc(args.start)
     end = parse_utc(args.end)

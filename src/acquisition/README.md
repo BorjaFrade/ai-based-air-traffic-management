@@ -52,6 +52,8 @@ Options:
 --start TIMESTAMP         UTC inclusive; default 2025-01-01 00:00:00
 --end TIMESTAMP           UTC exclusive; default 2025-02-01 00:00:00
 --max-windows N           Maximum new Trino windows; 0 means unlimited
+--all-altitudes           Download all barometric flight levels to a separate root
+--output-root PATH        Override the raw archive root
 ```
 
 For a first connection test, limit the run:
@@ -67,6 +69,13 @@ python3 src/acquisition/download_opensky_sector.py \
 Raw output is stored under
 `data/raw/opensky_sectors/<sector>/year=YYYY/month=MM/`. The downloader caches
 completed windows and can be rerun after interruption.
+The manifest records the exact UTC interval in each monthly file. A later run
+requesting more hours of that month reuses cached windows and extends the file;
+the month filename alone does not imply a full calendar month was downloaded.
+The existing 2019 LECMSAN envelope archive was downloaded with FL290–410 and
+airborne-only filters. To fetch all flight levels for a day without changing
+that archive, use `--all-altitudes`; its default output root is
+`data/raw/opensky_sectors_all_altitudes/`.
 
 ### Configurable Trino visualisation workflow
 
@@ -74,7 +83,10 @@ completed windows and can be rerun after interruption.
 older, richer workflow that queries a configured interval and can create map
 frames and an MP4. It has no CLI date arguments: edit `START_UTC`, `END_UTC`,
 `SELECTED_REGION`, `GENERATE_VIDEO` and the other user-configuration constants
-near the top of the file before running it.
+near the top of the file before running it. Its map arrows and predicted
+safety colours use 2-, 5-, 10- and 20-minute look-ahead endpoints, with the
+worst predicted state evaluated separately over 0–2, 2–5, 5–10 and 10–20
+minutes.
 
 ```python
 START_UTC = "2019-01-15 12:00:00"
@@ -211,8 +223,9 @@ The script also accepts `--source-url`, `--bbox-presets`, `--output` and
 ## Safety states
 
 The active `ENROUTE` profile uses 5 NM horizontal and 1,000 ft vertical
-research thresholds and a 1-, 2- and 5-minute look-ahead sampled every five
-seconds. The four states are:
+research thresholds. The live snapshot uses 1-, 2- and 5-minute look-ahead;
+the historical Trino video uses 2-, 5-, 10- and 20-minute look-ahead. Both
+sample predictions every five seconds. The four states are:
 
 ```text
 GREEN / NORMAL       outside the warning envelope

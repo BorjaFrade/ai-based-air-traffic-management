@@ -1201,7 +1201,7 @@ def draw_trajectory_vector(
 
     The aircraft and current safety circle keep the current state colour.
     Each trajectory segment uses the worst predicted state in its own
-    interval (e.g. 0-1, 1-2 and 2-5 minutes).
+    interval (e.g. 0-2, 2-5, 5-10 and 10-20 minutes).
     """
 
     horizons = list(globals().get("LOOKAHEAD_MINUTES", [1, 2, 5]))

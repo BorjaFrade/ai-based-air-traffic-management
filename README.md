@@ -273,9 +273,10 @@ automatically the historical waypoint network.
 The default `ENROUTE` profile is configured in
 [`src/acquisition/separation_profiles.json`](src/acquisition/separation_profiles.json).
 Its research thresholds are 5 NM horizontal and 1,000 ft vertical. The model
-also evaluates 1-, 2- and 5-minute constant-kinematics look-ahead intervals at
-5-second steps. These are modelling parameters, not universal operational ATC
-minima or safety advice.
+also evaluates constant-kinematics look-ahead intervals at 5-second steps:
+1, 2 and 5 minutes for live snapshots, or 2, 5, 10 and 20 minutes for the
+historical Trino video. These are modelling parameters, not universal
+operational ATC minima or safety advice.
 
 ## Repository structure
 

@@ -104,9 +104,9 @@ def print_authentication_mode():
 # All times are UTC.
 #
 
-START_UTC = "2025-06-16 20:00:00"
+START_UTC = "2019-01-19 00:00:00"
 
-END_UTC = "2025-06-16 20:20:00"
+END_UTC = "2019-01-19 04:00:00"
 
 
 # ------------------------------------------------------------
@@ -155,7 +155,7 @@ AREA_POLYGON = AREA_DEFINITIONS[SELECTED_REGION].get("polygon")
 DEFAULT_RENDER_WIDTH_PX = 3840
 DEFAULT_RENDER_HEIGHT_PX = 2160
 
-FIG_DPI = 160
+FIG_DPI = 320
 
 
 def resolve_render_configuration():
@@ -376,7 +376,7 @@ SHOW_VERTICAL_SPEED = True
 
 SHOW_TRAJECTORY_VECTOR = True
 
-LOOKAHEAD_MINUTES = [1, 2, 5]
+LOOKAHEAD_MINUTES = [2, 5, 10, 20]
 PREDICTION_STEP_SECONDS = 5
 
 

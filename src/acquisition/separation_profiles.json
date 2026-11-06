@@ -1,7 +1,7 @@
 {
   "ENROUTE": {
-    "profile_name": "En-route / RVSM",
-    "logic_version": "2026-10-16-v3-active-separator",
+    "profile_name": "En-route / RVSM (data-driven colour scale)",
+    "logic_version": "2026-11-04-v4-data-driven-mmin-tau",
     "horizontal_nm": 5.0,
     "vertical_ft": 1000.0,
     "comparison": {
@@ -9,19 +9,29 @@
       "loss_vertical": "<",
       "boundary_is_safe": true,
       "vertical_tolerance_ft": 1.0,
-      "description": "Loss of separation requires H < 5 NM AND effective V < 1000 ft. A raw vertical separation within +/-1 ft of 1000 ft is normalised to exactly 1000 ft before the rule comparison."
+      "description": "Loss of separation requires H < 5 NM AND effective V < 1000 ft (i.e. m < 1, with m = max(H/5 NM, V/1000 ft)). A raw vertical separation within +/-1 ft of 1000 ft is normalised to exactly 1000 ft before the rule comparison."
     },
     "prediction": {
       "lookahead_minutes": [
-        1,
-        2,
-        5
+        20
       ],
-      "prediction_step_seconds": 5,
-      "event_state_aggregation": "worst_of_current_and_0_1_1_2_2_5_min",
+      "prediction_step_seconds": 10,
+      "evaluation_period_seconds": 120,
+      "predictor": "route_following",
+      "predictor_description": "Path built from the SCAT predicted-trajectory fixes, travelled at the observed ground speed; altitude from the observed altitude. Constant-velocity extrapolation is only a comparison predictor.",
+      "normalised_separation": "m(t) = max(H(t)/5 NM, V(t)/1000 ft)",
+      "m_min": "minimum of m(t) over the lookahead",
+      "tau_minutes": "time from now until m_min is reached",
+      "event_state_aggregation": "colour_from_m_min_and_tau",
+      "evaluation_order": [
+        "RED_LOSS_OF_SEPARATION",
+        "ORANGE_HIGH_RISK",
+        "YELLOW_PROXIMITY_WARNING",
+        "GREEN_NORMAL_OPERATION"
+      ],
       "vertical_rate_deadband_fpm": 100.0,
-      "logic": "active_separator_dynamic_envelopes",
-      "description": "Yellow/orange are dynamic near-miss states. They require the dimension(s) currently providing legal separation to be deteriorating. A level crossing at >=1000 ft vertical separation is not yellow/orange merely because H falls below 5 NM."
+      "logic": "data_driven_mmin_tau",
+      "description": "Colours depend on the predicted minimum normalised separation (m_min) over the next 20 min and on the time tau until it occurs. No active-separator deterioration condition is used. Thresholds are nested boxes: m=1 is 5 NM / 1000 ft, m=1.2 is 6 NM / 1200 ft, m=2 is 10 NM / 2000 ft. All inequalities are strict where written '<'."
     },
     "states": {
       "GREEN_NORMAL_OPERATION": {
@@ -29,36 +39,42 @@
         "enabled": true,
         "display_name": "Normal separation",
         "colour": "#00A651",
-        "rule": "otherwise"
+        "rule": "otherwise",
+        "description": "m_min >= 2, or 1 <= m_min < 1.2 (passes just outside 5 NM / 1000 ft), or no event within the lookahead."
       },
       "YELLOW_PROXIMITY_WARNING": {
         "state": "PROXIMITY",
         "enabled": true,
         "display_name": "Proximity warning",
         "colour": "#FFD400",
-        "horizontal_nm": 7.5,
-        "vertical_ft": 1500.0,
-        "requires_active_separator_deterioration": true,
-        "horizontal_deterioration_epsilon_nm": 0.01,
-        "vertical_deterioration_epsilon_ft": 1.0,
-        "rule": "inside_envelope_and_active_separator_deteriorating"
+        "horizontal_nm": 10.0,
+        "vertical_ft": 2000.0,
+        "excluded_inner_horizontal_nm": 6.0,
+        "excluded_inner_vertical_ft": 1200.0,
+        "m_min_min_inclusive": 1.2,
+        "m_min_max_exclusive": 2.0,
+        "tau_minutes_min": 0.0,
+        "tau_minutes_max": 20.0,
+        "requires_active_separator_deterioration": false,
+        "rule": "1.2 <= m_min < 2 at any tau within the lookahead"
       },
       "ORANGE_HIGH_RISK": {
         "state": "HIGH_RISK",
         "enabled": true,
-        "display_name": "High-risk near miss",
+        "display_name": "Predicted loss of separation (5-20 min)",
         "colour": "#FF6F00",
-        "horizontal_nm": 6.0,
-        "vertical_ft": 1200.0,
-        "requires_active_separator_deterioration": true,
-        "horizontal_deterioration_epsilon_nm": 0.01,
-        "vertical_deterioration_epsilon_ft": 1.0,
-        "rule": "inside_tight_envelope_and_active_separator_deteriorating"
+        "horizontal_nm": 5.0,
+        "vertical_ft": 1000.0,
+        "m_min_max_exclusive": 1.0,
+        "tau_minutes_min_inclusive": 5.0,
+        "tau_minutes_max_inclusive": 20.0,
+        "requires_active_separator_deterioration": false,
+        "rule": "m_min < 1 and 5 <= tau <= 20 min"
       },
       "RED_LOSS_OF_SEPARATION": {
         "state": "CONFLICT",
         "enabled": true,
-        "display_name": "Loss of separation",
+        "display_name": "Loss of separation (current or predicted within 5 min)",
         "colour": "#D7191C",
         "horizontal_nm": 5.0,
         "vertical_ft": 1000.0,
@@ -66,8 +82,47 @@
         "vertical_rate_deadband_fpm": 100.0,
         "horizontal_operator": "<",
         "vertical_operator": "<",
-        "rule": "both_below"
+        "m_min_max_exclusive": 1.0,
+        "tau_minutes_min_inclusive": 0.0,
+        "tau_minutes_max_exclusive": 5.0,
+        "rule": "m_min < 1 and tau < 5 min (tau = 0 is the current loss of separation)"
       }
+    },
+    "calibration": {
+      "status": "proposal",
+      "data": "SCAT, 13 sampled weeks (91 days), FL290-FL410; thresholds and number of colours chosen with the 9 calibration weeks only; evaluated on 4 test weeks (20170107, 20170401, 20170624, 20170916)",
+      "outcome": "eligible level/heading orders to either aircraft within 300 s",
+      "reference": "green pairs with the same traffic stratum (4 strata of the number of aircraft in FL290-FL410)",
+      "test_lift_vs_green": {
+        "YELLOW": {
+          "lift": 1.53,
+          "ci95": [
+            1.48,
+            1.59
+          ]
+        },
+        "ORANGE": {
+          "lift": 2.23,
+          "ci95": [
+            2.1,
+            2.34
+          ]
+        },
+        "RED": {
+          "lift": 3.11,
+          "ci95": [
+            2.91,
+            3.32
+          ]
+        }
+      },
+      "test_order_rate": {
+        "GREEN": 0.135,
+        "YELLOW": 0.207,
+        "ORANGE": 0.301,
+        "RED": 0.422
+      },
+      "note": "Lift measures association with controller orders, not real risk. SCAT excludes flights involved in incident reports. A fifth colour (red split at 2 min) is statistically detectable but adds under 1 percentage point of the achievable out-of-sample gain; 4 colours chosen for parsimony."
     }
   },
   "TERMINAL": {
