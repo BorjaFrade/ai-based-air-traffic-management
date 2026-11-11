@@ -6112,5 +6112,127 @@
         "remarks": "(A): ESSB\n(D): ESGG"
       }
     ]
+  },
+  "SWITZERLAND": {
+    "name": "Swiss LSAS FRA reference points",
+    "source": {
+      "authority": "EUROCONTROL Network Manager",
+      "service": "NM_DCT2_1/DATASOURCES/MapServer/5 FRA_Points",
+      "url": "https://ext.eurocontrol.int/arcgis/rest/services/NM_DCT2_1/DATASOURCES/MapServer/5",
+      "retrieved_utc": "2026-11-06T23:01:56.906293+00:00",
+      "validity": "Current service snapshot. VALIDFROM_DATE and VALIDTO_DATE were null; no 2019/2025 historical validity claim.",
+      "selection": "Twelve named FRA points spanning western, central, northern, eastern and southern LSAS connections; no route geometry inferred."
+    },
+    "count": 12,
+    "waypoints": [
+      {
+        "name": "GILIR",
+        "type": "FRA",
+        "lon": 6.23916667,
+        "lat": 47.06333333,
+        "fra_type": "I",
+        "level_min_fl": 195,
+        "level_max_fl": 660
+      },
+      {
+        "name": "KOGAS",
+        "type": "FRA",
+        "lon": 6.39083333,
+        "lat": 45.80833333,
+        "fra_type": "I",
+        "level_min_fl": 195,
+        "level_max_fl": 660
+      },
+      {
+        "name": "BENOT",
+        "type": "FRA",
+        "lon": 7.1728175,
+        "lat": 47.05770306,
+        "fra_type": "I",
+        "level_min_fl": 195,
+        "level_max_fl": 660
+      },
+      {
+        "name": "NEMOS",
+        "type": "FRA",
+        "lon": 6.90655444,
+        "lat": 46.9119425,
+        "fra_type": "I",
+        "level_min_fl": 195,
+        "level_max_fl": 660
+      },
+      {
+        "name": "SOSAL",
+        "type": "FRA",
+        "lon": 6.88444444,
+        "lat": 46.55805556,
+        "fra_type": "I",
+        "level_min_fl": 195,
+        "level_max_fl": 660
+      },
+      {
+        "name": "ORSUD",
+        "type": "FRA",
+        "lon": 7.18166667,
+        "lat": 45.95777778,
+        "fra_type": "I",
+        "level_min_fl": 195,
+        "level_max_fl": 660
+      },
+      {
+        "name": "ARGAX",
+        "type": "FRA",
+        "lon": 9.29806861,
+        "lat": 47.04993333,
+        "fra_type": "I",
+        "level_min_fl": 195,
+        "level_max_fl": 660
+      },
+      {
+        "name": "UTAVO",
+        "type": "FRA",
+        "lon": 9.00927417,
+        "lat": 46.41063139,
+        "fra_type": "I",
+        "level_min_fl": 195,
+        "level_max_fl": 660
+      },
+      {
+        "name": "DEGES",
+        "type": "FRA",
+        "lon": 9.20194444,
+        "lat": 47.4125,
+        "fra_type": "I",
+        "level_min_fl": 195,
+        "level_max_fl": 660
+      },
+      {
+        "name": "NUNRI",
+        "type": "FRA",
+        "lon": 9.65241111,
+        "lat": 47.58655556,
+        "fra_type": "X",
+        "level_min_fl": 195,
+        "level_max_fl": 660
+      },
+      {
+        "name": "RESIA",
+        "type": "FRA",
+        "lon": 10.04320833,
+        "lat": 46.47845833,
+        "fra_type": "EX",
+        "level_min_fl": 195,
+        "level_max_fl": 660
+      },
+      {
+        "name": "RONAG",
+        "type": "FRA",
+        "lon": 10.25901139,
+        "lat": 46.7794125,
+        "fra_type": "I",
+        "level_min_fl": 195,
+        "level_max_fl": 660
+      }
+    ]
   }
 }

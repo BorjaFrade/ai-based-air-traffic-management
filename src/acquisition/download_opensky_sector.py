@@ -133,7 +133,7 @@ QUERY_WINDOW_MINUTES = 60
 
 # A courtesy delay between sequential queries. This is NOT an official OpenSky
 # quota; it simply avoids immediately firing the next request in a tight loop.
-POLITE_DELAY_SECONDS = 2.0
+POLITE_DELAY_SECONDS = 0.5
 
 # Retry transient failures sequentially. No parallel retry workers are used.
 MAX_RETRIES = 4

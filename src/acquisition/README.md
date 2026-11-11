@@ -10,13 +10,18 @@ Run every command from the repository root. Historical times are UTC.
 
 - [`bbox_presets.json`](bbox_presets.json): bounding boxes, polygons and render
   sizes. Current keys include `LECMSAN_ENVELOPE`, `LECMSAN`, `GALICIA`,
-  `NORTHERN_SPAIN`, `BARCELONA_50KM`, the local SCAT-backed Swedish sectors
+  `SWITZERLAND`, `GENEVA_ACC`, `ZURICH_ACC`, `NORTHERN_SPAIN`,
+  `BARCELONA_50KM`, the local SCAT-backed Swedish sectors
   `SCAT_ESMM_GOTHENBURG_GG`, `SCAT_ESMM_MALMO_MS` and
   `SCAT_ESOS_STOCKHOLM_SE`, and the en-route envelopes
   `SCAT_ESMM_GOTHENBURG_ENROUTE`, `SCAT_ESMM_MALMO_ENROUTE`,
   `SCAT_ESOS_STOCKHOLM_ENROUTE` and `SCAT_ESOS_CENTRAL_ENROUTE`.
+  `SWITZERLAND` is a broad study box; the ACC keys enclose current
+  EUROCONTROL upper-sector geometries. See [`SWITZERLAND_AUDIT.md`](SWITZERLAND_AUDIT.md)
+  for their bounds and historical-use limits.
 - [`location_presets.json`](location_presets.json): airport-centred locations
-  used by the live snapshot script.
+  grouped by study area. The live snapshot still selects a location by its
+  code (for example `SCQ` or `ZRH`); Swiss map airports use these same records.
 - [`separation_profiles.json`](separation_profiles.json): `ENROUTE`,
   `TERMINAL`, `FINAL_APPROACH` and `CUSTOM` research profiles.
 - [`waypoints.json`](waypoints.json) and [`corridors.json`](corridors.json):

@@ -31,6 +31,27 @@ def load_area_presets(path: Path) -> dict:
     }
 
 
+def load_location_presets(path: Path) -> dict[str, dict]:
+    """Flatten sector-grouped airport locations for code-based selection."""
+    with path.open(encoding="utf-8") as file:
+        groups = json.load(file)
+    if not isinstance(groups, dict):
+        raise ValueError("Location presets must be a JSON object")
+    locations: dict[str, dict] = {}
+    for sector, group in groups.items():
+        if not isinstance(group, dict) or not isinstance(group.get("locations"), dict):
+            raise ValueError(f"Location group {sector!r} must contain a locations object")
+        for code, location in group["locations"].items():
+            if code in locations:
+                raise ValueError(f"Duplicate location code: {code}")
+            if not isinstance(location, dict) or not all(
+                key in location for key in ("name", "icao", "lat", "lon")
+            ):
+                raise ValueError(f"Invalid location {code!r} in {sector!r}")
+            locations[code] = dict(location)
+    return locations
+
+
 def bbox_from_center(latitude: float, longitude: float, radius_km: float) -> dict:
     radius_m = float(radius_km) * 1000.0
     _, latitude_max, _ = GEOD.fwd(longitude, latitude, 0, radius_m)
@@ -145,6 +166,22 @@ def resolve_area_preset(preset_key: str, presets: dict) -> dict:
             '"center", "vertices" or "polygon"'
         )
 
+    reference_boundaries = []
+    for boundary in preset.get("reference_boundaries", []):
+        reference_boundaries.append({
+            "name": boundary["name"],
+            "points": _normalise_polygon_vertices(boundary),
+        })
+
+    airports = list(preset.get("airports", []))
+    if preset.get("airport_codes"):
+        locations = load_location_presets(Path(__file__).with_name("location_presets.json"))
+        airports = []
+        for code in preset["airport_codes"]:
+            if code not in locations:
+                raise ValueError(f"Unknown airport location code {code!r} in {preset_key!r}")
+            airports.append(dict(locations[code]))
+
     return {
         "key": preset_key,
         "name": preset.get("name", preset_key),
@@ -153,6 +190,11 @@ def resolve_area_preset(preset_key: str, presets: dict) -> dict:
         "bbox": bbox,
         "polygon": polygon_vertices,
         "render": dict(preset.get("render", {})),
+        "source": preset.get("source"),
+        "cities": list(preset.get("cities", [])),
+        "airports": airports,
+        "reference_boundaries": reference_boundaries,
+        "reference_boundary_note": preset.get("reference_boundary_note", ""),
     }
 
 

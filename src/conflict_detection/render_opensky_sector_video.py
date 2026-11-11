@@ -63,7 +63,7 @@ def arguments(argv=None):
     p.add_argument("--start", required=True, help="Inclusive UTC timestamp, e.g. 2019-01-15 00:00:00")
     p.add_argument("--end", required=True, help="Exclusive UTC timestamp, e.g. 2019-01-16 00:00:00")
     p.add_argument("--source", choices=("auto", "raw", "processed"), default="auto",
-                   help="auto uses raw CSVs for *_ENVELOPE and processed CSVs otherwise")
+                   help="auto uses the area preset source, then *_ENVELOPE=raw or processed otherwise")
     p.add_argument("--input-root", type=Path, help="Override the chosen source root")
     p.add_argument("--out", type=Path, help="Output directory; default results/opensky_sector_video/AREA/RANGE")
     p.add_argument("--profile", default="ENROUTE")
@@ -432,8 +432,13 @@ def write_video(paths, target, fps, log_every):
 def main(argv=None):
     run_began = time.monotonic()
     args = arguments(argv)
+    presets = load_area_presets(PRESETS)
+    if args.area not in presets:
+        raise ValueError(f"Unknown map preset: {args.area}")
+    area = resolve_area_preset(args.area, presets)
     if args.source == "auto":
-        args.source = "raw" if args.area.endswith("_ENVELOPE") else "processed"
+        args.source = area.get("source") or ("raw" if args.area.endswith("_ENVELOPE")
+                                              else "processed")
     if args.input_root is None:
         args.input_root = RAW_INPUT_ROOT if args.source == "raw" else PROCESSED_INPUT_ROOT
     start, end = utc_epoch(args.start), utc_epoch(args.end)
@@ -441,10 +446,6 @@ def main(argv=None):
         raise ValueError("--end must follow --start")
     if start % args.frame_step or end % args.frame_step:
         raise ValueError("UTC start/end must align with --frame-step")
-    presets = load_area_presets(PRESETS)
-    if args.area not in presets:
-        raise ValueError(f"Unknown map preset: {args.area}")
-    area = resolve_area_preset(args.area, presets)
     width = args.width or int(area.get("render", {}).get("width_px", 3840))
     height = args.height or int(area.get("render", {}).get("height_px", 2160))
     if width <= 0 or height <= 0 or width % 2 or height % 2:
@@ -472,7 +473,7 @@ def main(argv=None):
     names = state_display_names(rules)
     map_config = build_shared_validation_render_config(
         area, width_px=width, height_px=height, dpi=160,
-        title_prefix=("OpenSky envelope traffic" if args.area.endswith("_ENVELOPE")
+        title_prefix=("OpenSky envelope traffic" if args.source == "raw"
                       else "OpenSky sector traffic"),
         show_basemap=not args.no_basemap,
         overrides={"SEPARATION_PROFILE": args.profile, "LOOKAHEAD_MINUTES": list(HORIZONS_MINUTES),

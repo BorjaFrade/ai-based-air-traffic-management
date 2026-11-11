@@ -149,8 +149,15 @@ The downloader is resumable and stores its raw archive under
 
 The available area keys are defined in
 [`src/acquisition/bbox_presets.json`](src/acquisition/bbox_presets.json),
-including `LECMSAN_ENVELOPE`, `LECMSAN`, `GALICIA`, `NORTHERN_SPAIN` and
-`BARCELONA_50KM`.
+including `LECMSAN_ENVELOPE`, `LECMSAN`, `GALICIA`, `SWITZERLAND`,
+`GENEVA_ACC`, `ZURICH_ACC`, `NORTHERN_SPAIN` and `BARCELONA_50KM`.
+`SWITZERLAND` is a broad acquisition box that includes Liechtenstein and
+nearby airspace; it is not the LSAS FIR/UIR or a UAC boundary. It displays a
+sourced current LSAS UIR reference line, 12 FRA points, eight cities and seven
+airport reference points. The two ACC presets enclose current upper-sector
+reference geometries and use separate archives. See the
+[Swiss audit and source dates](src/acquisition/SWITZERLAND_AUDIT.md) before
+using that boundary to interpret historical flights.
 
 ### 2. Build regular 10-second snapshots
 

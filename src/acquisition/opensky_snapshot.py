@@ -20,6 +20,7 @@ import geonamescache
 
 from area_presets import (
     load_area_presets,
+    load_location_presets as load_grouped_location_presets,
     resolve_area_preset,
     filter_dataframe_to_area,
     load_waypoints_for_area,
@@ -71,10 +72,7 @@ LOCATION_PRESETS_FILE = Path(__file__).with_name(
 def load_location_presets():
 
     try:
-        with LOCATION_PRESETS_FILE.open(
-            encoding="utf-8"
-        ) as presets_file:
-            presets = json.load(presets_file)
+        presets = load_grouped_location_presets(LOCATION_PRESETS_FILE)
     except FileNotFoundError as error:
         raise FileNotFoundError(
             f"Location presets file not found: "
@@ -85,11 +83,6 @@ def load_location_presets():
             f"Invalid JSON in location presets file: "
             f"{LOCATION_PRESETS_FILE}"
         ) from error
-
-    if not isinstance(presets, dict):
-        raise ValueError(
-            "Location presets must be a JSON object"
-        )
 
     return presets
 

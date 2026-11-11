@@ -1,92 +1,182 @@
 {
-  "BCN": {
-    "name": "Barcelona-El Prat",
-    "icao": "LEBL",
-    "lat": 41.2974,
-    "lon": 2.0833
+  "BARCELONA_50KM": {
+    "locations": {
+      "BCN": {
+        "name": "Barcelona-El Prat",
+        "icao": "LEBL",
+        "lat": 41.2974,
+        "lon": 2.0833
+      }
+    }
   },
-  "MAD": {
-    "name": "Madrid-Barajas",
-    "icao": "LEMD",
-    "lat": 40.4983,
-    "lon": -3.5676
+  "MADRID": {
+    "locations": {
+      "MAD": {
+        "name": "Madrid-Barajas",
+        "icao": "LEMD",
+        "lat": 40.4983,
+        "lon": -3.5676
+      }
+    }
   },
-  "SCQ": {
-    "name": "Santiago-Rosalia de Castro",
-    "icao": "LEST",
-    "lat": 42.8963,
-    "lon": -8.4151
+  "LECMSAN": {
+    "locations": {
+      "SCQ": {
+        "name": "Santiago-Rosalia de Castro",
+        "icao": "LEST",
+        "lat": 42.8963,
+        "lon": -8.4151
+      },
+      "LCG": {
+        "name": "A Coruna",
+        "icao": "LECO",
+        "lat": 43.3021,
+        "lon": -8.3773
+      },
+      "VGO": {
+        "name": "Vigo-Peinador",
+        "icao": "LEVX",
+        "lat": 42.2318,
+        "lon": -8.6268
+      }
+    }
   },
-  "LCG": {
-    "name": "A Coruna",
-    "icao": "LECO",
-    "lat": 43.3021,
-    "lon": -8.3773
+  "NORTHERN_SPAIN": {
+    "locations": {
+      "OVD": {
+        "name": "Asturias",
+        "icao": "LEAS",
+        "lat": 43.5636,
+        "lon": -6.0346
+      },
+      "SDR": {
+        "name": "Santander-Seve Ballesteros",
+        "icao": "LEXJ",
+        "lat": 43.4271,
+        "lon": -3.82
+      },
+      "BIO": {
+        "name": "Bilbao",
+        "icao": "LEBB",
+        "lat": 43.3011,
+        "lon": -2.9106
+      },
+      "VIT": {
+        "name": "Vitoria",
+        "icao": "LEVT",
+        "lat": 42.8828,
+        "lon": -2.7245
+      }
+    }
   },
-  "VGO": {
-    "name": "Vigo-Peinador",
-    "icao": "LEVX",
-    "lat": 42.2318,
-    "lon": -8.6268
+  "LECMSAN_NEIGHBOURS": {
+    "locations": {
+      "OPO": {
+        "name": "Porto-Francisco Sa Carneiro",
+        "icao": "LPPR",
+        "lat": 41.2481,
+        "lon": -8.6814
+      }
+    }
   },
-  "OVD": {
-    "name": "Asturias",
-    "icao": "LEAS",
-    "lat": 43.5636,
-    "lon": -6.0346
+  "GERMANY": {
+    "locations": {
+      "FRA": {
+        "name": "Frankfurt",
+        "icao": "EDDF",
+        "lat": 50.0379,
+        "lon": 8.5622
+      }
+    }
   },
-  "SDR": {
-    "name": "Santander-Seve Ballesteros",
-    "icao": "LEXJ",
-    "lat": 43.4271,
-    "lon": -3.82
+  "SCAT_ESMM_GOTHENBURG_GG": {
+    "locations": {
+      "GOT": {
+        "name": "Gothenburg-Landvetter",
+        "icao": "ESGG",
+        "lat": 57.6628,
+        "lon": 12.2798
+      }
+    }
   },
-  "BIO": {
-    "name": "Bilbao",
-    "icao": "LEBB",
-    "lat": 43.3011,
-    "lon": -2.9106
+  "SCAT_ESMM_MALMO_MS": {
+    "locations": {
+      "MMX": {
+        "name": "Malmo Airport",
+        "icao": "ESMS",
+        "lat": 55.5363,
+        "lon": 13.3762
+      }
+    }
   },
-  "VIT": {
-    "name": "Vitoria",
-    "icao": "LEVT",
-    "lat": 42.8828,
-    "lon": -2.7245
+  "SCAT_ESOS_STOCKHOLM_SE": {
+    "locations": {
+      "ARN": {
+        "name": "Stockholm-Arlanda",
+        "icao": "ESSA",
+        "lat": 59.6519,
+        "lon": 17.9186
+      }
+    }
   },
-  "OPO": {
-    "name": "Porto-Francisco Sa Carneiro",
-    "icao": "LPPR",
-    "lat": 41.2481,
-    "lon": -8.6814
-  },
-  "ZRH": {
-    "name": "Zurich",
-    "icao": "LSZH",
-    "lat": 47.4581,
-    "lon": 8.5555
-  },
-  "FRA": {
-    "name": "Frankfurt",
-    "icao": "EDDF",
-    "lat": 50.0379,
-    "lon": 8.5622
-  },
-  "GOT": {
-    "name": "Gothenburg-Landvetter",
-    "icao": "ESGG",
-    "lat": 57.6628,
-    "lon": 12.2798
-  },
-  "MMX": {
-    "name": "Malmo Airport",
-    "icao": "ESMS",
-    "lat": 55.5363,
-    "lon": 13.3762
-  },
-  "ARN": {
-    "name": "Stockholm-Arlanda",
-    "icao": "ESSA",
-    "lat": 59.6519,
-    "lon": 17.9186
+  "SWITZERLAND": {
+    "source": {
+      "authority": "Swiss Federal Office of Civil Aviation (FOCA)",
+      "layer": "Aerodromes + Heliports",
+      "url": "https://api3.geo.admin.ch/rest/services/ech/MapServer/ch.bazl.flugplaetze-heliports",
+      "retrieved_date": "2026-11-07",
+      "validity": "Current reference points; historical 2019/2025 validity not established. LFSB is geographically in France."
+    },
+    "locations": {
+      "ZRH": {
+        "name": "Zürich",
+        "icao": "LSZH",
+        "lat": 47.458193,
+        "lon": 8.548004,
+        "country": "CH"
+      },
+      "GVA": {
+        "name": "Genève",
+        "icao": "LSGG",
+        "lat": 46.23845,
+        "lon": 6.109519,
+        "country": "CH"
+      },
+      "BSL": {
+        "name": "Basel-Mulhouse (France)",
+        "icao": "LFSB",
+        "lat": 47.59,
+        "lon": 7.529167,
+        "country": "FR"
+      },
+      "BRN": {
+        "name": "Bern-Belp",
+        "icao": "LSZB",
+        "lat": 46.912327,
+        "lon": 7.499338,
+        "country": "CH"
+      },
+      "LUG": {
+        "name": "Lugano-Agno",
+        "icao": "LSZA",
+        "lat": 46.003615,
+        "lon": 8.910263,
+        "country": "CH"
+      },
+      "SIR": {
+        "name": "Sion",
+        "icao": "LSGS",
+        "lat": 46.219167,
+        "lon": 7.326944,
+        "country": "CH"
+      },
+      "ACH": {
+        "name": "St. Gallen-Altenrhein",
+        "icao": "LSZR",
+        "lat": 47.484919,
+        "lon": 9.561936,
+        "country": "CH"
+      }
+    }
   }
 }

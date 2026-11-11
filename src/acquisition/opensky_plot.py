@@ -2858,11 +2858,7 @@ def render_map(
     if SHOW_CITIES:
 
 
-        cities = (
-            get_cached_cities(
-                BBOX
-            )
-        )
+        cities = area.get("cities") or get_cached_cities(BBOX)
 
 
     waypoint_points = []
@@ -2870,6 +2866,8 @@ def render_map(
     if SHOW_WAYPOINTS and waypoints:
 
         waypoint_points = list(waypoints)
+
+    airport_points = area.get("airports", [])
 
 
     corridor_lines = []
@@ -2944,6 +2942,21 @@ def render_map(
             zorder=9,
             clip_on=True,
         )
+
+    for boundary in area.get("reference_boundaries", []):
+        points = boundary["points"]
+        ax.plot(
+            [point[0] for point in points],
+            [point[1] for point in points],
+            color="#B6E6FF", linewidth=1.25, linestyle=(0, (5, 4)),
+            alpha=0.78, zorder=7.5, clip_on=True,
+        )
+    if area.get("reference_boundary_note"):
+        ax.text(0.015, 0.025, area["reference_boundary_note"],
+                transform=ax.transAxes, fontsize=7.5, color="white",
+                alpha=0.85, ha="left", va="bottom", zorder=10,
+                bbox={"facecolor": "#1f2937", "alpha": 0.7,
+                      "edgecolor": "none", "pad": 3})
 
 # ============================================================
     # CORRECT GEOGRAPHIC PROPORTIONS
@@ -3124,6 +3137,13 @@ def render_map(
             facecolor=WAYPOINT_FACE_COLOR,
             edgecolor=WAYPOINT_EDGE_COLOR,
             linewidth=WAYPOINT_EDGE_WIDTH,
+            zorder=8.5,
+        )
+
+    for airport in airport_points:
+        ax.scatter(
+            airport["lon"], airport["lat"], s=50, marker="^",
+            facecolor="#B6E6FF", edgecolor="black", linewidth=0.9,
             zorder=8.5,
         )
 
@@ -3608,6 +3628,19 @@ def render_map(
             # ----------------------------------------------------
 
             if SHOW_WAYPOINT_LABELS:
+
+                for airport in airport_points:
+                    artist, box = place_waypoint_label(
+                        ax=ax, renderer=renderer,
+                        waypoint={"name": airport["icao"], "lon": airport["lon"],
+                                  "lat": airport["lat"]},
+                        bbox_geo=BBOX, rings=config["waypoint_rings"],
+                        fontsize=config["waypoint_font"], occupied=occupied,
+                        obstacles=aircraft_icon_boxes,
+                    )
+                    if artist is not None:
+                        final_waypoint_artists.append(artist)
+                        occupied.append(box)
 
                 for waypoint in waypoint_points:
 
