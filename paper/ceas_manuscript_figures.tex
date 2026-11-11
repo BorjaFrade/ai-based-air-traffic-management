@@ -1,0 +1,440 @@
+% DRAFT FOR INTERNAL SCIENTIFIC REVIEW — NOT READY FOR SUBMISSION
+% Springer Nature sn-jnl template (v3.1). Use the official sn-jnl.cls.
+% All content is in this single .tex file, including the references.
+% Default target venue: CEAS Aeronautical Journal (Springer Nature, numeric style).
+%   Checklist: abstract 150-250 words; 4-6 keywords; numeric citations in order of
+%   appearance; references with full DOI links; Declarations section; editable
+%   source files (.tex + figures) and the compiled PDF at submission.
+%   Alternative venue: Journal of Open Aviation Science (TU Delft) uses another template.
+% Items in red [TBC: ...] or "pending" need author input or results not yet produced.
+% Figures use descriptive placeholders; replace with original figures.
+\documentclass[pdflatex,sn-mathphys-num]{sn-jnl}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{xcolor}
+\usepackage{url}
+\newcommand{\mmin}{m_{\min}}
+\newcommand{\tbc}[1]{\textcolor{red}{[TBC: #1]}}
+\newcommand{\pend}{\textcolor{red}{pending}}
+\newcommand{\figplaceholder}[1]{%
+  \fbox{\begin{minipage}[c][2.45cm][c]{0.92\linewidth}
+  \centering\sffamily\small\textbf{FIGURE PLACEHOLDER -- NOT GENERATED}\\[4pt]
+  \parbox{0.88\linewidth}{\centering #1}
+  \end{minipage}}}
+\title[ATC intervention-level calibration in SCAT]{Auditing Clearance-Based Labels of Aircraft Encounters: Multiplicity and Surveillance Coverage in the SCAT Dataset}
+% Author order and affiliations to be confirmed by all coauthors.
+% ORCID identifiers (link in the Springer Nature submission system):
+% Borja Rodriguez Frade: https://orcid.org/0000-0002-9097-1323
+% Felix Hernandez del Olmo: 0000-0002-0567-9572
+% Elena Gaudioso Vazquez: 0000-0003-2258-6623
+\author*[1]{\fnm{Borja} \sur{Rodríguez Frade}}
+\email{borja.rode@gmail.com}
+\author[2]{\fnm{Félix} \sur{Hernández del Olmo}}
+\email{felixh@dia.uned.es}
+\author[2]{\fnm{Elena} \sur{Gaudioso Vázquez}}
+\email{elena@dia.uned.es}
+% Affiliation 1 identifies the institution for Borja; verify whether a department
+% or a different current affiliation should be provided before submission.
+\affil*[1]{\orgname{Universidad Nacional de Educación a Distancia (UNED)}, \orgaddress{\city{Madrid}, \country{Spain}}}
+\affil[2]{\orgdiv{Departamento de Inteligencia Artificial}, \orgname{Universidad Nacional de Educación a Distancia (UNED)}, \orgaddress{\city{Madrid}, \country{Spain}}}
+\abstract{Historical air traffic control (ATC) clearances are increasingly treated as evidence of controller decisions, both to calibrate indicators of aircraft encounters and to train decision-support and learning-based conflict-resolution systems. This practice assumes that a clearance can be tied to the encounter that motivated it. We examine that assumption using the public Swedish Civil Air Traffic Control (SCAT) dataset. Aircraft encounters are predicted 20 minutes ahead and grouped into four levels according to how much subsequent controller activity each level is associated with; the levels are calibrated on nine weeks of traffic and tested on four held-out weeks. We then audit the result at the level of individual clearances and encounters. Controller activity does increase from the lowest to the highest level, but a single clearance is typically associated with dozens of aircraft-pair observations, so these observations cannot be read as independent conflicts. Moreover, for the most urgent encounters, later surveillance is often too incomplete to check what actually happened, which limits validation against observed trajectories. The contribution is a reproducible audit framework that makes calibration, event multiplicity and observation coverage explicit; it is not a new conflict detector. A prespecified comparison at the encounter level against simpler continuous and probabilistic baselines is defined to test whether the discrete levels add value, and external operational validation remains necessary before claiming improved detection performance.}
+\keywords{air traffic control, conflict detection, clearance attribution, encounter analysis, data-driven calibration, surveillance uncertainty}
+\begin{document}
+\maketitle
+
+\section{Introduction}
+\label{sec:intro}
+Reliable identification of aircraft encounters that may require controller attention is central to air traffic management (ATM). Tactical and medium-term conflict-detection tools rely on forecasts of aircraft position and separation, yet their operational value depends on more than geometric proximity. A forecast may not account for a planned level change, a previously issued clearance, traffic sequencing, or uncertainty in the flight trajectory. Conversely, the presence of a clearance cannot by itself establish that a specific pair of aircraft was in conflict. Understanding this distinction matters when historical controller actions are used as empirical targets for a detection system or as a reward signal for an intelligent decision-support agent.
+
+Modern operational concepts already distinguish predicted losses of separation, encounters that constrain manoeuvring options, and groups of interactions that should be presented coherently to the controller. The EUROCONTROL medium-term conflict detection (MTCD) specification explicitly recognises these functions, including uncertainty and the grouping of related encounters \cite{eurocontrol2017}. The research literature on conflict detection and resolution classifies methods by how they propagate predicted states and set detection thresholds \cite{kuchar2000}, and probabilistic formulations convert the growth of trajectory-prediction error with look-ahead time into a conflict probability \cite{paielli1997,prandini2000}. The separation minima that define a loss of separation are set by ICAO procedures \cite{icao4444}. In parallel, the availability of historical surveillance, flight plans and clearance logs has stimulated learning-based research on controller behaviour \cite{bastas2022,bastas2023,delgado2022}. These datasets provide a valuable observational foundation but rarely include an unambiguous label linking a particular clearance to the encounter that motivated it.
+
+The Swedish Civil Air Traffic Control (SCAT) dataset is especially attractive because it combines time-stamped surveillance with flight plans, system trajectory predictions and controller clearances for 13 sampled weeks of operations \cite{nilsson2023}. It has already been used to reconstruct potential conflicts resolved by heading or level instructions \cite{renkhoff2025}, to predict or reconstruct clearances with supervised learning \cite{renkhoff2026}, and to analyse pilot response times to clearances \cite{wustenbecker2025}. Thus, reconstructing encounters or detecting instructions from SCAT is not new in itself. The question explored here is whether \emph{levels of ATC intervention activity} derived from pairwise geometry remain interpretable after the same action is recognised as belonging to multiple pair-instances or encounters and after the limitations of later surveillance are recorded explicitly.
+
+The underlying study began with a four-colour representation (green, yellow, orange and red; ``non-green'' below means yellow, orange or red) intended to encode progressively different patterns of expected ATC activity, not certified categories of incident severity. These levels use the minimum predicted normalised separation, $\mmin$, and the time to that minimum, $\tau$. Their boundaries were selected from observed clearance associations, rather than fixed solely by engineering judgement. The resulting analysis, however, operates initially on repeated pair-instants: one aircraft pair can appear at successive two-minute evaluations, and one clearance can label many pairs. Treating these rows as independent decisions would risk overstating the amount of evidence.
+
+We therefore pose the following research question:
+\begin{quote}
+\emph{To what extent can predicted encounter geometry characterise subsequent ATC clearance activity, and how does the assessment change when clearance multiplicity, encounter-level counting and incomplete surveillance are made explicit?}
+\end{quote}
+
+The contribution is a reproducible \emph{audit-and-calibration workflow}, not a claim to have invented geometric conflict metrics, colour-coded warnings, event grouping or threshold fitting. The workflow (i) constructs and temporally validates an intervention-associated geometric partition, (ii) reconciles pair-instant labels with identifiable clearance events, (iii) aggregates repeated non-green observations into encounters, and (iv) checks prediction outcomes only where synchronised observed trajectories permit such checks. By reporting the denominators and exclusions of every step, the method tests the meaning of an intervention-derived class before using it in subsequent controller-support algorithms.
+
+The present manuscript reports completed reconstruction and audit results from the existing SCAT pipeline and, in Sect.~\ref{sec:benchmarks}, fixes a prespecified encounter-level comparison between the audited four-level partition (labelled M0) and six reference models (M1--M6): a simple geometric screen, continuous logistic models, a model with traffic context, alternative discrete partitions and a probabilistic conflict-probability baseline (Table~\ref{tab:models}). The results of that comparison have \emph{not yet been produced}; they are marked as pending rather than described as findings. This distinction preserves the difference between a demonstrated methodological problem and an as-yet unproven performance benefit.
+
+\section{Related work and research gap}\label{sec:related}
+\subsection{Controller behaviour from operational data}
+Bastas and Vouros \cite{bastas2022} formulated data-driven prediction of whether and when a controller reacts to a conflict, and subsequently studied models of the type of resolution action using historical flight information \cite{bastas2023}. Both contributions recognise the difficulty of recovering an operator's decision context from trajectories recorded after interventions have been applied. Delgado-Aguilera Jurado et al. \cite{delgado2022} evaluated potential conflict detection by controllers with a Bayesian network model calibrated from operational information. These studies establish that the use of ATC events as proxies for detection or intervention is already an established direction. The present study does not claim this idea as novel: it examines how much interpretation is lost when one clearance is used as a label for repeated and possibly unrelated pairwise observations.
+
+Other approaches seek controller-conformal conflict-resolution policies through imitation or behaviour cloning \cite{guleria2024}. Such models benefit from reliable examples of the situation that motivated an action. If each clearance is assigned to every pair containing the aircraft within a time window, the label may capture routine traffic management instead of resolution of the nominated pair. The central object of our study is therefore the integrity of the association between pairwise geometry and observed controller action, not the prediction of the specific action itself.
+
+\subsection{Conflict reconstruction, threshold selection and prediction error}
+Renkhoff \cite{renkhoff2025} reconstructed potential conflicts and compatible heading/level resolutions from the same SCAT source, while Renkhoff et al. \cite{renkhoff2026} demonstrated supervised learning for reconstructing clearance information. Gaume et al. \cite{gaume2025} extracted conflict-resolution situations from historical ADS-B trajectories and estimated proximity-related thresholds using data. These are close precedents for the constituent operations of our pipeline. A useful distinction is that their scientific questions centre on recovering interventions or deconfliction situations, whereas ours evaluates the stability and interpretation of a geometric \emph{intervention-level partition} under alternative counting and data-coverage rules. Gaume et al. had earlier proposed a heuristic catalogue of resolved lateral conflicts from ADS-B and flight plans \cite{gaume2023}. In the SCAT-based study \cite{renkhoff2025}, the retained samples are those in which a clearance prevented a potential conflict (135 heading and 3,720 flight-level clearances); we instead keep all 51,950 eligible heading/level orders and audit how many pair observations each order labels. Wüstenbecker et al. \cite{wustenbecker2025} analysed initiation delays and completion times of pilot responses on the same dataset (about 830,000 clearances), which bears directly on the choice of the 300-s association window examined in Sect.~\ref{sec:benchmarks}.
+
+Xia et al. \cite{xia2024} investigated the interaction between trajectory predictor performance and the detection characteristics of adaptive conflict-detection systems. The dependence of alert quality on prediction uncertainty is therefore also established. Our descriptive comparison of predicted and observed separation adds a different kind of evidence because it is linked to identifiable clearance records and includes an explicit missing-surveillance category. It should not, however, be presented as a calibrated probability of conflict or as a novel uncertainty model.
+
+\subsection{Specific contribution being tested}
+The literature above covers controller-action prediction, conflict reconstruction, threshold calibration, trajectory errors, and grouping of encounters. We have not identified, within these specific cited studies, an evaluation combining \emph{all} of the following as the primary object: weekly calibration of discrete intervention levels; traceable many-to-many clearance links; episode-level versus pair-instant counting; and outcome validation conditional on observed trajectory coverage. This is a \emph{scoped research gap}, not a claim that no such work exists anywhere in the field. The scientific value of the combination will depend on showing that these choices materially alter calibration, discrimination, or interpretation relative to transparent reference models. Those incremental tests are specified in Sect.~\ref{sec:benchmarks}.
+
+\section{Data, study population and provenance}\label{sec:data}
+\subsection{SCAT source and flight selection}
+SCAT comprises 13 non-consecutive weeks distributed from October 2016 to September 2017. The source describes approximately 170,000 scheduled flights, with military, private and incident-report-related flights removed \cite{nilsson2023}. The structural audit of our local archive counted 167,547 flights, 70,224,874 surveillance points, 1,187,437 raw clearance snapshots and 9,713,913 system-prediction updates. These are \emph{source-level} inventory counts; they must not be conflated with the much smaller set of flights and clearances eligible for the intervention analysis.
+
+The modelling study restricts simultaneous aircraft to flight levels FL290--FL410. At an evaluation instant, an unordered pair enters the candidate set when both aircraft are observed within the flight-level range and their current horizontal separation is below 350 NM. This wide initial radius deliberately preserves many geometrically unremarkable pairs as reference traffic. All eligible pairs are evaluated at 120-s intervals. Predictions extend 20 minutes into the future on a 10-s grid. Because the colour-calibration pipeline retains only scheduled SCAT traffic, the resulting analysis concerns normal operations as captured by that dataset and not a representative sample of all reported aviation incidents.
+
+\subsection{Clearance provenance and eligibility}
+Clearance extraction records a new change in an actionable field rather than every repeated flight-plan snapshot. It yielded 1,019,799 distinct actionable records, of which 908,165 include a heading or level component. During preprocessing, we retained level clearances only when both assigned flight levels were numeric and different, both assigned levels and the recipient's observed flight level lay within FL290--FL410, and a valid surveillance state was available no more than 10 s before the clearance. Heading clearances required a valid numeric new heading that was either an initial assignment or a change from the previous assignment, together with a valid pre-clearance surveillance state within 10 s and an observed flight level in FL290--FL410. These rules selected 50,774 level and 1,176 heading records, giving 51,950 distinct \emph{eligible heading/level clearances}. The audit preserved each original clearance identifier and reconciled it with its flight, source member, archive week and UTC epoch. Speed-only instructions were excluded from the target label.
+
+The eligibility difference is substantial: the 51,950 selected records are only a subset of the available heading/level changes. The current paper reports results for this \emph{eligible-analysis subset}; population-wide claims about all controller interventions would require an exclusion audit and sensitivity analysis using broader clearance definitions.
+
+\subsection{Temporal partition and observational units}
+Nine sampled weeks form the calibration partition and four form the evaluation partition. The four test-week start dates are 7 January, 1 April, 24 June and 16 September 2017. Colour selection was rerun using leave-one-week-out validation on the nine calibration weeks, and the resulting thresholds were held fixed during the final reported test computation. A previous exploratory version had inspected all 13 weeks; accordingly, we describe the four-week partition as \emph{held out from the final calibration run}, not as a pristine independent external validation untouched during study development.
+
+Three units are distinguished throughout the article. A \emph{pair-instant} is one unordered aircraft pair at one evaluation time. A \emph{clearance event} is one deduplicated, identified heading/level authorisation. An \emph{encounter episode} is a contiguous run of observations for the same two aircraft, defined as described in Sect.~\ref{sec:encounters}. A one-to-many or many-to-many relationship between the units is expected and is retained in the audit instead of being suppressed.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/fig01_workflow.png}
+\caption{Completed SCAT analysis workflow. Blue boxes denote observed source records and lavender boxes denote predictions, temporal links or derived summaries. The comparison of the audited partition (M0) with the reference models M1--M6 (Sect.~\ref{sec:benchmarks}) remains planned.}\label{fig:workflow}
+\end{figure}
+\section{Methodology}\label{sec:methods}
+\subsection{Predicted encounter geometry}\label{sec:geometry}
+For aircraft $i$ and $j$ evaluated at UTC instant $t_0$, let $H_{ij}(t_0+s)$ and $V_{ij}(t_0+s)$ denote their predicted simultaneous horizontal and absolute vertical separations, respectively, at look-ahead $s$. The primary predictor follows the available horizontal route points at the current observed ground speed, follows the predicted altitude profile where available (with a constant-motion fallback when no usable route exists) and samples the 20-min forecast every 10 s. It is a simplified, route-informed predictor, \emph{not} a complete four-dimensional model of planned turns, level changes or dynamic aircraft performance. The earlier analysis also tested constant-motion extrapolation; comparison with time-resolved native SCAT trajectory predictions remains a valuable sensitivity study.
+
+For the reference separation thresholds used in this exploratory analysis, we define
+\begin{equation}\label{eq:geometry}
+ m_{ij}(t_0+s)=\max\!\left\{\frac{H_{ij}(t_0+s)}{5\,\mathrm{NM}},\frac{V_{ij}(t_0+s)}{1000\,\mathrm{ft}}\right\},
+\end{equation}
+with predicted minimum and lead time
+\begin{equation}\label{eq:minimum}
+ \mmin(t_0)=\min_{s\in\{0,10,\ldots,1200\}\mathrm{s}}m_{ij}(t_0+s),\quad
+ \tau(t_0)=\mathop{\mathrm{argmin}}_{s}m_{ij}(t_0+s).
+\end{equation}
+For this metric, $m<1$ means that the horizontal and vertical thresholds are both violated \emph{at the same predicted instant}; $m=2$ means that the larger normalised separation coordinate equals two, not that both distances simultaneously equal twice their thresholds. The limits are study parameters rather than a claim that identical operational minima apply across every Swedish sector, route and flight circumstance.
+
+This maximum-coordinate definition produces nested boxes in the $(H,V)$ separation plane. It is particularly transparent for the binary geometric screen $m<1$, but it need not be a calibrated estimate of collision probability or of controller urgency. The predicted minimum and its occurrence time form a compact encounter descriptor whose association with clearance activity can be studied empirically.
+
+\subsection{Clearance association and traffic-density adjustment}\label{sec:lift}
+At each pair-instant, the response $Y_{ij,t_0}=1$ if either member of the pair has at least one \emph{eligible} heading or level clearance in the interval $(t_0,t_0+300\,\mathrm{s}]$, and zero otherwise. This is a binary indicator of a temporally associated order; the event count remains at most one per pair-instant regardless of how many clearances occur. An individual clearance can mark many pair-instants, including pairs that are not themselves the motivation for the order. The use of such a label must not be equated with a confirmed conflict.
+
+Traffic is stratified using the concurrent number of aircraft inside FL290--FL410 over the study airspace as a whole. The original calibration uses four strata, approximately 0--15, 15--25, 25--35 and more than 35 aircraft; the precise treatment of bin-edge equality must be reproduced from the code. This is \emph{global instantaneous traffic count}, not local sector density or workload. Within each stratum $d$, let $r_{0d}$ be the observed clearance-label rate in a reference green category estimated from calibration data. For a geometric group $g$ with $n_{gd}$ pair-instants, define its expected positives and stratified relative rate as
+\begin{equation}\label{eq:lift}
+ E_g=\sum_{d=1}^{4}n_{gd}r_{0d},\qquad L_g=\frac{O_g}{E_g},
+\end{equation}
+where $O_g$ is the number of pair-instants for which $Y=1$, \emph{not} the number of unique authorisations. In the calibration split the green reference is fixed to $L=1$ by construction, because $r_{0d}$ is estimated from the same green pair-instants. The test-split lifts use density-specific green reference rates re-estimated on the four test weeks, as implemented in the split-specific tier calculation. Thus test-green lift is 1 by construction; this is a descriptive held-out comparison rather than a prospective calculation with a frozen calibration reference rate. During exploratory segmentation a far-pair reference was also used as a constant scaling factor; it must not be silently combined with the final green-referenced lift values. All final tables here use the green-referenced version.
+
+The observed stratified reference rates in calibration were approximately 6.9\%, 12.1\%, 13.3\%, and 13.3\% across the increasing traffic strata. Stratification addresses one major source of confounding, but does not adjust for local density, sector, altitude, time of day, weather, flight purpose or the presence of planned changes. The word ``expected'' in Eq.~\eqref{eq:lift} therefore denotes a \emph{standardised observational comparison}, not a counterfactual estimate of how a real controller would have behaved in the absence of risk.
+
+\subsection{Statistical calibration of discrete levels}\label{sec:colors}
+Candidate geometric cells were formed from nine bands of $\mmin$ (below 1; 1--1.2; 1.2--1.5; 1.5--2; 2--3; 3--4; 4--6; 6--8; and 8--12) and four lead-time bands (below 2; 2--5; 5--10; and 10--20 min). Candidate intervention levels were fitted using the rate information within cells. The threshold-selection analysis compared constrained, operationally interpretable partitions with more flexible statistical groupings and considered different numbers $K$ of levels. For an ordered collection of cells, a profile-Poisson objective can be written, up to constants common to alternative partitions, as
+\begin{equation}\label{eq:partition}
+ \mathcal{Q}(\mathcal{P}_K)=\sum_{k=1}^{K}O_k\log\!\left(\frac{O_k}{E_k}\right),
+\end{equation}
+where $\mathcal{P}_K$ partitions the cells into $K$ contiguous groups in the chosen ordering; terms with $O_k=0$ are treated by continuity. A dynamic-programming segmentation step was used for that restricted search; exact segmentation by dynamic programming is reviewed in \cite{killick2012}. The operational colour scheme was selected by comparing predictive gains across nine leave-one-week-out calibration folds, with a simpler four-level specification preferred when the incremental improvement of a fifth level was small.
+
+The frozen nominal rules used in the subsequent audits are
+\begin{equation}\label{eq:color}
+ C(\mmin,\tau)=
+ \begin{cases}
+ \mathrm{red},& \mmin<1,\ \tau<300\,\mathrm{s},\\
+ \mathrm{orange},& \mmin<1,\ 300\le\tau\le1200\,\mathrm{s},\\
+ \mathrm{yellow},&1.2\le\mmin<2,\\
+ \mathrm{green},&\text{otherwise}.
+ \end{cases}
+\end{equation}
+In particular, $1\le\mmin<1.2$ is green in this data-driven solution. That counterintuitive choice shows why these colours cannot simply be described as four monotonically increasing \emph{geometric danger} classes. They instead reflect an observed pattern of subsequent clearance activity under a specific forecasting and labelling pipeline. The near-threshold green band requires a dedicated sensitivity test, particularly for $\tau<2$ min, where elevated rates were found in exploratory cells.
+
+The calibration analysis reported that the four-level operational scheme captured 87.8\% of the attainable score improvement under the study's specific comparison set and five-minute target; a three-level scheme captured 84.2\%, while splitting the red category at two minutes added only approximately 0.8 percentage points to that score. These percentages describe \emph{the defined segmentation criterion}, not the fraction of avoidable conflicts detected, a general clinical-style explained variance, or an established operational performance level. The score-normalisation denominator and the full candidate-grid definition must be supplied in the final supplementary material.
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}[b]{0.42\linewidth}
+\centering
+\includegraphics[width=\linewidth]{figures/fig02a_geometry.png}
+\caption{Normalised-separation geometry with the region of each class shaded in its colour.}\label{colorsa}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.55\linewidth}
+\centering
+\includegraphics[width=\linewidth]{figures/fig02b_lift_heatmap.png}
+\caption{Clearance lift relative to the final green class.}\label{colorsb}
+\end{subfigure}
+\caption{Normalised-separation geometry and the four intervention-activity classes. In (b), calibration-week (nine weeks), traffic-density-adjusted lift of the five-minute eligible-order label relative to the final green class is shown; outlines mark the selected regions. The 1--1.2 band is green. Colours are not certified safety categories.}\label{fig:colors}
+\end{figure}
+
+\subsection{Traceable clearance-to-pair reconciliation}\label{sec:attribution}
+The clearance-attribution audit replayed the pairwise prediction calculation for all 13 archive weeks and exported one canonical Parquet row per eligible pair-instant. Each row preserves both aircraft identifiers, archive/source member, UTC evaluation time, $\mmin$, $\tau$, frozen colour and the original binary future-clearance label. A separate table retains the original clearance identifier and its timestamp. Attribution checks whether the clearance belongs to either aircraft in the pair and falls inside the stipulated future window. No deduplication is performed solely by matching coincident timestamps.
+
+For each identified clearance $c$, let $A(c)$ be the set of labelled pair-instants containing its recipient. The multiplicity $|A(c)|$ is reported along with the number of distinct aircraft pairs and non-green episodes linked to that event. Reconciliation tests verify that the reconstructed binary flags reproduce the original binary future-order label for every pair-instant. This check establishes internal consistency of the data pipeline; it does not establish why the controller issued any given instruction.
+
+\subsection{Encounter aggregation and temporal order categories}\label{sec:encounters}
+Pair-instants of the same two source aircraft are grouped into a single \emph{non-green episode} if consecutive non-green observations lie at most 360 s apart within the same archive week. The colour of an episode is the most severe colour it attained. Green pairs are not episode-segmented in the completed encounter aggregation, which is an important restriction on green-to-red encounter-level comparisons. A prior eligible order is a heading/level clearance to either member in the 600 s before episode onset; a later eligible order is one in the following 300 s of any pair-instant within the episode.
+
+The episode categories \emph{prior only}, \emph{later only}, \emph{both}, and \emph{neither} are mutually exclusive after combining their two binary indicators. The window definitions are operationally motivated audit heuristics, not validated causal intervention boundaries. Their sensitivity to 300, 600 and 360 s must be tested. A flight can appear in multiple overlapping encounters, and even a unique clearance may still be linked to several episodes; grouping repeated observations is necessary but insufficient to solve action attribution completely.
+
+\subsection{Synchronized retrospective trajectory validation}\label{sec:observation}
+For retrospective validation, we reconstruct the subsequent surveillance tracks of the two aircraft in an episode and evaluate their horizontal and vertical separation at the \emph{same} UTC grid instants. The forecast and observation are anchored to the first snapshot at which the episode attained its highest colour. The 20-min observed horizon uses a 10-s grid. Interpolation is allowed only across short gaps of at most 30 s, with no extrapolation beyond available surveillance points. An observed minimum is considered evaluable only when at least 80\% of the grid is covered and both endpoints are present. Asserting that an anticipated loss \emph{did not occur} additionally requires complete coverage.
+
+An observed normalised minimum $m_{\mathrm{obs}}<1$ is a geometric screening outcome, not by itself a certified operational separation minima infringement or incident. Conversely, an observed minimum above one does not prove that the original alert was unnecessary: the aircraft may have been influenced by earlier instructions, expected route changes or other unseen constraints. Episodes with insufficient follow-up are reported as \emph{not evaluable}, rather than relabelled as safe.
+
+The screening also checks whether an observable heading or level change is compatible with the recorded instruction and records its approximate onset. Finally, it compares observed separation with a constant-horizontal-and-vertical-velocity projection based on pre-clearance states. This projection is explicitly a weak sensitivity screen: it neglects planned manoeuvres and possible subsequent actions of either aircraft. It is not a credible causal estimator of a clearance's prevented loss of separation without stronger flight-plan and operational information.
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}[b]{0.49\linewidth}
+\centering
+\includegraphics[width=\linewidth]{figures/fig03a_full_horizon.png}
+\caption{Complete 20-minute horizon.}\label{examplea}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.49\linewidth}
+\centering
+\includegraphics[width=\linewidth]{figures/fig03b_closest_approach.png}
+\caption{Closest-approach detail.}\label{exampleb}
+\end{subfigure}
+\caption{Predicted and observed normalised separation for an example red encounter. The route-based forecast was frozen at the reference time (0 min); the two eligible orders (numbered in (b)) and their estimated manoeuvre onsets are marked.}\label{fig:example}
+\end{figure}
+
+\subsection{Uncertainty and statistical dependence}\label{sec:uncertainty}
+The calibration summary used 400 bootstrap replicates resampling whole days, with percentile-based 95\% intervals. This is preferable to treating millions of pair-instants as independent draws because repeated assessments of a flight and its neighbouring aircraft occur within a day. Nevertheless, day-level resampling cannot eliminate systematic confounding, shared-order weighting, or dependence across day boundaries. Moreover, significance tests computed from overlapping cross-validation training folds can be optimistic; the nine-fold paired $t$ statistics are therefore not treated here as decisive evidence of optimal class count. More conservative checks include fold-consistency summaries, week-level effect sizes, and cluster-aware bootstrap resampling of whole days or of encounters evaluated on encounter-level outcomes \cite{field2007}.
+
+\section{Completed results}\label{sec:results}
+\subsection{Pair-instant classification and week-level evaluation}
+The canonical reconstruction contains 21,567,488 pair-instants over the 91 nominal SCAT days. The event-level reconciliation reproduces the original binary future-order labels, with zero disagreements. Table~\ref{tab:pair} reports exact counts and final green-referenced lifts. These are rates of \emph{pair-instants with a later eligible order}, not rates of independent conflicts or distinct controller decisions. The calibrated trend increases from green through red, but should not be read as evidence that red incidents were observed.
+
+\begin{table}[t]
+\caption{Frozen four-class summary for the nine calibration weeks and four evaluation weeks. ``With label'' denotes an eligible heading/level clearance within 300 s of that pair-instant; rows are not independent events. Confidence intervals are the reported day-bootstrap 95\% intervals. Test-split lifts use green reference rates re-estimated on the test weeks.}\label{tab:pair}
+\begin{tabular}{@{}llrrrl@{}}
+\toprule
+Split & Class & Pair-instants & With label & Rate (\%) & Lift (95\% CI)\\
+\midrule
+Cal. & Green & 14,616,594 & 1,906,874 & 13.0 & 1.00 (ref.)\\
+Cal. & Yellow & 75,289 & 15,361 & 20.4 & 1.56\\
+Cal. & Orange & 12,896 & 3,641 & 28.2 & 2.15\\
+Cal. & Red & 5,829 & 2,223 & 38.1 & 2.91\\
+Test & Green & 6,812,986 & 919,826 & 13.5 & 1.00 (ref.)\\
+Test & Yellow & 35,071 & 7,269 & 20.7 & 1.53 (1.48--1.59)\\
+Test & Orange & 6,218 & 1,874 & 30.1 & 2.23 (2.10--2.34)\\
+Test & Red & 2,605 & 1,100 & 42.2 & 3.11 (2.91--3.32)\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+The relative differences are consistent with a graded intervention-activity response under the chosen denominator. A count of 2,605 red pair-instants in test should not be described as 2,605 independent red conflict encounters. Indeed, the same aircraft pair may be sampled repeatedly and even a clearance unrelated to this pair's geometry may cause a positive label.
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}[b]{0.49\linewidth}
+\centering
+\includegraphics[width=\linewidth]{figures/fig04a_label_rate.png}
+\caption{Label rate (pair-instant denominators above bars).}\label{lifta}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.49\linewidth}
+\centering
+\includegraphics[width=\linewidth]{figures/fig04b_relative_lift.png}
+\caption{Relative lift versus green.}\label{liftb}
+\end{subfigure}
+\caption{Eligible clearance-label rates for pair-instants in calibration and test, with 95\% intervals from 400 whole-day bootstrap replicates (a), and density-adjusted green-referenced lifts (b). Numbers above bars give pair-instant denominators. These are repeated observations with a later order, not independent encounters or confirmed incidents.}\label{fig:lift}
+\end{figure}
+
+\subsection{Multiplicity of clearance attribution}\label{sec:results_attribution}
+Of 51,950 eligible unique orders, 47,339 were associated with at least one pair-instant by the specified five-minute matching rule; the remaining 4,611 had no linked pair-instant and are not shown in Fig.~\ref{fig:multiplicity}(a). In total, 3,176,638 order-to-pair-instant links were found, exceeding the 2,858,168 pair-instants with a positive label because some pair-instants had more than one order in their window. The median number of linked pair-instants per linked clearance was 65, with 90th percentile 108. For one manually checked source clearance, 96 pair-instants encompassing 38 distinct flight pairs were linked within the five-minute window. Such multiplicity is an empirical reason to reconsider naive label-level independence.
+
+Importantly, a distinct clearance may be counted in more than one colour if the receiving aircraft participates in different nearby pairs. Similarly, at episode level there were 45,463 episode--clearance links representing only 28,324 distinct linked clearances. Of these, 11,474 were linked to more than one episode. Any paper reporting ``orders in red'' should therefore specify whether orders are unique across all colours, within-colour unique, or event--episode links.
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}[b]{0.33\linewidth}
+\centering
+\includegraphics[width=\linewidth]{figures/fig05a_links_per_order.png}
+\caption{Linked pair-instants per clearance (zero-linked orders included).}\label{multiplicitya}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.33\linewidth}
+\centering
+\includegraphics[width=\linewidth]{figures/fig05b_pairs_per_order.png}
+\caption{Distinct flight pairs per linked clearance.}\label{multiplicityb}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.28\linewidth}
+\centering
+\includegraphics[width=\linewidth]{figures/fig05c_link_totals.png}
+\caption{Event and link totals.}\label{multiplicityc}
+\end{subfigure}
+\caption{Many-to-many association of eligible controller clearances with pairwise observations. Panel (a) shows only the 47,339 orders with at least one linked pair-instant; the remaining 4,611 eligible orders have none. One order may label several pairs and repeated snapshots. This is label multiplicity, not controller workload.}\label{fig:multiplicity}
+\end{figure}
+
+\subsection{Non-green encounter episodes and order timing}
+The encounter aggregation identifies 54,441 non-green episodes across the 13 weeks: 39,351 yellow, 9,039 orange and 6,051 red under their maximum attained colour. Within the four evaluation weeks there were 1,863 red episodes. Their mutually exclusive order-timing categories were 642 later-only, 213 both prior and later, 187 prior-only, and 821 with neither eligible order in the selected windows. Hence, 855/1,863 (45.9\%) had a later eligible order and 400/1,863 (21.5\%) had a prior eligible order, while 821/1,863 (44.1\%) had neither; these overlapping marginals must not be added. The 42.2\% rate reported for red \emph{pair-instants} is therefore not the same estimand as the 45.9\% share of red \emph{episodes} with a later eligible order.
+
+These values also depend on episode construction, eligibility filters and temporal windows. They do not tell us which of the 821 apparently unlinked red encounters were resolved before the earlier window, followed a planned manoeuvre, or would have led to a loss without some unrecorded response. A subsequent broader examination found that 99 of these 821 episodes had an eligible order 10--30 min before onset, and 574 had \emph{some} recorded clearance in the preceding 30 min. Those broader categories are not equivalent to the narrow eligible-order label and are not interpreted as confirmed resolutions.
+
+\begin{figure}[t]
+\centering
+\includegraphics[width=\linewidth]{figures/fig06_red_episode_orders.png}
+\caption{Mutually exclusive timing categories for 1,863 red encounter episodes in the four test weeks. Prior means an eligible order in the 600 s before episode onset; later means an eligible order within 300 s after any episode observation. One order may link to several encounters; temporal association is not evidence of causal resolution. The 42.2\% rate (1,100/2,605 red pair-instants) and the 45.9\% share (855/1,863 red episodes with a later order) use different denominators.}\label{fig:episodeorders}
+\end{figure}
+
+\subsection{Follow-up coverage and observed separation}\label{sec:results_coverage}
+A major result is the limitation imposed by subsequent surveillance. Of 54,441 non-green episodes, 27,451 (50.4\%) met the specified criterion for an evaluable synchronised observed minimum; 26,990 were excluded for insufficient follow-up. Of the evaluable set, 27,447 had complete 10-s grid coverage. Table~\ref{tab:coverage} shows that the evaluability rate depends strongly on colour: only 1,744/6,051 red episodes (28.8\%) are evaluable, versus 5,802/9,039 orange (64.2\%) and 19,905/39,351 yellow (50.6\%). Since the opportunity to observe the subsequent minimum is not uniform, evaluating only available episodes can distort comparisons between colours.
+
+\begin{table}[t]
+\caption{Encounter-level coverage and geometric screening outcome across all 13 SCAT weeks. ``Observed below 1'' means a synchronised measured value of $m<1$, not a certified operational incident.}\label{tab:coverage}
+\begin{tabular}{@{}lrrrrr@{}}
+\toprule
+Class & Episodes & Evaluable & Evaluable (\%) & Obs. $m<1$ & Pred. loss not obs.\\
+\midrule
+Yellow & 39,351 & 19,905 & 50.6 & 349 & Not applicable\\
+Orange & 9,039 & 5,802 & 64.2 & 470 & 5,332\\
+Red & 6,051 & 1,744 & 28.8 & 703 & 1,040\\
+\midrule
+Total & 54,441 & 27,451 & 50.4 & 1,522 & --\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For red encounters, 703 evaluable episodes had an observed normalised minimum below one; 1,040 had a forecast loss not observed under complete follow-up (one additional evaluable episode did not meet that stricter complete-coverage criterion). These counts do not establish detector precision or false-alarm rates, because planned and executed manoeuvres may have changed the trajectories and the SCAT population excludes flights in incident reports. They are primarily a descriptive indication of disagreement between a simplified forecast and later observed trajectories.
+
+In the four evaluation weeks specifically, 821 red episodes had no eligible order in the original timing windows. Only 150 of those were evaluable; 89 had observed $m<1$ and 61 had complete follow-up with observed $m\ge1$. Of those 61, 46 had at least one recorded clearance in a broadened 30-min preceding window and 13 had none in that broadened window or the episode/five-minute follow-up; the remaining 2 cases had no recorded clearance in the preceding 30 minutes but had at least one during the episode/five-minute follow-up. Their median normalised prediction discrepancy was approximately 0.020, and only one exceeded 0.1. These residual cases remain \emph{unexplained by the specified order-linking procedure}, rather than demonstrated false alarms.
+
+\begin{figure}[t]
+\centering
+\begin{subfigure}[b]{0.49\linewidth}
+\centering
+\includegraphics[width=\linewidth]{figures/fig07a_coverage.png}
+\caption{Surveillance coverage.}\label{coveragea}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.49\linewidth}
+\centering
+\includegraphics[width=\linewidth]{figures/fig07b_observed_screen.png}
+\caption{Observed geometric screen.}\label{coverageb}
+\end{subfigure}
+\caption{Surveillance evaluability and observed geometric screening across all 13 weeks. Evaluable requires at least 80\% of the 10-s grid and both endpoints; absence of an observed predicted loss is claimed only under complete coverage, and one red evaluable episode has partial coverage. Observed $m<1$ is a geometric screen, not a certified incident.}\label{fig:coverage}
+\end{figure}
+
+\subsection{Observed manoeuvres and limits of inertial screening}
+Among 28,324 distinct clearances linked to non-green encounters, 16,566 (58.5\%) showed a trajectory change compatible with the recorded heading or level target, while 23,875 (84.3\%) showed some observable change, whether or not it could be matched confidently to the order. A further 3,071 had no observable execution and 1,378 were indeterminate. For compatible changes, the proxy onset quantiles were 20, 30 and 110 seconds after issue. These are observational compatibility categories, not a reconstruction of a controller's intent. A large fraction of linked clearances (22,159) had another recorded clearance within five minutes.
+
+An exploratory constant-velocity pre-order projection had sufficient pre-order state and observed follow-up for 30,081 of 63,524 projection rows. Among the rows compatible with a manoeuvre, 578 had projected $m<1$ and fully observed $m\ge1$; only 17 exceeded a 90th-percentile absolute projection-error threshold computed from 3,807 full-coverage calibration reference rows without linked orders. Even those 17 do not provide clean causal evidence, because nearby orders or interactions may explain the difference. In test, all three cases above that error threshold had a nearby order. A scientifically defensible count of \emph{conflicts prevented by clearance} is therefore \emph{not available} from the current screening procedure.
+
+\section{Discussion}\label{sec:discussion}
+\subsection{Why the observational unit matters}
+The observed gradient of clearance-label lift across green, yellow, orange and red is reproducible at pair-instant level. It does not follow that the corresponding rates would be unchanged after weighting each independent encounter once or assigning each clearance to its most plausible motivating interaction. The clearance-attribution audit supplies the quantitative basis for this warning: a single clearance typically affects dozens of pair-instant labels and often multiple encounters. Consequently, a colour with many repeated observations per aircraft may appear better supported even when its independent encounter count is modest. The correct next test is to compare probabilities and calibration errors under clearly defined estimands, while preserving all many-to-many links rather than selecting a ``true'' motivating pair without evidence.
+
+A possible estimand is the probability that at least one eligible order is associated with an episode within a prespecified horizon, conditional on its entry geometry and available traffic context. A different, aircraft-level estimand would be the probability of any order to the focal aircraft. They answer different research questions and require different exposure denominators. The present paper deliberately avoids declaring one universally correct; the goal is to show how the choice affects interpretation.
+
+\subsection{Why the four levels are a hypothesis, not a safety scale}
+The calibrated four-colour partition is a convenient summary of the original pair-instant analysis, with increasing positive-label rates. Its thresholds are not universal operational standards. The inclusion of $1\le\mmin<1.2$ in green is a revealing feature: the scheme is not geometrically monotone near the threshold. An episode near $m=1.1$ can be assigned green even while a more widely separated episode is yellow. This may reflect low subsequent-order rates in the selected sample, order timing, forecast error, or the effects of previously issued instructions; none has yet been distinguished. A mandatory sensitivity analysis should compare (i) the current unconstrained interpretation, (ii) a monotonic geometry-constrained version, and (iii) a continuous calibrated model of $\mmin$ and $\tau$.
+
+The number of levels was chosen through week-based predictive comparison and a simplicity preference, not discovered as an intrinsic property of the airspace. The improvement from a fifth level was small under the selected target and score, but the choice might change under a two-minute order window, different traffic strata or encounter-level weighting. Accordingly, a paper centred only on ``four optimal colours'' would be weakly distinguished from prior threshold-calibration studies \cite{delgado2022,gaume2025,xia2024}. Its more defensible contribution lies in making visible the data decisions that govern such a conclusion.
+
+\subsection{Censoring, selection and non-causal interpretation}
+The incomplete retrospective surveillance is not a minor footnote. More than 70\% of red episodes lack an evaluable observed minimum under the chosen stringent criteria. This could arise from trajectories leaving the studied altitude band or region, missing tracks, archive boundaries or temporal matching failures, and the relative contribution of these causes remains to be established. Because coverage depends on class, complete-case estimates should not be generalised to all red episodes without evidence about missingness. Stratified missingness models, inverse-probability weighting \cite{seaman2013} with appropriate diagnostics, and worst/best-case sensitivity bounds are plausible follow-up analyses; none is reported as completed here.
+
+The dataset construction excludes flights involved in incident reports \cite{nilsson2023}. This is important for any attempt to validate actual loss-of-separation outcomes: the most consequential events may be absent by design. The reported geometric threshold also does not replace sector- and flight-specific operational rules. A high future-order rate can reflect sequencing, direct routing, requested level changes or other controller tasks. There is no ground-truth mapping from an observed clearance to a specific predicted aircraft pair, and even an observed post-clearance increase in separation is not proof of causation. The present article therefore characterises \emph{historically observed clearance activity}, not actual risk perception, controller attention, confirmed incidents, or safety improvement.
+
+\subsection{Relation to operational MTCD and controller decision support}
+EUROCONTROL's MTCD specification already encompasses aircraft encounters, probabilities and interactions \cite{eurocontrol2017}. A four-colour score cannot be positioned as a replacement for those functions without an operational comparison. The current pipeline does not account for real controller-sector workload, alert suppression, sector-specific rules or false-alert costs. The scientifically appropriate application is to use the reconstructed associations to understand whether a compact activity indicator can provide supplementary information in a future ATM decision-support model. Any claims about actual alert burden require de-duplicated events per sector and hour, rather than raw pair-instants.
+
+\section{Encounter-level comparison against reference models: protocol and results}\label{sec:benchmarks}
+To determine whether the proposed treatment is an incremental scientific contribution rather than a descriptive audit, this section fixes the comparison protocol \emph{before} the models are scored on the four evaluation weeks. Entries marked ``pending'' are results that have not been produced; none of them is an estimate.
+
+\subsection{Estimands, cohorts and splits}
+\emph{Primary estimand.} For an encounter episode $e$, $Y^{\mathrm{ep}}_e=1$ if at least one eligible heading/level clearance to either aircraft falls in the \emph{later} window defined in Sect.~\ref{sec:encounters}. Prior-order status is a covariate, not part of the outcome, because a prior order may already have resolved the encounter. An aircraft-level estimand (any order to the focal aircraft) is reported as secondary, since it answers a different question with a different exposure denominator.
+
+\emph{Cohorts.} To avoid comparing non-green episodes with unsegmented green pair-instants, the 360-s gap rule is applied to green pair-instants as well, restricted to $\mmin<2$ \tbc{fix this inclusion threshold before running}; a run in which every instant is green forms a green episode, and any run containing a non-green instant keeps its maximal colour. Results are reported under both pair-instant weighting and one-episode-one-vote weighting. A clearance linked to several episodes is kept in all of them; no ``true'' motivating pair is selected.
+
+\emph{Splits.} All fitting and model selection use the nine calibration weeks (with leave-one-week-out folds for hyperparameters). The four test weeks are scored once, with thresholds and parameters frozen.
+
+\subsection{Models and metrics}
+Table~\ref{tab:models} defines the seven models, labelled M0--M6. M0 is the four-level partition audited in the preceding sections, so every other model is compared against it. M1 is the simplest detector, a yes/no flag for a predicted loss of separation. M2 and M3 replace the discrete levels by a smooth probability of a later order, using $\mmin$ alone (M2) or $\mmin$ and $\tau$ together (M3). M4 adds traffic context and prior orders to M3. M5 keeps discrete levels but forces them to be monotone in geometry and varies their number. M6 is a classical probabilistic baseline that converts prediction uncertainty into a conflict probability. All are compared on exactly the same splits and cohorts.
+
+\begin{table}[t]
+\caption{Models compared at the episode level. All are fitted on the nine calibration weeks and frozen before the four evaluation weeks are scored.}\label{tab:models}
+\begin{tabular}{@{}lp{0.45\linewidth}p{0.30\linewidth}@{}}
+\toprule
+ID & Model & Role\\
+\midrule
+M0 & Frozen four-level partition (Eq.~\eqref{eq:color}) & Object of the audit\\
+M1 & Binary geometric screen $\mmin<1$ within 20 min & Nominal-detection baseline\\
+M2 & Logistic regression on $\mmin$ only & Parsimonious continuous baseline\\
+M3 & Logistic regression on smooth terms of $(\mmin,\tau)$ & Continuous two-variable model\\
+M4 & M3 plus traffic stratum and prior-order indicator & Contextual model\\
+M5 & Monotone-constrained partitions with $K=3,4,5$ levels & Discrete alternatives\\
+M6 & Conflict probability under Gaussian prediction error growing with look-ahead \cite{paielli1997,prandini2000} & Probabilistic baseline\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+For M6, the error parameters are estimated on the calibration weeks from synchronised observed-minus-predicted separations where these are evaluable \tbc{specify the error model and its parameters}. Models are compared with the Brier score and the logarithmic score, both strictly proper scoring rules \cite{gneiting2007}, together with calibration intercept and slope and decile reliability curves; discrimination (area under the ROC curve) is secondary. Association statistics are \emph{not} safety precision. Uncertainty comes from a day-cluster bootstrap with at least 400 replicates \cite{field2007} and from week-level paired differences, which with four test weeks are descriptive and not significance tests. Alert burden is reported as deduplicated non-green episodes per hour, not as raw pair-instants.
+
+\emph{Decision rule (prespecified).} M0 is recommended as a summary only if its held-out Brier score differs from the best of M2--M4 by less than the bootstrap standard error of the difference \tbc{authors to confirm this threshold}. Otherwise the continuous model is the primary result and M0 is presented as an interpretability layer. The test weeks are not used again to select model complexity.
+
+\subsection{Sensitivity analyses}
+The analysis is repeated under: episode gaps of 240, 360 and 480 s; later-order windows of 120, 300 and 600 s and prior-order windows of 300 and 600 s; the broader set of extracted heading/level clearances (908,165 records) instead of the 51,950 eligible orders; a monotone variant of the near-threshold green band $1\le\mmin<1.2$; alternative traffic-stratum edges; and alternative predictors (constant-velocity extrapolation and the native SCAT trajectory predictions).
+
+\subsection{Eligibility, coverage and missingness}
+The preprocessing selection cascade from the 908,165 heading/level records to the 51,950 eligible events will be documented with exclusion reasons by week, aircraft type and traffic context. For the observed-outcome checks, results are reported under complete-case analysis, under inverse-probability weighting with an evaluability model (colour, week, altitude, region) \cite{seaman2013}, and under best/worst-case bounds; reasons for missing follow-up are tabulated by colour. If operationally labelled conflicts are required, an independent expert reviews a prespecified sample with time-resolved planned trajectories and the applicable separation rules.
+
+\subsection{Results of the comparison}
+Table~\ref{tab:bench} is a result skeleton; every cell is \pend{} until the protocol above has been run. No performance claim is made in this version of the manuscript.
+
+\begin{table}[t]
+\caption{Held-out encounter-level comparison on the four evaluation weeks (primary estimand). $\Delta$Brier is relative to M0, with day-cluster bootstrap 95\% interval.}\label{tab:bench}
+\begin{tabular}{@{}lcccc@{}}
+\toprule
+Model & Brier & Log score & Calib. slope & $\Delta$Brier vs M0\\
+\midrule
+M0 & \pend & \pend & \pend & --\\
+M1 & \pend & \pend & \pend & \pend\\
+M2 & \pend & \pend & \pend & \pend\\
+M3 & \pend & \pend & \pend & \pend\\
+M4 & \pend & \pend & \pend & \pend\\
+M5 ($K=3,4,5$) & \pend & \pend & \pend & \pend\\
+M6 & \pend & \pend & \pend & \pend\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[t]
+\centering\figplaceholder{Future results only. Held-out comparison plot for M0--M6 with week-level and day-cluster bootstrap intervals, calibration curves and deduplicated alert counts per hour. Do not populate with simulated or invented improvements.}
+\caption{Planned M0--M6 benchmark figure. Results are pending; no model-comparison values are plotted in this draft.}\label{fig:benchmarks}
+\end{figure}
+
+\section{Conclusions}\label{sec:conclusion}
+A historical ATC clearance is a real operational record but is not automatically a uniquely attributable response to a particular pairwise encounter. This study provides a traceable reconstruction of pair-instants, an empirical four-level intervention-activity partition, an event-reconciliation audit and a surveillance-coverage-aware retrospective assessment over 13 sampled SCAT weeks. The analysis shows that the clearance-label gradient is reproducible at pair-instant level, while unique clearances create many repeated links and observation coverage is particularly limited for red episodes.
+
+The central scientific implication is that data-driven encounter classes must be evaluated at the unit and with the target appropriate to the intended application. The present results support an audit methodology and expose substantial measurement and interpretation problems; they do not demonstrate four intrinsic risk categories, the causal prevention of losses of separation, or superiority to existing conflict-detection tools. The prespecified encounter-level comparison with continuous, discrete and probabilistic baselines (Sect.~\ref{sec:benchmarks}), together with eligibility and missingness sensitivity tests, is the step that will establish whether the framework has incremental value \tbc{replace with the actual findings once the comparison has been run}.
+
+\section*{Statements and Declarations}
+\noindent\textbf{Funding.} No funds, grants, or other support was received.\\
+\textbf{Competing interests.} The authors have no relevant financial or non-financial interests to disclose.\\
+\textbf{Author contributions.} Borja Rodríguez Frade was the main contributor: he conceived the study, performed the analyses, wrote the code and wrote the manuscript. Félix Hernández del Olmo and Elena Gaudioso Vázquez reviewed the manuscript.\\
+\textbf{Data availability.} The SCAT dataset analysed here is publicly available on Mendeley Data (\url{https://doi.org/10.17632/8yn985bwz5.1}) \cite{nilsson2023}. The derived pair-instant and episode tables are \tbc{state whether they are included in the code repository or available on request; verify the SCAT licence permits redistribution of derived tables}.\\
+\textbf{Code availability.} The code used for the analysis and the scripts that generate the figures are available at \url{https://github.com/BorjaFrade/ai-based-air-traffic-management}. \tbc{add the release tag or commit hash and a persistent archive DOI (e.g., Zenodo) for the submitted version}\\
+\textbf{Ethics approval.} Not applicable to the analysis of the available de-identified operational records; no ethics committee approval was required.\\
+\textbf{Use of generative AI.} Generative AI (Claude, Anthropic) was used to improve the readability of the manuscript and to generate some of the Python scripts used for the data analysis. It was not used to produce the data or the numerical results. The authors reviewed and verified all analyses, numbers, figures and references and take full responsibility for the content. \tbc{authors to confirm and add the model version and dates of use, in line with the Springer Nature AI policy}
+
+\begin{thebibliography}{99}
+\bibitem{eurocontrol2017} EUROCONTROL: EUROCONTROL Specification for Medium-Term Conflict Detection (MTCD), Edition 2.0, EUROCONTROL-SPEC-0139 (2017). \url{https://www.eurocontrol.int/publication/eurocontrol-specification-medium-term-conflict-detection-mtcd}
+\bibitem{kuchar2000} Kuchar, J.K., Yang, L.C.: A review of conflict detection and resolution modeling methods. IEEE Trans. Intell. Transp. Syst. \textbf{1}(4), 179--189 (2000). \url{https://doi.org/10.1109/6979.898217}
+\bibitem{paielli1997} Paielli, R.A., Erzberger, H.: Conflict probability estimation for free flight. J. Guid. Control Dyn. \textbf{20}(3), 588--596 (1997). \url{https://doi.org/10.2514/2.4081}
+\bibitem{prandini2000} Prandini, M., Hu, J., Lygeros, J., Sastry, S.: A probabilistic approach to aircraft conflict detection. IEEE Trans. Intell. Transp. Syst. \textbf{1}(4), 199--220 (2000). \url{https://doi.org/10.1109/6979.898224}
+\bibitem{icao4444} International Civil Aviation Organization: Procedures for Air Navigation Services -- Air Traffic Management (PANS-ATM), Doc 4444, 16th edn. ICAO, Montr\'eal (2016). \url{https://s-store.icao.int/en/procedures-for-air-navigation-services-air-traffic-management-doc-4444}
+\bibitem{bastas2022} Bastas, A., Vouros, G.A.: Data-driven prediction of air traffic controllers reactions to resolving conflicts. Information Sciences \textbf{613}, 763--785 (2022). \url{https://doi.org/10.1016/j.ins.2022.09.015}
+\bibitem{bastas2023} Bastas, A., Vouros, G.A.: Data-driven modeling of air traffic controllers' policy to resolve conflicts. Aerospace \textbf{10}(6), 557 (2023). \url{https://doi.org/10.3390/aerospace10060557}
+\bibitem{delgado2022} Delgado-Aguilera Jurado, R., G\'omez Comendador, V.F., Zamarre\~no Su\'arez, M., P\'erez Moreno, F., Verdonk Gallego, C.E., Arnaldo Vald\'es, R.M.: Assessment of potential conflict detection by the ATCo. Aerospace \textbf{9}(9), 522 (2022). \url{https://doi.org/10.3390/aerospace9090522}
+\bibitem{nilsson2023} Nilsson, J., Unger, J.: Swedish civil air traffic control dataset. Data in Brief \textbf{48}, 109240 (2023). \url{https://doi.org/10.1016/j.dib.2023.109240}
+\bibitem{renkhoff2025} Renkhoff, J.: Identifying potential conflicts and corresponding resolutions in the upper airspace from historical air traffic data. Deutscher Luft- und Raumfahrtkongress (DLRK) 2025 (2025). \url{https://doi.org/10.25967/650174}
+\bibitem{renkhoff2026} Renkhoff, J., W\"ustenbecker, N., Jameel, M., Schier-Morgenthal, S.: Predicting and reconstructing clearances from air traffic data using a supervised learning approach. CEAS Aeronautical Journal \textbf{17}, 343--354 (2026). \url{https://doi.org/10.1007/s13272-025-00854-x}
+\bibitem{wustenbecker2025} W\"ustenbecker, N., Renkhoff, J., Zeppenfeld, D., Jameel, M., Schier-Morgenthal, S.: Analysis and prediction of pilot response time to air traffic control clearances. CEAS Aeronautical Journal \textbf{17}, 507--520 (2026). \url{https://doi.org/10.1007/s13272-025-00848-9}
+% Volume/pages of this entry come from a secondary index (SciProfiles); check against the Springer page.
+\bibitem{guleria2024} Guleria, Y., Pham, D.-T., Alam, S., Tran, P.N., Durand, N.: Towards conformal automation in air traffic control: Learning conflict resolution strategies through behavior cloning. Advanced Engineering Informatics \textbf{59}, 102273 (2024). \url{https://doi.org/10.1016/j.aei.2023.102273}
+\bibitem{gaume2025} Gaume, K., Olive, X., Gianazza, D., Alligier, R., Durand, N.: Extracting aircraft conflict-resolution situations from historical ADS-B data. Transportation Research Interdisciplinary Perspectives \textbf{34}, 101669 (2025). \url{https://doi.org/10.1016/j.trip.2025.101669}
+\bibitem{gaume2023} Gaume, K., Olive, X., Gianazza, D., Alligier, R., Durand, N.: A catalogue of deconfliction actions extracted from historical ADS-B data. Journal of Open Aviation Science \textbf{1}(2) (2023). \url{https://doi.org/10.59490/joas.2023.7222}
+\bibitem{xia2024} Xia, C., Verdonk Gallego, C.E., Bracero, A.F., G\'omez Comendador, V.F., Arnaldo Vald\'es, R.M.: Trajectory predictor and conflict detection figures of merit for a performance-based adaptive air traffic monitoring system. Aerospace \textbf{11}(2), 155 (2024). \url{https://doi.org/10.3390/aerospace11020155}
+\bibitem{killick2012} Killick, R., Fearnhead, P., Eckley, I.A.: Optimal detection of changepoints with a linear computational cost. J. Am. Stat. Assoc. \textbf{107}(500), 1590--1598 (2012). \url{https://doi.org/10.1080/01621459.2012.737745}
+\bibitem{field2007} Field, C.A., Welsh, A.H.: Bootstrapping clustered data. J. R. Stat. Soc. Ser. B \textbf{69}(3), 369--390 (2007). \url{https://doi.org/10.1111/j.1467-9868.2007.00593.x}
+\bibitem{seaman2013} Seaman, S.R., White, I.R.: Review of inverse probability weighting for dealing with missing data. Stat. Methods Med. Res. \textbf{22}(3), 278--295 (2013). \url{https://doi.org/10.1177/0962280210395740}
+\bibitem{gneiting2007} Gneiting, T., Raftery, A.E.: Strictly proper scoring rules, prediction, and estimation. J. Am. Stat. Assoc. \textbf{102}(477), 359--378 (2007). \url{https://doi.org/10.1198/016214506000001437}
+\end{thebibliography}
+\end{document}
