@@ -433,20 +433,19 @@ def fig8():
     delta=q.delta_brier_vs_M0.to_numpy(float)
     ax.errorbar(delta,y,xerr=np.vstack([delta-q.delta_brier_ci_low,
                                         q.delta_brier_ci_high-delta]),
-                fmt="o",color="#315a76",capsize=2,lw=1)
+                fmt="o",color="#315a76",capsize=2,lw=1,label="ΔBrier vs M0 (95% CI)")
     ax.axvline(0,color="#555",lw=.8,linestyle="--")
     ax.set_yticks(y,q.model.str.replace("_"," K=",regex=False))
+    ax.legend(loc="lower left",frameon=True,framealpha=1,edgecolor="#555",fontsize=7)
     ax.invert_yaxis();ax.set_xlabel("ΔBrier versus M0 (95% day-bootstrap interval)")
-    ax.set_title("Held-out episode comparison",loc="left",fontsize=9)
     fig.tight_layout();save(fig,"fig08a_brier")
     fig,bx=plt.subplots(figsize=(3.7,3.2))
     for model,color in [("M0","#3f6a82"),("M2","#ad732d"),("M3","#6b5291"),("M4","#b14b4b")]:
         g=r[r.weight.eq("episode") & r.model.eq(model)].sort_values("mean_predicted")
-        bx.plot(g.mean_predicted,g.observed_rate,"o-",lw=1,ms=3,label=model,color=color)
+        bx.scatter(g.mean_predicted,g.observed_rate,s=14,label=model,color=color,zorder=3)
     bx.plot([0,1],[0,1],"--",color="#777",lw=.8)
     bx.set(xlabel="Mean predicted probability",ylabel="Observed order rate",xlim=(0,.8),ylim=(0,.8))
-    bx.legend(frameon=False,ncol=2)
-    bx.set_title("Reliability on test episodes",loc="left",fontsize=9)
+    bx.legend(loc="upper left",frameon=True,framealpha=1,edgecolor="#555",ncol=2,fontsize=7)
     fig.tight_layout();save(fig,"fig08b_reliability")
 
 
