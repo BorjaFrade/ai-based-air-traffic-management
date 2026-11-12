@@ -1,6 +1,6 @@
 # Encounter-level benchmark: validation record
 
-Protocol approved 12 November 2026: `docs/decisiones_protocolo.md`. Source inputs are the frozen Stage 03 and Stage 16–21 outputs. Scripts are in `paper/figure_scripts/`; new outputs are under `results/benchmarks/` and sensitivity-specific directories. The four test weeks were scored with calibration-fitted models and thresholds.
+Protocol choices fixed on 12 November 2026 and recorded locally in `docs/decisiones_protocolo.md` before the first run of the benchmark; the file is not versioned. The test weeks were scored repeatedly during development, so results are exploratory held-out analyses. Source inputs are the frozen Stage 03 and Stage 16–21 outputs. Scripts are in `paper/figure_scripts/`; new outputs are under `results/benchmarks/` and sensitivity-specific directories. The four test weeks were scored with calibration-fitted models and thresholds.
 
 ## Primary cohort and target
 
@@ -20,7 +20,7 @@ M4 was selected among M2–M4 by minimum leave-one-week-out calibration Brier sc
 | One episode, one vote | 0.171235 | 0.169040 | −0.002196 | [−0.002977, −0.001489] | 0.000396 |
 | Pair-instant weight | 0.148185 | 0.146677 | −0.001508 | [−0.002048, −0.000956] | 0.000295 |
 
-The prespecified one-SE rule favours M4 for predicting subsequent eligible orders. Four paired week-level differences are all negative but remain descriptive. The test alert burden is 17,338 distinct non-green episodes across 605 hours containing at least one such episode (28.7 per active hour). Figure 8 reads `metrics.csv` and `reliability.csv`; it plots no simulated values.
+The one-SE decision rule favours M4 for predicting subsequent eligible orders. Four paired week-level differences are all negative but remain descriptive. The test alert burden is 17,338 distinct non-green episodes across 605 hours containing at least one such episode (28.7 per active hour). Figure 8 reads `metrics.csv` and `reliability.csv`; it plots no simulated values.
 
 ## Audits and sensitivities
 
