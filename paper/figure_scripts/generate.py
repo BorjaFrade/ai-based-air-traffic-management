@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Reproduce CEAS figures 1-7 from the frozen SCAT Stage 19-21 outputs.
+"""Reproduce CEAS figures 1-10 from the frozen SCAT Stage 19-21 outputs.
 
 Run from the repository root: python3 paper/figure_scripts/generate.py --figure all
 No Stage 1-21 result is written or modified.
@@ -72,8 +72,6 @@ def fig1():
     arrow(1.52,2.6,1.52,2.02);arrow(5,2.6,5,2.02);arrow(8.42,2.6,8.42,2.02)
     box(3.48,.35,3.15,.55,"Audited rates, multiplicity\nand coverage",calc)
     arrow(5,1.28,5,1.02);arrow(8.42,1.28,6.75,.68)
-    ax.text(.2,5.16,"Blue: observed SCAT data     Lavender: calculated predictions, links and summaries",fontsize=7)
-    ax.text(6.8,.4,"M0–M5 comparison",fontsize=7,color="#555")
     save(fig,"fig01_workflow")
 
 
@@ -440,16 +438,198 @@ def fig8():
     ax.invert_yaxis();ax.set_xlabel("ΔBrier versus M0 (95% day-bootstrap interval)")
     fig.tight_layout();save(fig,"fig08a_brier")
     fig,bx=plt.subplots(figsize=(3.7,3.2))
-    for model,color in [("M0","#3f6a82"),("M2","#ad732d"),("M3","#6b5291"),("M4","#b14b4b")]:
+    for model,color,mk in [("M0","#3f6a82","o"),("M2","#ad732d","s"),("M3","#6b5291","^"),("M4","#b14b4b","D")]:
         g=r[r.weight.eq("episode") & r.model.eq(model)].sort_values("mean_predicted")
-        bx.scatter(g.mean_predicted,g.observed_rate,s=14,label=model,color=color,zorder=3)
+        bx.scatter(g.mean_predicted,g.observed_rate,s=20,marker=mk,label=model,facecolor=color,edgecolor="white",
+                   linewidth=.5,alpha=.9,zorder=3)
     bx.plot([0,1],[0,1],"--",color="#777",lw=.8)
-    bx.set(xlabel="Mean predicted probability",ylabel="Observed order rate",xlim=(0,.8),ylim=(0,.8))
-    bx.legend(loc="upper left",frameon=True,framealpha=1,edgecolor="#555",ncol=2,fontsize=7)
+    bx.set(xlabel="Mean predicted probability",ylabel="Observed order rate",xlim=(0,.5),ylim=(0,.5));bx.set_aspect("equal")
+    bx.legend(loc="lower right",frameon=True,framealpha=1,edgecolor="#555",ncol=2,fontsize=7)
     fig.tight_layout();save(fig,"fig08b_reliability")
 
 
-FIGS={1:fig1,2:fig2,3:fig3,4:fig4,5:fig5,6:fig6,7:fig7,8:fig8}
+# ----------------------------------------------------------------------------------------
+# Fig. 9: how many levels? Fig. 10: worked example (one instant of Swedish upper airspace)
+# ----------------------------------------------------------------------------------------
+def fig9():
+    """Share of the attainable leave-one-week-out score captured by K groups (Stage 19, 5-min label)."""
+    rc=pd.read_csv(CAL/"region_cv.csv");rc=rc[(rc.predictor=="R")&(rc.W==300)].sort_values("K")
+    nc=pd.read_csv(CAL/"named_schemes_cv.csv");nc=nc[(nc.predictor=="R")&(nc.W==300)]
+    g1=float(rc.mean_gain.iloc[0]);best=float(rc.mean_gain.max())
+    rc=rc.assign(pct=100*(rc.mean_gain-g1)/(best-g1))
+    rc=rc[rc.K<=10]
+    named=nc[nc.K>=2].groupby("K").pct_of_achievable.max()
+    final=nc.loc[nc.scheme.str.startswith("4 colores: rojo <5min | naranja 5-20min | amarillo 1.2-2")].pct_of_achievable.iloc[0]
+    check(abs(final-87.8)<0.05 and abs(nc.loc[nc.scheme.str.startswith("3 colores: rojo m<1 | amarillo 1.2<=m<2")].pct_of_achievable.iloc[0]-84.2)<0.05,
+          "Stage 19 percentages of the four- and three-level schemes")
+    check(abs(named.loc[5]-final-0.83)<0.05,"Gain of the fifth level in the operational family")
+    fig,ax=plt.subplots(figsize=(3.55,3.2))
+    ax.plot(rc.K,rc.pct,"-o",color="#315a76",ms=3.5,lw=1.3,label="Unconstrained partition into K groups",zorder=3)
+    ax.scatter(named.index,named.values,marker="s",s=22,color="#d16b27",edgecolor="black",linewidth=.5,zorder=4,
+               label="Best operational scheme with K levels")
+    ax.axvline(4,color="#555",lw=.8,ls=":")
+    ax.scatter([4],[final],marker="s",s=60,facecolor="none",edgecolor="black",linewidth=1.1,zorder=5)
+    ax.annotate(f"adopted: 4 levels\n{final:.1f}%",(4,final),xytext=(5.3,66),fontsize=7,
+                arrowprops=dict(arrowstyle="-",color="#555",lw=.7))
+    ax.set(xlabel="Number of groups K",ylabel="Share of attainable score (%)",xlim=(.7,10.3),ylim=(-3,103))
+    ax.set_xticks(range(1,11));ax.grid(alpha=.16)
+    ax.legend(loc="lower right",frameon=True,framealpha=1,edgecolor="#555",fontsize=6.3)
+    fig.tight_layout();save(fig,"fig09a_k_share")
+    inc=rc.pct.diff().iloc[1:].to_numpy();ks=rc.K.iloc[1:].to_numpy()
+    fig,bx=plt.subplots(figsize=(3.55,3.2))
+    bx.bar(ks,inc,color=["#315a76" if k!=4 else "#d16b27" for k in ks],edgecolor="black",linewidth=.5)
+    for k,v in zip(ks,inc):bx.text(k,v+1.2,f"{v:.1f}",ha="center",fontsize=6.5)
+    bx.set(xlabel="Number of groups K",ylabel="Gain over K−1 groups (percentage points)",xlim=(1.4,10.6),ylim=(0,max(inc)*1.15))
+    bx.set_xticks(range(2,11));bx.grid(axis="y",alpha=.16)
+    fig.tight_layout();save(fig,"fig09b_k_gain")
+
+
+def fig10():
+    """Worked example: one instant of upper airspace, predicted tracks and the geometry of one pair."""
+    sys.path.insert(0,str(ROOT/"src/scat_analysis"))
+    import stage16_pair_hazard as s16
+    import stage13_level_change_geometry as s13
+    from matplotlib.patches import Polygon as MPoly
+    e=pd.read_csv(S21/"stage21_encounters.csv").set_index("episode_id").loc[33]
+    T=pd.Timestamp(e.anchor_time_utc).timestamp();week=e.week
+    path=ROOT/"data/processed/scat/02_traffic/scat_states.parquet"
+    cols=["archive_week","flight_key","time_epoch","latitude","longitude","altitude_ft","ground_speed_kt",
+          "track_deg","vertical_rate_fpm","on_ground"]
+    pf=pq.ParquetFile(path);chunks=[]
+    for rg in s13.week_row_groups(pf,week):
+        q=pf.read_row_group(rg,columns=cols).to_pandas()
+        q=q.loc[q.archive_week.eq(week)&q.time_epoch.between(T-10,T)]
+        if len(q):chunks.append(q)
+    st=pd.concat(chunks).sort_values("time_epoch").groupby("flight_key").tail(1)
+    st=st.loc[st.altitude_ft.between(29000,41000)&~st.on_ground.astype(bool)].reset_index(drop=True)
+    x,y=s16.to_plane(st.latitude,st.longitude);st["x"]=x;st["y"]=y
+    pair=[e.flight1,e.flight2];check(set(pair)<=set(st.flight_key),"Example pair present at the reference time")
+    mid=st.loc[st.flight_key.isin(pair),["x","y"]].mean()
+    HX,HY=95.0,58.5   # half-size of the displayed window (NM)
+    win=st.loc[(st.x-mid.x).abs().le(HX-8)&(st.y-mid.y).abs().le(HY-6)].reset_index(drop=True)
+    flights=win.flight_key.tolist()
+    preds=read_week_flights(ROOT/"data/processed/scat/02_traffic/scat_predicted_trajectories.parquet",week,flights,
+                            ["archive_week","flight_key","source_member","prediction_epoch","route_json"],
+                            "prediction_epoch",T-900,T).sort_values("prediction_epoch").groupby("flight_key").tail(1).set_index("flight_key")
+    n=len(win);grid=np.arange(0,1201,10,dtype=float)
+    x0,y0=win.x.to_numpy(float),win.y.to_numpy(float);z0=win.altitude_ft.to_numpy(float)
+    ux,uy=s16.plane_direction(win.latitude,win.longitude,win.track_deg)
+    speed=win.ground_speed_kt.to_numpy(float)/3600
+    px=np.full((n,s16.MAX_PATH_FIXES),np.nan);py=px.copy();pz=px.copy();ok=np.zeros(n,bool)
+    for i,f in enumerate(flights):
+        if f not in preds.index:continue
+        route=s16.parse_route(preds.loc[f,"route_json"])
+        if route is None:continue
+        fx,fy,fz=s16.build_path(route,T,x0[i],y0[i],ux[i],uy[i])
+        if len(fx):px[i,:len(fx)]=fx;py[i,:len(fy)]=fy;pz[i,:len(fz)]=fz;ok[i]=True
+    XR,YR,ZR=s16.route_positions(x0,y0,z0,ux,uy,speed,px,py,pz,grid)
+    rules=s16.s15.load_rules();vr=s16.s15.deadbanded(win.vertical_rate_fpm.to_numpy(float),rules["deadband"])
+    XC,YC,ZC=s16.constant_velocity(x0,y0,z0,ux*speed,uy*speed,vr,grid)
+    X=np.where(ok[:,None],XR,XC);Y=np.where(ok[:,None],YR,YC);Z=np.where(ok[:,None],ZR,ZC)
+    ia,ib=flights.index(pair[0]),flights.index(pair[1])
+    Hs=np.hypot(X[ia]-X[ib],Y[ia]-Y[ib]);Vs=np.abs(Z[ia]-Z[ib]);m=np.maximum(Hs/5,Vs/1000)
+    check(abs(m.min()-e.m_min_predicted_stage16_start)<1e-6 and grid[m.argmin()]==e.tau_predicted_stage16_start_sec,
+          "Example forecast reproduces the stored minimum and lead time")
+    tau=grid[m.argmin()];mmin=m.min()
+    mp=np.array([np.maximum(np.hypot(X[p_]-X[q_],Y[p_]-Y[q_])/5,np.abs(Z[p_]-Z[q_])/1000).min()
+                 for p_ in range(n) for q_ in range(p_+1,n)])
+    print(f"pairs among displayed aircraft: {len(mp)}; m_min<1: {(mp<1).sum()}; m_min<2: {(mp<2).sum()}; sorted smallest: {np.sort(mp)[:4].round(2)}")
+    letters={f:chr(65+k) for k,f in enumerate(sorted(flights,key=lambda f:(f not in pair,f)))}
+    # ---------------------------------------------------------------- panel (a): map
+    base=json.loads((Path(__file__).parent/"basemap_sweden.json").read_text())
+    def plane(ring):
+        a=np.asarray(ring,float);xx,yy=s16.to_plane(a[:,1],a[:,0]);return np.c_[xx,yy]
+    fig,ax=plt.subplots(figsize=(5.2,3.2))
+    ax.set_facecolor("#dde8f1")
+    for r in base["land"]:ax.add_patch(MPoly(plane(r),closed=True,fc="#f1f0e8",ec="#8d9aa6",lw=.5,zorder=1))
+    for r in base["lakes"]:ax.add_patch(MPoly(plane(r),closed=True,fc="#dde8f1",ec="#8d9aa6",lw=.4,zorder=2))
+    xl,xh,yl,yh=mid.x-HX,mid.x+HX,mid.y-HY,mid.y+HY
+    ax.set(xlim=(xl,xh),ylim=(yl,yh));ax.set_aspect("equal")
+    ax.spines[["top","right"]].set_visible(True)
+    for lat in range(54,63):
+        lo=np.linspace(8,24,200);gx,gy=s16.to_plane(np.full(200,lat),lo)
+        ax.plot(gx,gy,color="#9fb0bf",lw=.4,zorder=3)
+        if gy.min()<yh and gy.max()>yl:
+            j=np.argmin(abs(gx-xl))
+            if yl<gy[j]<yh:ax.text(xl+1.5,gy[j]+1.5,f"{lat}°N",fontsize=6,color="#5b6b7a",zorder=3)
+    for lon in range(10,22):
+        la=np.linspace(54,63,200);gx,gy=s16.to_plane(la,np.full(200,lon))
+        ax.plot(gx,gy,color="#9fb0bf",lw=.4,zorder=3)
+        j=np.argmin(abs(gy-yl))
+        if xl<gx[j]<xh:ax.text(gx[j]+1.5,yl+1.5,f"{lon}°E",fontsize=6,color="#5b6b7a",zorder=3)
+    red,blue="#b53e3e","#274d6b"
+    for i,f in enumerate(flights):
+        focal=f in pair;col=red if focal else blue
+        ax.plot(X[i],Y[i],color=col,lw=1.4 if focal else .9,ls="--",alpha=.9 if focal else .55,zorder=4)
+        for minute in (5,10,20):
+            k=minute*6
+            ax.plot(X[i,k],Y[i,k],"o",ms=3.2 if focal else 2.2,mfc="white",mec=col,mew=.8,zorder=5)
+            if focal:ax.text(X[i,k]+2.2,Y[i,k]+2.0,f"{minute} min",fontsize=5.8,color=col,zorder=6,clip_on=True)
+    for i,f in enumerate(flights):
+        ang=np.degrees(np.arctan2(ux[i],uy[i]))
+        ax.plot(x0[i],y0[i],marker=(3,0,-ang),ms=8.5,color=red if f in pair else blue,mec="white",mew=.6,zorder=7,ls="")
+    ax.plot(X[[ia,ib],int(tau/10)],Y[[ia,ib],int(tau/10)],":",color="black",lw=1,zorder=6)
+    ax.plot(X[[ia,ib],int(tau/10)],Y[[ia,ib],int(tau/10)],"s",ms=3.5,color="black",zorder=6)
+    fig.canvas.draw();rend=fig.canvas.get_renderer();placed=[]
+    marks=[ax.transData.transform((x0[i],y0[i])) for i in range(n)]+[ax.transData.transform((X[ia,int(tau/10)],Y[ia,int(tau/10)])),ax.transData.transform((X[ib,int(tau/10)],Y[ib,int(tau/10)]))]+[ax.transData.transform((X[j,k],Y[j,k]+4)) for j in (ia,ib) for k in (30,60)]
+    offs=[(r*np.cos(a),r*np.sin(a)) for r in (14,26,40,56,74,94) for a in np.radians(np.arange(15,375,30))]
+    axb=ax.get_window_extent(rend)
+    def penalty(b):
+        pen=0.0
+        for q in placed:
+            w=min(b.x1,q.x1)-max(b.x0,q.x0);h=min(b.y1,q.y1)-max(b.y0,q.y0)
+            if w>0 and h>0:pen+=w*h
+        for mx,my in marks:
+            if b.x0-6<mx<b.x1+6 and b.y0-6<my<b.y1+6:pen+=400
+        return pen
+    order=np.argsort([f not in pair for f in flights],kind="stable")
+    for i in order:
+        f=flights[i];r=win.iloc[i];vr_i=r.vertical_rate_fpm
+        vtxt="level" if abs(vr_i)<100 else f"{'+' if vr_i>0 else '−'}{abs(vr_i):,.0f} ft/min"
+        txt=f"{letters[f]}  FL{round(r.altitude_ft/100):d}  {r.ground_speed_kt:.0f} kt\n{vtxt}"
+        best=None;bestpen=1e18;bestoff=None
+        for dx,dy in offs:
+            t=ax.annotate(txt,(x0[i],y0[i]),xytext=(dx,dy),textcoords="offset points",fontsize=6.3,zorder=8,
+                          ha="left" if dx>=0 else "right",va="bottom" if dy>=0 else "top")
+            bb=t.get_window_extent(rend);t.remove()
+            if not(bb.x0>axb.x0+3 and bb.x1<axb.x1-3 and bb.y0>axb.y0+3 and bb.y1<axb.y1-3):continue
+            pen=penalty(bb)+0.5*np.hypot(dx,dy)
+            if pen<bestpen:best,bestpen,bestoff=bb,pen,(dx,dy)
+        check(best is not None,f"No label position inside the map for aircraft {letters[f]}")
+        dx,dy=bestoff
+        ax.annotate(txt,(x0[i],y0[i]),xytext=(dx,dy),textcoords="offset points",fontsize=6.3,zorder=8,
+                    ha="left" if dx>=0 else "right",va="bottom" if dy>=0 else "top",
+                    bbox=dict(boxstyle="round,pad=.22",fc="white",ec=red if f in pair else "#6c7a89",lw=.8,alpha=.96),
+                    arrowprops=dict(arrowstyle="-",color="#444",lw=.5,shrinkA=0,shrinkB=3))
+        placed.append(best)
+        print(f"label {letters[f]} penalty {bestpen:.0f}")
+    sx=xl+10;sy=yh-9
+    ax.plot([sx,sx+25],[sy,sy],color="black",lw=2,zorder=9);ax.text(sx+12.5,sy+2,"25 NM",ha="center",fontsize=6.3,zorder=9,clip_on=True)
+    ax.plot([],[],color=blue,ls="--",lw=.9,label="Forecast track (20 min)");ax.plot([],[],"o",mfc="white",mec=blue,ms=3.2,ls="",label="Position at 5, 10, 20 min")
+    ax.plot([],[],marker=(3,0,0),ls="",color=red,ms=7,label="Aircraft pair of panel (b)")
+    ax.plot([],[],"s:",color="black",ms=3.5,lw=1,label="Pair at closest approach")
+    ax.legend(loc="upper center",bbox_to_anchor=(.5,-.015),ncol=2,frameon=False,fontsize=6.5,columnspacing=1.6)
+    ax.set_xticks([]);ax.set_yticks([])
+    fig.tight_layout();save(fig,"fig10a_airspace_frame")
+    # ---------------------------------------------------------------- panel (b): m(s)
+    fig,bx=plt.subplots(figsize=(4.2,2.7))
+    s=grid/60
+    bx.plot(s,m,color="black",lw=3.2,label="m = max(H/5 NM, V/1,000 ft)")
+    bx.plot(s,Hs/5,color="#6fb0e6",ls="--",lw=1.1,label="H / 5 NM (horizontal)")
+    bx.plot(s,Vs/1000,color="#e0a04a",ls="-.",lw=1.3,label="V / 1,000 ft (vertical)")
+    bx.axhline(1,color="#b53e3e",lw=.9,ls=":")
+    bx.fill_between(s,0.02,1,color="#b53e3e",alpha=.08)
+    bx.plot([tau/60],[mmin],"o",ms=6,mfc="white",mec="black",mew=1.4,zorder=5)
+    bx.annotate(f"$m_{{\\min}}$ = {mmin:.2f}\nτ = {tau/60:.1f} min",(tau/60,mmin),xytext=(8.6,.16),fontsize=7,
+                arrowprops=dict(arrowstyle="-",color="#555",lw=.7))
+    bx.set_yscale("log");bx.set(xlim=(0,20),ylim=(.1,100),xlabel="Look-ahead time s (min)",ylabel="Normalised separation")
+    bx.set_yticks([.1,.3,1,3,10,30,100],["0.1","0.3","1","3","10","30","100"]);bx.grid(alpha=.16)
+    bx.legend(loc="upper left",frameon=True,framealpha=1,edgecolor="#555",fontsize=6.3)
+    fig.tight_layout();save(fig,"fig10b_pair_geometry")
+    print(f"window aircraft: {n}; pair m_min={mmin:.3f} tau={tau:.0f}s; reference {e.anchor_time_utc}")
+
+
+FIGS={1:fig1,2:fig2,3:fig3,4:fig4,5:fig5,6:fig6,7:fig7,8:fig8,9:fig9,10:fig10}
 if __name__=="__main__":
     p=argparse.ArgumentParser();p.add_argument("--figure",default="all",choices=["all"]+[str(i) for i in FIGS])
     a=p.parse_args()

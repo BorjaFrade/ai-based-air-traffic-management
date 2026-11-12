@@ -7,10 +7,11 @@ Run from the repository root with Python 3 and `numpy`, `pandas`, `pyarrow`,
 python3 paper/figure_scripts/benchmark.py
 python3 paper/figure_scripts/audit_supplements.py
 python3 paper/figure_scripts/coverage_causes.py
+python3 paper/figure_scripts/track_end_footprint.py
 python3 paper/figure_scripts/generate.py --figure all
 ```
 
-`--figure 1` through `--figure 8` regenerate individual figures. The generator
+`--figure 1` through `--figure 10` regenerate individual figures (9: choice of the number of levels, from Stage 19 tables; 10: worked example of one instant of Swedish upper airspace, from the SCAT state and prediction tables and `basemap_sweden.json`, Natural Earth public-domain land and lakes). The generator
 writes PNG panels to `paper/figures/` and never changes Stage 1–21 results.
 `benchmark.py` writes its cohort, predictions, scores, reliability curves,
 bootstrap intervals, paired weekly differences, alert burden and decision to
