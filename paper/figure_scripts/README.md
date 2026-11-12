@@ -1,18 +1,40 @@
 # Reproducing the CEAS figures
 
-Run from the repository root with Python 3 and `numpy`, `pandas`, `pyarrow`, and
-`matplotlib` installed:
+Run from the repository root with Python 3 and `numpy`, `pandas`, `pyarrow`,
+`matplotlib`, `scipy`, and `scikit-learn` installed:
 
 ```bash
+python3 paper/figure_scripts/benchmark.py
+python3 paper/figure_scripts/audit_supplements.py
+python3 paper/figure_scripts/coverage_causes.py
 python3 paper/figure_scripts/generate.py --figure all
-python3 paper/figure_scripts/integrate.py
 ```
 
-`--figure 1` through `--figure 7` regenerate individual figures. The generator
-writes only to `paper/figures/` and never changes Stage 1–21 results. Each figure
-is exported as a vector PDF and a 300-dpi PNG. The integration script reads the
-unaltered supplied draft at `paper/ceas_manuscript_original.tex` and writes
-`paper/ceas_manuscript_figures.tex`.
+`--figure 1` through `--figure 8` regenerate individual figures. The generator
+writes PNG panels to `paper/figures/` and never changes Stage 1–21 results.
+`benchmark.py` writes its cohort, predictions, scores, reliability curves,
+bootstrap intervals, paired weekly differences, alert burden and decision to
+`results/benchmarks/`. The random seed is **20261112**. Its approved protocol
+is recorded in `docs/decisiones_protocolo.md`.
+
+To reconstruct the approved green-inclusion sensitivities without overwriting
+the primary results, run:
+
+```bash
+python3 paper/figure_scripts/benchmark.py --green-limit 3 --out results/benchmarks_green3
+python3 paper/figure_scripts/benchmark.py --green-limit inf --prepare-only --out results/benchmarks_green_all
+python3 paper/figure_scripts/sensitivity_green_all.py
+python3 paper/figure_scripts/benchmark.py --gap 240 --out results/benchmarks_gap240
+python3 paper/figure_scripts/benchmark.py --gap 480 --out results/benchmarks_gap480
+python3 paper/figure_scripts/sensitivity_broad_orders.py
+```
+
+The canonical manuscript is `paper/ceas_manuscript_figures.tex`. It is updated
+with verified values from the primary benchmark. Do not rerun model selection
+on test weeks or edit the frozen Stage 16–21 inputs.
+The no-limit green sensitivity freezes the primary M4 regularisation choice
+and reports only M0 and M4, since its 3.39 million green episodes make a new
+full leave-one-week-out model grid costly.
 
 The manuscript and plotted labels describe the operations without numbered
 pipeline stages. Stage identifiers in this README and the code are retained
@@ -29,6 +51,7 @@ only to locate the exact input files and reproduce the outputs.
 | 5 | Stage 20 clearance-attribution CSV, canonical Stage 20 pair Parquets, Stage 03 clearance Parquet | Exact original clearance epochs; strict `(T,T+300 s]` association; all 13 weeks |
 | 6 | Stage 20 episodes CSV | Test red episodes; prior 600 s before episode start; later 300 s after episode observations |
 | 7 | Stage 21 encounters CSV | All 13 weeks; observed minimum evaluable at ≥80% synchronized 10-s grid coverage and both endpoints; absence claim requires 100% coverage |
+| 8 | `results/benchmarks/metrics.csv`, `reliability.csv` | One episode, one vote; 400 paired whole-day bootstrap draws; M0–M5 |
 
 ### Example encounter
 
@@ -61,14 +84,31 @@ that the orders resolved this encounter.
 
 ## Pending comparison
 
-Figure 8 is intentionally absent. The M0–M6 protocol in the manuscript still
-has unresolved specifications (green episode inclusion threshold, M6 error
-model, decision threshold). A future, reviewed script would need a common
-episode-level cohort, frozen calibration/test split, green episode construction,
-M0–M6 model fits on calibration weeks, held-out scores, day-cluster bootstrap,
-week-level paired summaries, calibration curves, and deduplicated alert counts
-per hour. None of these benchmark outcomes exists in the current Stage 16–21
-results, and this script does not run experiments or choose thresholds on test.
+Figure 8 plots the completed M0–M5 held-out comparison. M6 was excluded by
+author decision because a conflict probability does not directly estimate the
+recorded-order outcome. The primary outcome is an eligible order in the 300 s
+after episode start. The any-observation outcome is reported separately to show
+the effect of unequal exposure. Non-green episodes retain their frozen Stage 20
+IDs; green-only runs exclude green observations within 360 s of a non-green
+observation for the same pair. This is a conservative reconciliation rule, not
+a claim that removed green observations were risk free.
+
+`audit_supplements.py` reproduces the selection funnel, compares eligible and
+broader orders by week/type/matched flight level, and classifies observable
+surveillance-coverage patterns. It cannot infer whether a missing
+end state arose from area exit, archive boundary, track gap or another cause.
+`coverage_causes.py` scans the original Stage 02 individual tracks and writes
+one evidence category per unevaluable episode to
+`results/benchmarks/coverage_evidence_detail.csv`. It distinguishes the last
+observed altitude band, missing starts, archive boundaries and track endings.
+Without a Swedish airspace polygon, an in-band track end remains geographically
+indeterminate.
+The trajectory-predictor sensitivities in the task list remain outstanding.
+The broader order sensitivity relabels the same episodes with all 908,165
+extracted heading/level records and writes to `results/benchmarks_broad_orders/`.
+The fixed
+120/300/600-s outcome-window and 300/600-s prior-window variants are produced by
+`sensitivity_windows.py` and summarised in `results/benchmarks/window_sensitivity.csv`.
 
 ## Compilation
 

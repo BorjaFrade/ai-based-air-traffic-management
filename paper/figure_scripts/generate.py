@@ -73,7 +73,7 @@ def fig1():
     box(3.48,.35,3.15,.55,"Audited rates, multiplicity\nand coverage",calc)
     arrow(5,1.28,5,1.02);arrow(8.42,1.28,6.75,.68)
     ax.text(.2,5.16,"Blue: observed SCAT data     Lavender: calculated predictions, links and summaries",fontsize=7)
-    ax.text(6.8,.4,"M0–M6 planned",fontsize=7,color="#555")
+    ax.text(6.8,.4,"M0–M5 comparison",fontsize=7,color="#555")
     save(fig,"fig01_workflow")
 
 
@@ -420,7 +420,37 @@ def fig7():
     fig.tight_layout();save(fig,"fig07b_observed_screen")
 
 
-FIGS={1:fig1,2:fig2,3:fig3,4:fig4,5:fig5,6:fig6,7:fig7}
+def fig8():
+    bench=ROOT/"results/benchmarks"
+    m=pd.read_csv(bench/"metrics.csv")
+    r=pd.read_csv(bench/"reliability.csv")
+    q=m[m.weight.eq("episode")].copy()
+    check(set(q.model)=={"M0","M1","M2","M3","M4","M5_3","M5_4","M5_5"},
+          "Benchmark model set is incomplete")
+    q=q.sort_values("brier")
+    fig,ax=plt.subplots(figsize=(3.7,3.2))
+    y=np.arange(len(q))
+    delta=q.delta_brier_vs_M0.to_numpy(float)
+    ax.errorbar(delta,y,xerr=np.vstack([delta-q.delta_brier_ci_low,
+                                        q.delta_brier_ci_high-delta]),
+                fmt="o",color="#315a76",capsize=2,lw=1)
+    ax.axvline(0,color="#555",lw=.8,linestyle="--")
+    ax.set_yticks(y,q.model.str.replace("_"," K=",regex=False))
+    ax.invert_yaxis();ax.set_xlabel("ΔBrier versus M0 (95% day-bootstrap interval)")
+    ax.set_title("Held-out episode comparison",loc="left",fontsize=9)
+    fig.tight_layout();save(fig,"fig08a_brier")
+    fig,bx=plt.subplots(figsize=(3.7,3.2))
+    for model,color in [("M0","#3f6a82"),("M2","#ad732d"),("M3","#6b5291"),("M4","#b14b4b")]:
+        g=r[r.weight.eq("episode") & r.model.eq(model)].sort_values("mean_predicted")
+        bx.plot(g.mean_predicted,g.observed_rate,"o-",lw=1,ms=3,label=model,color=color)
+    bx.plot([0,1],[0,1],"--",color="#777",lw=.8)
+    bx.set(xlabel="Mean predicted probability",ylabel="Observed order rate",xlim=(0,.8),ylim=(0,.8))
+    bx.legend(frameon=False,ncol=2)
+    bx.set_title("Reliability on test episodes",loc="left",fontsize=9)
+    fig.tight_layout();save(fig,"fig08b_reliability")
+
+
+FIGS={1:fig1,2:fig2,3:fig3,4:fig4,5:fig5,6:fig6,7:fig7,8:fig8}
 if __name__=="__main__":
     p=argparse.ArgumentParser();p.add_argument("--figure",default="all",choices=["all"]+[str(i) for i in FIGS])
     a=p.parse_args()

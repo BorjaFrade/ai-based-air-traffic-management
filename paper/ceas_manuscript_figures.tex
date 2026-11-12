@@ -41,7 +41,7 @@
 % or a different current affiliation should be provided before submission.
 \affil*[1]{\orgname{Universidad Nacional de Educación a Distancia (UNED)}, \orgaddress{\city{Madrid}, \country{Spain}}}
 \affil[2]{\orgdiv{Departamento de Inteligencia Artificial}, \orgname{Universidad Nacional de Educación a Distancia (UNED)}, \orgaddress{\city{Madrid}, \country{Spain}}}
-\abstract{Historical air traffic control (ATC) clearances are increasingly treated as evidence of controller decisions, both to calibrate indicators of aircraft encounters and to train decision-support and learning-based conflict-resolution systems. This practice assumes that a clearance can be tied to the encounter that motivated it. We examine that assumption using the public Swedish Civil Air Traffic Control (SCAT) dataset. Aircraft encounters are predicted 20 minutes ahead and grouped into four levels according to how much subsequent controller activity each level is associated with; the levels are calibrated on nine weeks of traffic and tested on four held-out weeks. We then audit the result at the level of individual clearances and encounters. Controller activity does increase from the lowest to the highest level, but a single clearance is typically associated with dozens of aircraft-pair observations, so these observations cannot be read as independent conflicts. Moreover, for the most urgent encounters, later surveillance is often too incomplete to check what actually happened, which limits validation against observed trajectories. The contribution is a reproducible audit framework that makes calibration, event multiplicity and observation coverage explicit; it is not a new conflict detector. A prespecified comparison at the encounter level against simpler continuous and probabilistic baselines is defined to test whether the discrete levels add value, and external operational validation remains necessary before claiming improved detection performance.}
+\abstract{Historical air traffic control (ATC) clearances are increasingly treated as evidence of controller decisions, both to calibrate indicators of aircraft encounters and to train decision-support and learning-based conflict-resolution systems. This practice assumes that a clearance can be tied to the encounter that motivated it. We examine that assumption using the public Swedish Civil Air Traffic Control (SCAT) dataset. Aircraft encounters are predicted 20 minutes ahead and grouped into four levels according to how much subsequent controller activity each level is associated with; the levels are calibrated on nine weeks of traffic and tested on four held-out weeks. We then audit the result at the level of individual clearances and encounters. A single clearance is typically associated with dozens of aircraft-pair observations, so these observations cannot be read as independent conflicts. For red encounters, later surveillance is often too incomplete to check what actually happened. In a prespecified retrospective encounter-level comparison using a fixed 300-s order window from episode start, the calibration-selected contextual continuous model improves held-out Brier score from 0.1712 to 0.1690 relative to the four-level partition. Episode geometry and duration are finalised after the episode ends, so this result does not measure real-time forecasting. The contribution is a reproducible audit framework that makes calibration, event multiplicity, observation coverage and the limits of discrete intervention classes explicit.}
 \keywords{air traffic control, conflict detection, clearance attribution, encounter analysis, data-driven calibration, surveillance uncertainty}
 \begin{document}
 \maketitle
@@ -63,7 +63,7 @@ We therefore pose the following research question:
 
 The contribution is a reproducible \emph{audit-and-calibration workflow}, not a claim to have invented geometric conflict metrics, colour-coded warnings, event grouping or threshold fitting. The workflow (i) constructs and temporally validates an intervention-associated geometric partition, (ii) reconciles pair-instant labels with identifiable clearance events, (iii) aggregates repeated non-green observations into encounters, and (iv) checks prediction outcomes only where synchronised observed trajectories permit such checks. By reporting the denominators and exclusions of every step, the method tests the meaning of an intervention-derived class before using it in subsequent controller-support algorithms.
 
-The present manuscript reports completed reconstruction and audit results from the existing SCAT pipeline and, in Sect.~\ref{sec:benchmarks}, fixes a prespecified encounter-level comparison between the audited four-level partition (labelled M0) and six reference models (M1--M6): a simple geometric screen, continuous logistic models, a model with traffic context, alternative discrete partitions and a probabilistic conflict-probability baseline (Table~\ref{tab:models}). The results of that comparison have \emph{not yet been produced}; they are marked as pending rather than described as findings. This distinction preserves the difference between a demonstrated methodological problem and an as-yet unproven performance benefit.
+The present manuscript reports completed reconstruction and audit results from the existing SCAT pipeline and, in Sect.~\ref{sec:benchmarks}, compares the audited four-level partition (M0) against a geometric screen, continuous logistic models and monotone discrete alternatives (M1--M5). A Gaussian conflict-probability model is deferred because its target differs from subsequent clearance activity.
 
 \section{Related work and research gap}\label{sec:related}
 \subsection{Controller behaviour from operational data}
@@ -98,7 +98,7 @@ Three units are distinguished throughout the article. A \emph{pair-instant} is o
 \begin{figure}[t]
 \centering
 \includegraphics[width=\linewidth]{figures/fig01_workflow.png}
-\caption{Completed SCAT analysis workflow. Blue boxes denote observed source records and lavender boxes denote predictions, temporal links or derived summaries. The comparison of the audited partition (M0) with the reference models M1--M6 (Sect.~\ref{sec:benchmarks}) remains planned.}\label{fig:workflow}
+\caption{SCAT analysis workflow. Blue boxes denote observed source records and lavender boxes denote predictions, temporal links or derived summaries. The M0--M5 comparison is reported in Sect.~\ref{sec:benchmarks}.}\label{fig:workflow}
 \end{figure}
 \section{Methodology}\label{sec:methods}
 \subsection{Predicted encounter geometry}\label{sec:geometry}
@@ -336,17 +336,19 @@ The dataset construction excludes flights involved in incident reports \cite{nil
 EUROCONTROL's MTCD specification already encompasses aircraft encounters, probabilities and interactions \cite{eurocontrol2017}. A four-colour score cannot be positioned as a replacement for those functions without an operational comparison. The current pipeline does not account for real controller-sector workload, alert suppression, sector-specific rules or false-alert costs. The scientifically appropriate application is to use the reconstructed associations to understand whether a compact activity indicator can provide supplementary information in a future ATM decision-support model. Any claims about actual alert burden require de-duplicated events per sector and hour, rather than raw pair-instants.
 
 \section{Encounter-level comparison against reference models: protocol and results}\label{sec:benchmarks}
-To determine whether the proposed treatment is an incremental scientific contribution rather than a descriptive audit, this section fixes the comparison protocol \emph{before} the models are scored on the four evaluation weeks. Entries marked ``pending'' are results that have not been produced; none of them is an estimate.
+The comparison protocol was approved and recorded before scoring the four evaluation weeks (\texttt{docs/decisiones\_protocolo.md}). The frozen calibration/test split and the reproducible episode construction are described below.
 
 \subsection{Estimands, cohorts and splits}
-\emph{Primary estimand.} For an encounter episode $e$, $Y^{\mathrm{ep}}_e=1$ if at least one eligible heading/level clearance to either aircraft falls in the \emph{later} window defined in Sect.~\ref{sec:encounters}. Prior-order status is a covariate, not part of the outcome, because a prior order may already have resolved the encounter. An aircraft-level estimand (any order to the focal aircraft) is reported as secondary, since it answers a different question with a different exposure denominator.
+\emph{Primary estimand.} For an encounter episode $e$ beginning at $T_0$, $Y^{\mathrm{ep}}_e=1$ if at least one eligible heading/level clearance to either aircraft occurs in $(T_0,T_0+300\,\mathrm{s}]$. This fixed window equalises exposure across episodes. The earlier outcome based on a 300-s window after \emph{any} episode observation is retained as an exposure sensitivity analysis. Prior-order status in the 600 s before $T_0$ is a covariate, not part of the outcome. Temporal association does not establish that the order was motivated by the encounter.
 
-\emph{Cohorts.} To avoid comparing non-green episodes with unsegmented green pair-instants, the 360-s gap rule is applied to green pair-instants as well, restricted to $\mmin<2$ \tbc{fix this inclusion threshold before running}; a run in which every instant is green forms a green episode, and any run containing a non-green instant keeps its maximal colour. Results are reported under both pair-instant weighting and one-episode-one-vote weighting. A clearance linked to several episodes is kept in all of them; no ``true'' motivating pair is selected.
+\emph{Cohorts.} The 54,441 previously audited non-green episodes retain their identifiers and maximum colours. Green observations with $\mmin<2$ form green-only runs under the same 360-s gap rule; observations within 360 s of a non-green observation for the same aircraft pair are excluded from a separate green run. This yields 12,926 green episodes and preserves 39,351 yellow, 9,039 orange and 6,051 red episodes. Results are reported under one-episode-one-vote and pair-instant weighting. A clearance linked to several episodes is kept in all of them; no ``true'' motivating pair is selected.
 
 \emph{Splits.} All fitting and model selection use the nine calibration weeks (with leave-one-week-out folds for hyperparameters). The four test weeks are scored once, with thresholds and parameters frozen.
 
+\emph{Temporal interpretation.} Episode maximum colour, minimum geometry and duration are defined using the completed run. They may contain observations after the start-based order window or after an order has occurred. Thus this is a held-out \emph{retrospective association} comparison, not a deployable $T_0$ predictor. A prospective study must recompute features from information available at each decision time and evaluate forward in time.
+
 \subsection{Models and metrics}
-Table~\ref{tab:models} defines the seven models, labelled M0--M6. M0 is the four-level partition audited in the preceding sections, so every other model is compared against it. M1 is the simplest detector, a yes/no flag for a predicted loss of separation. M2 and M3 replace the discrete levels by a smooth probability of a later order, using $\mmin$ alone (M2) or $\mmin$ and $\tau$ together (M3). M4 adds traffic context and prior orders to M3. M5 keeps discrete levels but forces them to be monotone in geometry and varies their number. M6 is a classical probabilistic baseline that converts prediction uncertainty into a conflict probability. All are compared on exactly the same splits and cohorts.
+Table~\ref{tab:models} defines M0--M5. M0 converts each frozen colour to its calibration-week empirical order rate. M1 similarly converts the binary $\mmin<1$ screen to calibration-week probabilities. M2 and M3 fit logistic probabilities from $\mmin$ alone or cubic spline terms of $(\mmin,\tau)$. M4 adds tertiles of the number of episode starts observed during the preceding hour, prior-order status and log episode duration. M5 uses geometry-ordered, isotonic-pooled $\mmin$ quantile partitions with $K=3,4,5$. All models share the same cohort and outcome; spline knots, quantiles, scaling and probability estimates are fitted only on calibration weeks. Logistic regularisation is selected by leave-one-week-out calibration Brier score.
 
 \begin{table}[t]
 \caption{Models compared at the episode level. All are fitted on the nine calibration weeks and frozen before the four evaluation weeks are scored.}\label{tab:models}
@@ -358,52 +360,75 @@ M0 & Frozen four-level partition (Eq.~\eqref{eq:color}) & Object of the audit\\
 M1 & Binary geometric screen $\mmin<1$ within 20 min & Nominal-detection baseline\\
 M2 & Logistic regression on $\mmin$ only & Parsimonious continuous baseline\\
 M3 & Logistic regression on smooth terms of $(\mmin,\tau)$ & Continuous two-variable model\\
-M4 & M3 plus traffic stratum and prior-order indicator & Contextual model\\
+M4 & M3 plus hourly density stratum, prior order and log duration & Contextual model\\
 M5 & Monotone-constrained partitions with $K=3,4,5$ levels & Discrete alternatives\\
-M6 & Conflict probability under Gaussian prediction error growing with look-ahead \cite{paielli1997,prandini2000} & Probabilistic baseline\\
 \bottomrule
 \end{tabular}
 \end{table}
 
-For M6, the error parameters are estimated on the calibration weeks from synchronised observed-minus-predicted separations where these are evaluable \tbc{specify the error model and its parameters}. Models are compared with the Brier score and the logarithmic score, both strictly proper scoring rules \cite{gneiting2007}, together with calibration intercept and slope and decile reliability curves; discrimination (area under the ROC curve) is secondary. Association statistics are \emph{not} safety precision. Uncertainty comes from a day-cluster bootstrap with at least 400 replicates \cite{field2007} and from week-level paired differences, which with four test weeks are descriptive and not significance tests. Alert burden is reported as deduplicated non-green episodes per hour, not as raw pair-instants.
+Models are compared with Brier and logarithmic scores, both strictly proper scoring rules \cite{gneiting2007}, together with calibration intercept and slope and decile reliability curves; area under the ROC curve is secondary. Association statistics are \emph{not} safety precision. Paired Brier uncertainty uses 400 day-cluster bootstrap replicates \cite{field2007}. Four week-level paired differences are descriptive, not significance tests. Alert burden is counted as deduplicated non-green episodes per observed hour, not as raw pair-instants. A Gaussian conflict-probability model is reserved for future work because it targets conflict rather than the recorded order outcome.
 
-\emph{Decision rule (prespecified).} M0 is recommended as a summary only if its held-out Brier score differs from the best of M2--M4 by less than the bootstrap standard error of the difference \tbc{authors to confirm this threshold}. Otherwise the continuous model is the primary result and M0 is presented as an interpretability layer. The test weeks are not used again to select model complexity.
+\emph{Decision rule (prespecified).} The best of M2--M4 is selected by leave-one-week-out calibration Brier score. It becomes the primary model if its test Brier improvement over M0 exceeds one day-bootstrap standard error of the paired difference. Otherwise M0 remains the recommended summary. The test weeks do not select model complexity.
 
 \subsection{Sensitivity analyses}
-The analysis is repeated under: episode gaps of 240, 360 and 480 s; later-order windows of 120, 300 and 600 s and prior-order windows of 300 and 600 s; the broader set of extracted heading/level clearances (908,165 records) instead of the 51,950 eligible orders; a monotone variant of the near-threshold green band $1\le\mmin<1.2$; alternative traffic-stratum edges; and alternative predictors (constant-velocity extrapolation and the native SCAT trajectory predictions).
+The first exposure sensitivity compares the fixed start-based order window with a 300-s window after any observation in the episode (Table~\ref{tab:windows}). At a fixed 120-s later window, the red order rate is 13.7\%, below orange at 14.4\%; the four-class monotone ordering therefore does not persist at this shorter horizon. M4 remains the calibration-selected continuous model and improves Brier over M0 by 0.00161. At 600 s, class-rate ordering is restored and M4 improves Brier by 0.00220. Reducing the prior-order window from 600 to 300 s leaves M4 preferred, with a 0.00213 Brier improvement. With 240- and 480-s episode gaps, the class-rate ordering is retained and M4 remains selected, improving Brier by 0.00156 and 0.00251, respectively. With the green inclusion limit relaxed to $\mmin<3$, M4 remains calibration-selected and improves Brier by 0.00138. With no green limit, fitting the primary M0 and M4 specifications on the enlarged calibration cohort yields test Brier scores of 0.13355 and 0.13247, respectively; this large-cohort sensitivity freezes M4's primary regularisation choice rather than repeating the full model-selection grid. Relabelling the same episodes with all 908,165 extracted heading/level records raises order rates sharply: in test they are 23.6\%, 36.7\%, 58.3\% and 34.5\% for green through red. Red now falls below orange. M4 remains calibration-selected and improves Brier by 0.04181 under this substantially different target; the magnitude cannot be compared with the primary eligible-order experiment as if only a model parameter changed. Alternative trajectory predictors remain to be run.
 
 \subsection{Eligibility, coverage and missingness}
-The preprocessing selection cascade from the 908,165 heading/level records to the 51,950 eligible events will be documented with exclusion reasons by week, aircraft type and traffic context. For the observed-outcome checks, results are reported under complete-case analysis, under inverse-probability weighting with an evaluability model (colour, week, altitude, region) \cite{seaman2013}, and under best/worst-case bounds; reasons for missing follow-up are tabulated by colour. If operationally labelled conflicts are required, an independent expert reviews a prespecified sample with time-resolved planned trajectories and the applicable separation rules.
+The source extraction contains 1,019,799 actionable rows, including 908,165 heading/level records. The frozen eligible set comprises 50,774 level and 1,176 heading orders (51,950 total). For level records, 731,166 candidates fall to 563,511 with two numeric authorised levels, 416,449 with a changed flight level, 360,475 with a valid previous focal state, 113,163 in the analysed flight-level band and 50,774 finally eligible. Heading orders follow a separately audited cascade; its 177,004 candidate rows yield 1,176 eligible events in the band. Among the broader heading/level records excluded from the eligible set, 543,535 have a matched flight level below FL290 and 248,889 lack one; 63,757 are recorded in FL290--FL410 but fail another eligibility condition. These counts are reproduced directly from the Stage 20 selection audit and Stage 03 rows by \texttt{audit\_supplements.py}. Stepwise differences are overlapping criteria and must not be presented as mutually exclusive causes.
+
+The observed-track screen makes 19,905/39,351 yellow, 5,802/9,039 orange and 1,744/6,051 red episodes evaluable. A second pass over native individual tracks partitions all 26,990 unevaluable episodes by observable evidence at the 20-min endpoint. In the red class, 479 have at least one aircraft last observed outside FL290--FL410, 3,823 have a track ending before the endpoint while last observed inside that band, and five lack an observed start state. In the yellow and orange classes, the corresponding in-band track-end counts are 14,479 and 1,089. Three yellow episodes reach the nominal archive boundary. No episode in this hierarchy has a later track that brackets the missing endpoint across a gap. An in-band track end is consistent with leaving the recorded Swedish surveillance domain but does not prove geographic exit because no operational airspace polygon is defined. These are evidence categories, not causal missingness diagnoses. Complete-case weighting and best/worst-case bounds remain for further study; no absence-of-conflict conclusion is drawn for unevaluable episodes.
 
 \subsection{Results of the comparison}
-Table~\ref{tab:bench} is a result skeleton; every cell is \pend{} until the protocol above has been run. No performance claim is made in this version of the manuscript.
+The common cohort contains 67,367 episodes, including 21,281 in the four test weeks. With the fixed start-based window, test positive rates rise from 16.2\% in green to 21.5\%, 27.7\% and 30.9\% in yellow, orange and red. Rates under the any-observation exposure window are higher in every class (Table~\ref{tab:windows}); this shows how the association window changes the measured target. The colour ordering is preserved under both definitions.
 
 \begin{table}[t]
-\caption{Held-out encounter-level comparison on the four evaluation weeks (primary estimand). $\Delta$Brier is relative to M0, with day-cluster bootstrap 95\% interval.}\label{tab:bench}
+\caption{Test-week eligible-order rates per episode under fixed 300-s exposure from episode start and under a 300-s window after any episode observation.}\label{tab:windows}
+\begin{tabular}{@{}lrrr@{}}\toprule
+Colour & Episodes & Fixed start window & Any-observation window\\\midrule
+Green & 3,943 & 16.2\% & 26.0\%\\
+Yellow & 12,548 & 21.5\% & 30.5\%\\
+Orange & 2,927 & 27.7\% & 41.0\%\\
+Red & 1,863 & 30.9\% & 45.9\%\\\bottomrule
+\end{tabular}
+\end{table}
+
+M4 was selected among M2--M4 using leave-one-week-out Brier score on the nine calibration weeks. On test it improved the episode-weighted Brier score from 0.1712 for M0 to 0.1690; the paired difference was $-0.00220$ (95\% day-bootstrap interval $[-0.00298,-0.00149]$, bootstrap standard error 0.00040). This exceeds the prespecified one-standard-error threshold. The pair-instant-weighted comparison also favoured M4 (0.1482 versus 0.1467; difference $-0.00151$). The paired episode-weighted improvement is negative in each of the four test weeks ($-0.00136,-0.00347,-0.00066,-0.00313$ in chronological order); four weeks are too few for a significance claim. The 17,338 test non-green episodes occurred in 605 hours containing at least one such episode, averaging 28.7 deduplicated episodes per active hour. These are modest gains for predicting a subsequent eligible order, not estimates of conflict detection accuracy or safety benefit.
+
+\begin{table}[t]
+\caption{Held-out episode-level comparison on the four evaluation weeks (one episode, one vote). $\Delta$Brier is relative to M0; its 95\% day-cluster interval is plotted in Fig.~\ref{fig:benchmarks}.}\label{tab:bench}
 \begin{tabular}{@{}lcccc@{}}
 \toprule
 Model & Brier & Log score & Calib. slope & $\Delta$Brier vs M0\\
 \midrule
-M0 & \pend & \pend & \pend & --\\
-M1 & \pend & \pend & \pend & \pend\\
-M2 & \pend & \pend & \pend & \pend\\
-M3 & \pend & \pend & \pend & \pend\\
-M4 & \pend & \pend & \pend & \pend\\
-M5 ($K=3,4,5$) & \pend & \pend & \pend & \pend\\
-M6 & \pend & \pend & \pend & \pend\\
+M0 & 0.1712 & 0.5251 & 1.063 & --\\
+M1 & 0.1717 & 0.5265 & 1.156 & $+0.00044$\\
+M2 & 0.1722 & 0.5278 & 1.206 & $+0.00092$\\
+M3 & 0.1696 & 0.5206 & 0.899 & $-0.00162$\\
+M4 & 0.1690 & 0.5189 & 0.934 & $-0.00220$\\
+M5 ($K=3$) & 0.1717 & 0.5265 & 1.156 & $+0.00044$\\
+M5 ($K=4$) & 0.1717 & 0.5265 & 1.151 & $+0.00043$\\
+M5 ($K=5$) & 0.1712 & 0.5252 & 1.130 & $-0.00002$\\
 \bottomrule
 \end{tabular}
 \end{table}
 
 \begin{figure}[t]
-\centering\figplaceholder{Future results only. Held-out comparison plot for M0--M6 with week-level and day-cluster bootstrap intervals, calibration curves and deduplicated alert counts per hour. Do not populate with simulated or invented improvements.}
-\caption{Planned M0--M6 benchmark figure. Results are pending; no model-comparison values are plotted in this draft.}\label{fig:benchmarks}
+\centering
+\begin{subfigure}[b]{0.49\linewidth}
+\includegraphics[width=\linewidth]{figures/fig08a_brier.png}
+\caption{Paired Brier differences.}
+\end{subfigure}\hfill
+\begin{subfigure}[b]{0.49\linewidth}
+\includegraphics[width=\linewidth]{figures/fig08b_reliability.png}
+\caption{Test reliability.}
+\end{subfigure}
+\caption{Held-out episode-weighted comparison of M0--M5. Negative differences favour the candidate over M0. Error bars are 95\% day-cluster bootstrap intervals from 400 replicates. Reliability bins are deciles of predicted probability (duplicates collapsed).}\label{fig:benchmarks}
 \end{figure}
 
 \section{Conclusions}\label{sec:conclusion}
 A historical ATC clearance is a real operational record but is not automatically a uniquely attributable response to a particular pairwise encounter. This study provides a traceable reconstruction of pair-instants, an empirical four-level intervention-activity partition, an event-reconciliation audit and a surveillance-coverage-aware retrospective assessment over 13 sampled SCAT weeks. The analysis shows that the clearance-label gradient is reproducible at pair-instant level, while unique clearances create many repeated links and observation coverage is particularly limited for red episodes.
 
-The central scientific implication is that data-driven encounter classes must be evaluated at the unit and with the target appropriate to the intended application. The present results support an audit methodology and expose substantial measurement and interpretation problems; they do not demonstrate four intrinsic risk categories, the causal prevention of losses of separation, or superiority to existing conflict-detection tools. The prespecified encounter-level comparison with continuous, discrete and probabilistic baselines (Sect.~\ref{sec:benchmarks}), together with eligibility and missingness sensitivity tests, is the step that will establish whether the framework has incremental value \tbc{replace with the actual findings once the comparison has been run}.
+The central scientific implication is that data-driven encounter classes must be evaluated at the unit and with the target appropriate to the intended application. The prespecified retrospective encounter-level comparison found a small but consistent held-out association-score advantage for contextual continuous model M4 over the four-level partition. M0 remains an interpretable summary of subsequent order activity, but the one-standard-error rule does not support it as the primary model for this retrospective target. Because episode-level features are finalised after the run, these scores are not prospective decision-time performance. The findings do not demonstrate intrinsic risk categories, causal prevention of losses of separation, or superiority to operational conflict-detection tools. Alternative predictors and missingness mechanisms still require sensitivity analysis and external operational validation.
 
 \section*{Statements and Declarations}
 \noindent\textbf{Funding.} No funds, grants, or other support was received.\\
