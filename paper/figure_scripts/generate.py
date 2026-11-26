@@ -629,7 +629,64 @@ def fig10():
     print(f"window aircraft: {n}; pair m_min={mmin:.3f} tau={tau:.0f}s; reference {e.anchor_time_utc}")
 
 
-FIGS={1:fig1,2:fig2,3:fig3,4:fig4,5:fig5,6:fig6,7:fig7,8:fig8,9:fig9,10:fig10}
+def fig11():
+    """Common-population lift ladder, read only from the audited ladder CSV."""
+    path=ROOT/"results/benchmarks_units/ladder/ladder_rates_lifts.csv"
+    d=pd.read_csv(path,dtype={"step":str})
+    d=d.loc[d.stratifier.eq("instant")]
+    steps=["0","0b","1","2","3"]
+    labels=["0 pair-instant","0b equal weight","1 first obs.",
+            "2 episode, start","3 episode, max colour"]
+    def value(scheme, step, cls):
+        q=d.loc[d.scheme.eq(scheme)&d.step.eq(step)&d["class"].eq(cls)]
+        check(len(q)==1,f"Figure 11 needs one {scheme}/{step}/{cls} row")
+        return q.iloc[0]
+    check(round(float(value("four_class","0","rojo").lift),2)==3.11,
+          "Figure 11 step 0 no longer reproduces Table 6 red pair-instant lift")
+    # With every green observation assigned to an episode, step 2 is 1.94;
+    # Table 6's 1.96 used a green cohort that omitted 60,700 observations.
+    check(round(float(value("four_class","2","rojo").lift),2)==1.94,
+          "Figure 11 step 2 differs from the audited common-population result")
+    styles=[("amarillo","o",COLOURS["amarillo"],.7,3.4,1.1),
+            ("naranja","s",COLOURS["naranja"],.75,3.5,1.1),
+            ("rojo","^",COLOURS["rojo"],1.,5.1,1.6)]
+    def draw(scheme, classes, stem, ylabel, annotate):
+        fig,ax=plt.subplots(figsize=(3.2,2.8))
+        xx=np.arange(len(steps))
+        for cls,mk,col,alpha,ms,lw in classes:
+            rows=[value(scheme,s,cls) for s in steps]
+            yy=np.array([r.lift for r in rows],float)
+            lo=np.array([r.lo for r in rows],float)
+            hi=np.array([r.hi for r in rows],float)
+            check((lo<=yy).all() and (yy<=hi).all(),f"Invalid Figure 11 intervals: {scheme}/{cls}")
+            ax.errorbar(xx,yy,yerr=np.vstack([yy-lo,hi-yy]),fmt=mk+"-",color=col,
+                        alpha=alpha,markersize=ms,lw=lw,elinewidth=.8,capsize=2,
+                        markeredgecolor="white",markeredgewidth=.4,label=EN.get(cls,"m < 1"),zorder=4 if annotate and cls=="rojo" else 3)
+            if annotate and cls=="rojo":
+                for x,y in zip(xx,yy):
+                    ax.annotate(f"{y:.2f}",(x,y),xytext=(0,8),textcoords="offset points",
+                                ha="center",va="bottom",fontsize=6.3,color=col)
+            if annotate and cls=="positive":
+                for x,y in zip(xx,yy):
+                    ax.annotate(f"{y:.2f}",(x,y),xytext=(0,8),textcoords="offset points",
+                                ha="center",va="bottom",fontsize=6.3,color=col)
+        ax.axhline(1,color="#777",lw=.75,ls="--",zorder=1)
+        ax.set_xticks(xx,labels,rotation=22,ha="right")
+        ax.tick_params(axis="x",labelsize=6)
+        ax.tick_params(axis="y",labelsize=6.5)
+        ax.set(ylabel=ylabel,xlim=(-.18,4.18),ylim=(.75,3.65))
+        ax.yaxis.label.set_size(7)
+        if len(classes)>1:
+            ax.legend(loc="lower left",bbox_to_anchor=(0,1.01),ncol=3,
+                      frameon=False,fontsize=6.3,handletextpad=.3,columnspacing=.7)
+        fig.tight_layout(pad=.35)
+        save(fig,stem)
+    draw("four_class",styles,"fig11a_ladder_four_class","Lift vs green (95% CI)",True)
+    draw("binary_1",[("positive","^",COLOURS["rojo"],1.,5.1,1.6)],
+         "fig11b_ladder_binary","Lift vs negative (95% CI)",True)
+
+
+FIGS={1:fig1,2:fig2,3:fig3,4:fig4,5:fig5,6:fig6,7:fig7,8:fig8,9:fig9,10:fig10,11:fig11}
 if __name__=="__main__":
     p=argparse.ArgumentParser();p.add_argument("--figure",default="all",choices=["all"]+[str(i) for i in FIGS])
     a=p.parse_args()

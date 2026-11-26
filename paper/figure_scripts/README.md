@@ -11,8 +11,11 @@ python3 paper/figure_scripts/track_end_footprint.py
 python3 paper/figure_scripts/generate.py --figure all
 ```
 
-`--figure 1` through `--figure 10` regenerate individual figures (9: choice of the number of levels, from Stage 19 tables; 10: worked example of one instant of Swedish upper airspace, from the SCAT state and prediction tables and `basemap_sweden.json`, Natural Earth public-domain land and lakes). The generator
+`--figure 1` through `--figure 11` regenerate individual figures (9: choice of the number of levels, from Stage 19 tables; 10: worked example of one instant of Swedish upper airspace, from the SCAT state and prediction tables and `basemap_sweden.json`, Natural Earth public-domain land and lakes; 11: paired unit-of-analysis lift ladder, read from `results/benchmarks_units/ladder/ladder_rates_lifts.csv`). The generator
 writes PNG panels to `paper/figures/` and never changes Stage 1–21 results.
+
+To regenerate Figure 11 alone after the ladder CSV is available, run
+`python3 paper/figure_scripts/generate.py --figure 11`.
 `benchmark.py` writes its cohort, predictions, scores, reliability curves,
 bootstrap intervals, paired weekly differences, alert burden and decision to
 `results/benchmarks/`. The random seed is **20261112**. Its approved protocol
