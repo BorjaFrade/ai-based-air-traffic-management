@@ -8,6 +8,7 @@ every canonical pair observation belongs to exactly one episode.
 from __future__ import annotations
 
 import json
+import argparse
 import sys
 import time
 from pathlib import Path
@@ -159,12 +160,12 @@ def add(acc: dict, key: tuple, day: np.ndarray, stratum: np.ndarray, y: np.ndarr
 def write_tex(rates: pd.DataFrame) -> None:
     """Booktabs fragment for the four-class comparison under both strata."""
     lines = [r"\begin{tabular}{@{}llccc@{}}", r"\toprule",
-             r"Tráfico & Paso & Amarillo & Naranja & Rojo \\", r"\midrule"]
-    labels = {"0": "0: par instante", "0b": "0b: peso igual", "1": "1: primera obs.",
-              "2": "2: episodio, inicio", "2_any": "2: cualquier observación",
-              "3": "3: episodio, máximo"}
-    for strat, heading in (("instant", "aeronaves instantáneas"),
-                           ("episode_hour", "inicios de episodio/h")):
+             r"Traffic & Step & Yellow & Orange & Red \\", r"\midrule"]
+    labels = {"0": "0: pair-instant", "0b": "0b: equal weight", "1": "1: first obs.",
+              "2": "2: episode, start", "2_any": "2: any observation",
+              "3": "3: episode, maximum"}
+    for strat, heading in (("instant", "instantaneous aircraft"),
+                           ("episode_hour", "episode starts/h")):
         lines.append(rf"\multicolumn{{5}}{{@{{}}l}}{{{heading}}} \\")
         for step in ("0", "0b", "1", "2", "2_any", "3"):
             values = []
@@ -180,10 +181,24 @@ def write_tex(rates: pd.DataFrame) -> None:
 
 
 def main() -> None:
+    global GAP, OUT, STRATA
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--gap", type=int, default=360)
+    parser.add_argument("--weeks", choices=("test", "calib"), default="test")
+    parser.add_argument("--out", type=Path, default=OUT)
+    parser.add_argument("--instant-only", action="store_true")
+    parser.add_argument("--main-schemes", action="store_true")
+    args = parser.parse_args()
+    check(args.gap > 0, "Episode gap must be positive")
+    GAP, OUT = args.gap, args.out
+    if args.instant_only:
+        STRATA = ("instant",)
+    frozen_test = args.gap == 360 and args.weeks == "test"
     started = time.perf_counter()
-    preflight()
+    if frozen_test:
+        preflight()
     audit = json.loads((ROOT / "data/processed/scat/19_calib_selection/tables/audit.json").read_text())
-    weeks = audit["test"]
+    weeks = audit[args.weeks]
     days, day_lookup = test_days(weeks)
     weights = np.random.default_rng(SEED).multinomial(len(days), np.ones(len(days))/len(days), size=B)
     n_days = len(days)
@@ -192,15 +207,16 @@ def main() -> None:
         if key not in acc:
             acc[key] = {"den": np.zeros((n_days, n_strata)), "num": np.zeros((n_days, n_strata)),
                         "n_obs": 0, "underlying_obs": 0, "positive_rows": 0, "n_episodes": 0}
-    diagnostics = {"test_weeks": weeks, "days": days, "weekly": {}, "seed": SEED, "replicates": B}
+    diagnostics = {"test_weeks": weeks, "days": days, "weekly": {}, "seed": SEED, "replicates": B} if frozen_test else {"weeks": weeks, "gap": GAP, "days": days, "weekly": {}, "seed": SEED, "replicates": B}
     pf = pq.ParquetFile(ROOT / "data/processed/scat/02_traffic/scat_states.parquet")
-    frozen = pd.read_parquet(ROOT / "results/benchmarks_green_all/episodes.parquet",
-                             columns=["week", "highest_color", "observations"])
-    frozen = frozen.loc[frozen.week.isin(weeks) & frozen.highest_color.eq("verde")]
-    frozen_green = frozen.groupby("week").observations.agg(["size", "sum"])
-    del frozen
-    stage20 = pd.read_csv(ROOT / "results/stage20/stage20_episodes.csv", usecols=["week", "split"])
-    non_green_counts = stage20.loc[stage20.split.eq("test")].week.value_counts()
+    if frozen_test:
+        frozen = pd.read_parquet(ROOT / "results/benchmarks_green_all/episodes.parquet",
+                                 columns=["week", "highest_color", "observations"])
+        frozen = frozen.loc[frozen.week.isin(weeks) & frozen.highest_color.eq("verde")]
+        frozen_green = frozen.groupby("week").observations.agg(["size", "sum"])
+        del frozen
+        stage20 = pd.read_csv(ROOT / "results/stage20/stage20_episodes.csv", usecols=["week", "split"])
+        non_green_counts = stage20.loc[stage20.split.eq("test")].week.value_counts()
     global_episode_offset = 0
     for week in weeks:
         path = ROOT / "results/stage20/pairs" / f"pairs_{week}.parquet"
@@ -220,7 +236,7 @@ def main() -> None:
         unique_t, t_code = np.unique(t, return_inverse=True)
         inst_t = snapshot_strata(week, unique_t, pf)
         inst = inst_t[t_code]
-        day = np.array([day_lookup[int(v)] for v in (t//86400).astype(int)], dtype=np.int8)
+        day = np.array([day_lookup[int(v)] for v in (t//86400).astype(int)], dtype=np.int16)
         ep = make_episodes(t, pair, rank, y, m)
         e_id = ep["id"] + global_episode_offset
         first, maxi = ep["first"], ep["max"]
@@ -241,20 +257,33 @@ def main() -> None:
               int(expected.sum()) == len(t),
               f"Instantaneous traffic strata differ from Stage 16 in {week}")
         n_non_green = int((ep["max_rank"] > 0).sum())
-        frozen_ng = int(non_green_counts[week])
-        check(n_non_green == frozen_ng, f"Non-green episode count differs in {week}")
-        diagnostics["weekly"][week] = {"observations": len(t), "non_green_episodes": n_non_green,
-                                        "green_episodes": int((ep["max_rank"] == 0).sum()),
-                                        "frozen_green_episodes": int(frozen_green.loc[week, "size"]),
-                                        "frozen_green_observations": int(frozen_green.loc[week, "sum"]),
-                                        "near_non_green_green_observations": int((rank == 0).sum()-frozen_green.loc[week, "sum"]),
-                                        "tmax_equals_start": int((t[maxi] == ep_start).sum())}
+        if frozen_test:
+            check(n_non_green == int(non_green_counts[week]), f"Non-green episode count differs in {week}")
+        if frozen_test:
+            diagnostics["weekly"][week] = {"observations": len(t), "non_green_episodes": n_non_green,
+                                            "green_episodes": int((ep["max_rank"] == 0).sum()),
+                                            "frozen_green_episodes": int(frozen_green.loc[week, "size"]),
+                                            "frozen_green_observations": int(frozen_green.loc[week, "sum"]),
+                                            "near_non_green_green_observations": int((rank == 0).sum()-frozen_green.loc[week, "sum"]),
+                                            "tmax_equals_start": int((t[maxi] == ep_start).sum())}
+        else:
+            diagnostics["weekly"][week] = {"observations": len(t), "non_green_episodes": n_non_green,
+                                            "green_episodes": int((ep["max_rank"] == 0).sum()),
+                                            "tmax_equals_start": int((t[maxi] == ep_start).sum()),
+                                            "red_observations": int((rank == 3).sum()),
+                                            "red_episodes": int((ep["max_rank"] == 3).sum())}
+        check(np.array_equal(np.sort(maxi[ep["max_rank"] == 3]),
+                             np.sort(first_positive_indices(ep["id"], t, np.where(rank == 3, 0., 1.), ep["count"], .5)[ep["max_rank"] == 3])),
+              f"First red occurrence differs from T_max in {week}")
         configurations = [("four_class", rank, ep["first_rank"], ep["max_rank"], maxi)]
-        for c in (1., 1.5, 2.):
+        for c in ((1.,) if args.main_schemes else (1., 1.5, 2.)):
             p = m < c
             emax = ep["min_m"] < c
             pmax = first_positive_indices(ep["id"], t, m, ep["count"], c)
             pmax[~emax] = first[~emax]
+            if c == 1.:
+                check(np.array_equal(pmax[emax], first_positive_indices(ep["id"], t, m, ep["count"], 1.)[emax]),
+                      f"First binary positive differs from T_max in {week}")
             configurations.append((f"binary_{c:g}", p.astype(np.int8), p[first].astype(np.int8),
                                    emax.astype(np.int8), pmax))
         for scheme, obs_class, first_class, max_class, max_index in configurations:
@@ -312,38 +341,41 @@ def main() -> None:
                          rate=z.sum()/n.sum(), lift=lift,
                          lo=np.quantile(bs, .025), hi=np.quantile(bs, .975)))
     rates = pd.DataFrame(rows)
-    reference = pd.read_csv(ROOT / "results/benchmarks_units/table6_reproduction.csv")
-    for color in COLORS:
-        for step, window in (("0", "pair_instant"), ("2", "episode_start"), ("2_any", "episode_any")):
-            now = rates.loc[rates.scheme.eq("four_class") & rates.stratifier.eq("instant") &
-                            rates.step.eq(step) & rates["class"].eq(color)].iloc[0]
-            old = reference.loc[reference.window.eq(window) & reference.color.eq(color)].iloc[0]
-            if step == "0" or color != "verde":
-                check(int(now.n_obs) == int(old.n) and int(now.positive_rows) == int(old.positive),
-                      f"Ladder {step}/{color} does not retain Table 6's observed numerator/denominator")
-            if step == "0":
-                check(round(now.lift, 2) == round(old.lift, 2),
-                      f"Pair-instant lift differs from Table 6: {color}")
+    if frozen_test:
+        reference = pd.read_csv(ROOT / "results/benchmarks_units/table6_reproduction.csv")
+        for color in COLORS:
+            for step, window in (("0", "pair_instant"), ("2", "episode_start"), ("2_any", "episode_any")):
+                now = rates.loc[rates.scheme.eq("four_class") & rates.stratifier.eq("instant") &
+                                rates.step.eq(step) & rates["class"].eq(color)].iloc[0]
+                old = reference.loc[reference.window.eq(window) & reference.color.eq(color)].iloc[0]
+                if step == "0" or color != "verde":
+                    check(int(now.n_obs) == int(old.n) and int(now.positive_rows) == int(old.positive),
+                          f"Ladder {step}/{color} does not retain Table 6's observed numerator/denominator")
+                if step == "0":
+                    check(round(now.lift, 2) == round(old.lift, 2),
+                          f"Pair-instant lift differs from Table 6: {color}")
     for strat in STRATA:
-        for scheme in ("four_class", "binary_1", "binary_1.5", "binary_2"):
+        for scheme in (("four_class", "binary_1") if args.main_schemes else ("four_class", "binary_1", "binary_1.5", "binary_2")):
             x = rates.loc[rates.stratifier.eq(strat) & rates.scheme.eq(scheme)]
             for step in ("0b", "2", "3"):
                 part = x.loc[x.step.eq(step)]
                 check(abs(part.weight_sum.sum()-global_episode_offset) < 1e-6,
                       f"Episode weight total differs in {scheme}/{strat}/{step}")
-            check(int(x.loc[x.step.eq("2"), "underlying_obs"].sum()) == 6856880,
-                  f"Episode population differs in {scheme}/{strat}")
-    red_now = rates.loc[rates.scheme.eq("four_class") & rates.stratifier.eq("instant") &
-                        rates.step.eq("2") & rates["class"].eq("rojo")].iloc[0]
-    red_old = reference.loc[reference.window.eq("episode_start") & reference.color.eq("rojo")].iloc[0]
-    diagnostics["red_step2_vs_table6"] = {"common_lift": float(red_now.lift),
-                                           "published_lift": float(red_old.lift),
-                                           "difference": float(red_now.lift-red_old.lift)}
+            if frozen_test:
+                check(int(x.loc[x.step.eq("2"), "underlying_obs"].sum()) == 6856880,
+                      f"Episode population differs in {scheme}/{strat}")
+    if frozen_test:
+        red_now = rates.loc[rates.scheme.eq("four_class") & rates.stratifier.eq("instant") &
+                            rates.step.eq("2") & rates["class"].eq("rojo")].iloc[0]
+        red_old = reference.loc[reference.window.eq("episode_start") & reference.color.eq("rojo")].iloc[0]
+        diagnostics["red_step2_vs_table6"] = {"common_lift": float(red_now.lift),
+                                               "published_lift": float(red_old.lift),
+                                               "difference": float(red_now.lift-red_old.lift)}
     comparisons = []
-    for scheme in ("four_class", "binary_1", "binary_1.5", "binary_2"):
+    for scheme in (("four_class", "binary_1") if args.main_schemes else ("four_class", "binary_1", "binary_1.5", "binary_2")):
         labels = COLORS[1:] if scheme == "four_class" else ("positive",)
         for strat in STRATA:
-            for a, b in (("0", "0b"), ("0", "1"), ("0", "2"), ("2", "3"), ("0", "3"), ("0b", "1"), ("1", "2")):
+            for a, b in (("0", "0b"), ("0", "1"), ("0", "2"), ("2", "3"), ("0", "3"), ("0b", "1"), ("1", "2"), ("0", "2_any")):
                 for cls in labels:
                     A = rates.loc[rates.scheme.eq(scheme) & rates.stratifier.eq(strat) &
                                   rates.step.eq(a) & rates["class"].eq(cls)].iloc[0]
@@ -361,10 +393,14 @@ def main() -> None:
                                             logdiff_lo=np.quantile(logdiff, .025),
                                             logdiff_hi=np.quantile(logdiff, .975)))
     ratios = pd.DataFrame(comparisons)
+    if not frozen_test:
+        rates["gap"], rates["weeks"] = GAP, ";".join(weeks)
+        ratios["gap"], ratios["weeks"] = GAP, ";".join(weeks)
     OUT.mkdir(parents=True, exist_ok=True)
     rates.to_csv(OUT / "ladder_rates_lifts.csv", index=False)
     ratios.to_csv(OUT / "ladder_ratios.csv", index=False)
-    write_tex(rates)
+    if not args.instant_only:
+        write_tex(rates)
     diagnostics["elapsed_seconds"] = round(time.perf_counter()-started, 1)
     (OUT / "diagnostics.json").write_text(json.dumps(diagnostics, indent=2) + "\n")
     print(rates.loc[rates.scheme.eq("four_class") & rates.stratifier.eq("instant") &

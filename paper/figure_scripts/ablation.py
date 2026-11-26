@@ -175,15 +175,15 @@ def main():
     density_prior = full.loc["M3+density+prior", "brier"] - full.loc["M3", "brier"]
     duration_after = full.loc["M4", "brier"] - full.loc["M3+density+prior", "brier"]
     check(abs(extra - density_prior - duration_after) < 1e-12, "Ablation decomposition does not sum")
-    lines = ["# Ablación de M4 (T11)", "",
-             "Cohorte congelada: 67.367 episodios; 21.281 de test. Resultado: orden elegible en "
-             "`(T0,T0+300 s]`. Un episodio, un voto. Nueve semanas de calibración "
-             "para selección de C por leave-one-week-out; cuatro semanas de test para puntuación.", "",
-             "M3 y M4 completos reproducen exactamente los Brier y ΔBrier guardados en "
-             "`results/benchmarks/metrics.csv` (asserts en `ablation.py`). Los IC son "
-             "percentiles de 400 réplicas bootstrap por días con semilla 20261112, "
-             "y usan los mismos índices de días en todas las diferencias pareadas.", "",
-             "| Modelo | Brier | Log score | Pendiente | Δ vs M0 [IC 95 %] | Δ vs M3 [IC 95 %] |",
+    lines = ["# Ablation of M4 (T11)", "",
+             "Frozen cohort: 67,367 episodes; 21,281 in test. Outcome: eligible clearance in "
+             "`(T0,T0+300 s]`. One episode, one vote. Nine calibration weeks "
+             "for the selection of C by leave-one-week-out; four test weeks for scoring.", "",
+             "The full M3 and M4 reproduce exactly the Brier and ΔBrier values saved in "
+             "`results/benchmarks/metrics.csv` (asserts in `ablation.py`). The CIs are "
+             "percentiles of 400 day-level bootstrap replicates with seed 20261112, "
+             "and use the same day indices in all paired differences.", "",
+             "| Model | Brier | Log score | Slope | Δ vs M0 [95 % CI] | Δ vs M3 [95 % CI] |",
              "| --- | ---: | ---: | ---: | ---: | ---: |"]
     for r in rows:
         fmt = lambda x: f"{x:+.6f}"
@@ -192,20 +192,20 @@ def main():
                      f"[{fmt(r['delta_vs_M0_ci_low'])}, {fmt(r['delta_vs_M0_ci_high'])}] | "
                      f"{fmt(r['delta_vs_M3'])} "
                      f"[{fmt(r['delta_vs_M3_ci_low'])}, {fmt(r['delta_vs_M3_ci_high'])}] |")
-    lines += ["", f"Incremento M4 frente a M3: **{extra:+.6f}** de Brier.",
-              f"Densidad + orden previa sin duración: **{density_prior:+.6f}**.",
-              f"Duración añadida después de esas dos variables: **{duration_after:+.6f}**.",
-              "Estas son diferencias condicionales entre modelos reentrenados, no una "
-              "atribución causal ni una descomposición aditiva de efectos individuales.", "",
-              "## Diferencias por semana de test", "",
-              "| Modelo | Semana | Δ vs M0 | Δ vs M3 |", "| --- | --- | ---: | ---: |"]
+    lines += ["", f"Increment of M4 over M3: **{extra:+.6f}** in Brier score.",
+              f"Density + prior clearance without duration: **{density_prior:+.6f}**.",
+              f"Duration added after those two variables: **{duration_after:+.6f}**.",
+              "These are conditional differences between refitted models, not a "
+              "causal attribution nor an additive decomposition of individual effects.", "",
+              "## Differences by test week", "",
+              "| Model | Week | Δ vs M0 | Δ vs M3 |", "| --- | --- | ---: | ---: |"]
     for r in weekly:
         lines.append(f"| {r['model']} | {r['week']} | {r['delta_vs_M0']:+.6f} | "
                      f"{r['delta_vs_M3']:+.6f} |")
-    lines += ["", "## Límite de interpretación", "",
-              "La duración y el máximo geométrico se conocen al terminar el episodio. "
-              "Esta ablación compara asociaciones retrospectivas, no predicción "
-              "disponible en tiempo real en T0.", ""]
+    lines += ["", "## Limit of interpretation", "",
+              "Duration and the geometric maximum are known only when the episode ends. "
+              "This ablation compares retrospective associations, not prediction "
+              "available in real time at T0.", ""]
     (args.out / "RESUMEN.md").write_text("\n".join(lines), encoding="utf-8")
     print(metrics[["model", "brier", "delta_vs_M0", "delta_vs_M3"]].to_string(index=False))
 
